@@ -1,19 +1,16 @@
-int max_guesses = ... // # of guesses before converging on desired actuation
-int threshold = ... // threshold for difference between predicted and desired apogee, (m)
-double guess = 0 ... // desired actuation angle, (degrees)
-angle_resolution = 5 // used in rounding desired angle to nearest increment
+#include "airbrake_state.h"
 
 // Calculate Actuation Angle
-int calculateActuationAngle(double angle, double altitude, double velocity, double targetApogee, double tilt, double CdA_rocket) { 
+int AirbrakeState::calculateActuationAngle(double altitude, double velocity, double targetApogee, double tilt, double CdA_rocket) { 
 
     int i = 0;
     // initial flap guesses
-    low = 0; 
-    high = 90;
+    double low = 0; 
+    double high = 90;
             
     while (i < max_guesses) {
  
-        double sim_apogee = predict_apogee(apogee_predictor_timestamp, CdA_rocket, guess, tilt, velocity, altitude, GROUND_ALTITUDE, EMPTY_MASS); 
+        double sim_apogee = predict_apogee(time_step, CdA_rocket, guess, tilt, velocity, altitude, GROUND_ALTITUDE, empty_mass); 
         double apogee_difference = estimated_apogee - target_apogee;
 
          if(isnan(estimated_apogee)){
@@ -40,7 +37,7 @@ int calculateActuationAngle(double angle, double altitude, double velocity, doub
 }
 
 // Calculate apogee
-double predict_apogee(double time_step,double CdA_rocket, double flap_angle,double tilt, double cur_velocity, double cur_height, double ground_alt,double empty_mass){
+double AirbrakeState::predict_apogee(double time_step, double CdA_rocket, double flap_angle, double tilt, double cur_velocity, double cur_height, double ground_alt, double empty_mass) {
     
     double time_intergrating = 0.0;
     double x = 0.0;
@@ -82,10 +79,11 @@ double predict_apogee(double time_step,double CdA_rocket, double flap_angle,doub
 }
 
 // Calculate air density
-double get_density(double h){
+double AirbrakeState::get_density(double h){
   
   return p0*M/R/T0*pow((1-L*h/T0),((9.8*M/R/L)-1));
   
+  // TODO why use standard atm instead of calc on way
+  //return P*M/R*T
+  
 }
-
-
