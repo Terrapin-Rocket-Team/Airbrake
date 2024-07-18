@@ -18,6 +18,7 @@ cone_angle = atand(diameter_nose_cone/(2*height_nose_cone))
 % Airbrake properies
 length_of_flaps = .5; % in ft
 airbrake_flap_angle = 12; % in deg
+flap_area = 0.0064516; % in m^2
 
 % Flow input parameters
 gamma = 1.4;
@@ -41,6 +42,14 @@ T1 = T_inf*p_inf*rho_inf/(p1*rho1);
 % Second shock
 % 2D wedge shock
 beta_flap = wedge_2d_shock_angle(M1, airbrake_flap_angle, gamma, 0)
+M2inf_n = M1*sind(beta_flap)
+M2_n = sqrt((1 + M2inf_n*M2inf_n*(gamma-1)/2)/(gamma*M2inf_n*M2inf_n - ((gamma-1)/2)))
+M2 = M2_n/(sind(beta_flap-airbrake_flap_angle))
+p2 = p1*(1 + (2*gamma)*(M2inf_n*M2inf_n - 1)/(gamma + 1));
+rho2 = rho1*((Minf_n*Minf_n*(gamma+1))/(2 + (gamma-1)*M2inf_n*M2inf_n));
+
+q = .5*rho2*(343*M2)^2
+F = q*flap_area*sind(airbrake_flap_angle)
 
 % Visualize the shock and rocket
 figure;
