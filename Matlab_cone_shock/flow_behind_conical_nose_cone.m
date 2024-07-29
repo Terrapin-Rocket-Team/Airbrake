@@ -17,7 +17,7 @@ cone_angle = atand(diameter_nose_cone/(2*height_nose_cone))
 
 % Airbrake properies
 length_of_flaps = .5; % in ft
-airbrake_flap_angle = 12; % in deg
+airbrake_flap_angle = 15; % in deg
 flap_area = 0.0064516; % in m^2
 torque_arm = 1/6; % in ft
 
@@ -51,8 +51,8 @@ rho2 = rho1*((Minf_n*Minf_n*(gamma+1))/(2 + (gamma-1)*M2inf_n*M2inf_n));
 
 q = .5*rho2*(343*M2)^2
 F = q*flap_area*sind(airbrake_flap_angle)
-torque = F*1/6;
-force_on_disc = torque/(1/4)
+torque = F*sind(airbrake_flap_angle)*2.5;
+force_on_disc = torque/.75
 
 % Visualize the shock and rocket
 figure;

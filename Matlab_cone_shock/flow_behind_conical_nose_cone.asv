@@ -51,6 +51,8 @@ rho2 = rho1*((Minf_n*Minf_n*(gamma+1))/(2 + (gamma-1)*M2inf_n*M2inf_n));
 
 q = .5*rho2*(343*M2)^2
 F = q*flap_area*sind(airbrake_flap_angle)
+torque = F*sind(90-airbrake_flap_angle)*2;
+force_on_disc = torque/1
 
 % Visualize the shock and rocket
 figure;
