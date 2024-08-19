@@ -1,7 +1,13 @@
+#include <Arduino.h>
+
 #include "airbrake_state.h"
 
+void AirbrakeState::setAirbrakeStage(){
+    // TODO implement this
+}
+
 // Calculate Actuation Angle
-int AirbrakeState::calculateActuationAngle(double altitude, double velocity, double targetApogee, double tilt, double CdA_rocket) { 
+int AirbrakeState::calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time) { 
 
     int i = 0;
     // initial flap guesses
@@ -10,30 +16,28 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
             
     while (i < max_guesses) {
  
-        double sim_apogee = predict_apogee(time_step, CdA_rocket, guess, tilt, velocity, altitude, GROUND_ALTITUDE, empty_mass); 
+        double sim_apogee = predict_apogee(loop_time, cda_rocket, actuationAngle, tilt, velocity, altitude, ground_altitude, empty_mass); 
         double apogee_difference = estimated_apogee - target_apogee;
 
-         if(isnan(estimated_apogee)){
-          guess = 0;
+         if(estimated_apogee != estimated_apogee){ // TODO why does isnan(estimated_apogee) not work?
+          actuationAngle = 0;
           break;
          }
         
         if (abs(apogee_difference) < threshold) {
             break;
         } else if (apogee_difference > 0) {
-            low = guess;
+            low = actuationAngle;
         } else if (apogee_difference < 0) {
-            high = guess;
+            high = actuationAngle;
         }
         
-        guess = (high + low) / 2;
+        actuationAngle = (high + low) / 2;
         i++;
     }
     
-    // returns angles in degrees
-    guess = angle_resolution*round(guess/angle_resolution);
-
-    return guess;
+    // sets angles in degrees
+    actuationAngle = angle_resolution*round(actuationAngle/angle_resolution);
 }
 
 // Calculate apogee
@@ -80,10 +84,23 @@ double AirbrakeState::predict_apogee(double time_step, double CdA_rocket, double
 
 // Calculate air density
 double AirbrakeState::get_density(double h){
+    // Constants
+    double R=8.31446;  //universal gas constant (J/(mol·K))
+    double M=.0289652; //molar mass of air (kg/mol)
+    double L=0.0065;  //temperature lapse rate in the troposphere (K/m)
+
+    double p0=101325; //ground pressure (Pa) // TODO update. get from baro in MMFS
+    double T0=288.15; //ground temperature (K) // TODO update. get from baro in MMFS
+
   
-  return p0*M/R/T0*pow((1-L*h/T0),((9.8*M/R/L)-1));
+    density = p0*M/R/T0*pow((1-L*h/T0),((9.8*M/R/L)-1));
   
-  // TODO why use standard atm instead of calc on way
-  //return P*M/R*T
-  
+}
+
+// estimate CdA
+void AirbrakeState::update_cda_estimate() {
+    cda_number_of_measurements++;
+    double CdA_rocket_this_time_step =  (2*empty_mass*abs(acceleration.z()))/(density*velocity.z()*velocity.z()); // TODO I think this wrong, needs to be body frame accel and velo
+    cda_rocket = (  cda_rocket*(cda_number_of_measurements-1) +  CdA_rocket_this_time_step    )/cda_number_of_measurements ;  
+    logger->recordLogData(mmfs::INFO, 'CdA of the Rocket is ' + String(cda_rocket).c_str());
 }
