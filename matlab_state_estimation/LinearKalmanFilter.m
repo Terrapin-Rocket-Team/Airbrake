@@ -13,7 +13,7 @@ classdef LinearKalmanFilter
         c % Drag thing
 
         meas_uncertainity = .5;
-        process_noise = 1.2;
+        process_noise = 8;
     end
     
     % TODO get rid of hardcoded values

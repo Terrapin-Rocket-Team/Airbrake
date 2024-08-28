@@ -1,4 +1,4 @@
-function DataGenerator(dataFileName,loopFrequency,initialVelocity, accelerometerSigma, barometerSigma, motorAccel, burnTime, dragCoef, area)
+function DataGenerator(dataFileName,loopFrequency, accelerometerSigma, barometerSigma, motorAccel, burnTime, dragCoef, area)
 % DataGenerator creates a mock data file to be used as truth in Kalman
 % filter verification.
 % Inputs Args:
@@ -34,11 +34,15 @@ while r_z(i) > 0
     % Update accelerations (x and y remain 0)
     a_x(i) = 0;
     a_y(i) = 0;
-    % TODO need to add angle of attack
-    if t(i) < burnTime
-        a_z(i) = motorAccel - .5*DENSITY*dragCoef*area*v_z(i-1) -9.8;
+    if v_z(i-1) < 0
+        aoa = 1; % angle of attack flag to determine drag direction
     else
-        a_z(i) = -.5*DENSITY*dragCoef*area*v_z(i-1) - 9.8;
+        aoa = -1;
+    end
+    if t(i) < burnTime
+        a_z(i) = motorAccel + aoa*.5*DENSITY*dragCoef*area*v_z(i-1) -9.8;
+    else
+        a_z(i) = aoa*.5*DENSITY*dragCoef*area*v_z(i-1) - 9.8;
     end
     
     % Update velocities using 1D kinematics in each direction

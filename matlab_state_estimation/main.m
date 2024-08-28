@@ -12,8 +12,13 @@ clc
 
 % Generate Mock Data
 fileName = 'MockData/mock_1.csv';
-DataGenerator(fileName, 10, 100, .1, .5, 50, 5, .05, 7.62*7.62*pi)
+DataGenerator(fileName, 50, .1, .5, 500, 5, .5, 7.62*7.62*pi)
 data = readtable(fileName);
+
+
+% Read in Open Rocket Simulation File
+% TODO
+
 
 % Read in Flight Data File
 % TODO
