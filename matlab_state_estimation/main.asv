@@ -1,0 +1,38 @@
+%% Main.m
+% This script is the entrance point to the matlab state estimation for airbrake.
+% This script is broken up into 3 parts. The first part is a section to
+% read in data. This data can be generated or actual flight data. The
+% second part is to define the state estiamtor used. And the last part is
+% just code to determine how effective the filter is.
+
+
+%% Section 1: Read in Data
+
+% Generate Mock Data
+fileName = 'MockData/mock_1.csv';
+DataGenerator(fileName, 10, 100, .1, .5);
+dataTable = readtable(dataFileName);
+
+% Read in OpenRocket File
+% TODO
+
+% Read in Flight Data File
+% TODO
+
+
+
+%% Section 2: Initialize Filter
+
+initial_control = [0; 0; 0];
+initial_state = [0; 0; 0; 0; 0; 0];
+P = 500 * [1 0 0 1 0 0;
+           0 1 0 0 1 0;
+           0 0 1 0 0 1;
+           1 0 0 1 0 0;
+           0 1 0 0 1 0;
+           0 0 1 0 0 1];
+kf = LinearKalmanFilter(initial_state, P, initial_control);
+
+
+
+%% Section 3: Analyize Output
