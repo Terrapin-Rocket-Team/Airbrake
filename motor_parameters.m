@@ -13,7 +13,7 @@ ARM_HORIZONTAL = 1.5; % in inches
 ARM_HORIZONTAL_SI = ARM_HORIZONTAL * 0.0254; % in meters
 LEAD_SCREW_EFFICIENCY = .5; % 0-1 (.2-.8 is general range) (.85-.95 for ball screws)
 BATTERY_VOLTAGE = 3.7; % V
-BATTERY_CAPACITY = 200; % mAh
+BATTERY_CAPACITY = 2400; % mAh
 BATTERY_CAPACITY_SI = BATTERY_CAPACITY / 1000;
 
 motor_torque = motor_torque * gear_ratio;
@@ -30,8 +30,8 @@ fprintf('Motor Wattage: %d\n', motor_wattage);
 voltage_batteries = motor_voltage/BATTERY_VOLTAGE;
 number_of_batteries = ceil(voltage_batteries);
 fprintf('Number of Batteries: %d\n', number_of_batteries);
-battery_life = BATTERY_CAPACITY_SI/motor_amps;
-fprintf('Battery Life (hours): %d\n', battery_life);
+battery_life = BATTERY_CAPACITY_SI*60/motor_amps;
+fprintf('Battery Life (minutes): %d\n', battery_life);
 
 speed = (ARM_HORIZONTAL_SI*2/screw_lead_si)/motor_speed_si;
 force = motor_torque * 2 * pi * LEAD_SCREW_EFFICIENCY / screw_lead_si;
