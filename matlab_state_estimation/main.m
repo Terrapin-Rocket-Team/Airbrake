@@ -5,16 +5,15 @@
 % second part is to define the state estiamtor used. And the last part is
 % just code to determine how effective the filter is.
 
+clear
+clc
 
 %% Section 1: Read in Data
 
 % Generate Mock Data
 fileName = 'MockData/mock_1.csv';
-DataGenerator(fileName, 10, 100, .1, .5);
+DataGenerator(fileName, 10, 100, .1, .5, 50, 5, .05, 7.62*7.62*pi)
 data = readtable(fileName);
-
-% Read in OpenRocket File
-% TODO
 
 % Read in Flight Data File
 % TODO
@@ -34,25 +33,25 @@ P = 500 * [1 0 0 1 0 0;
            0 0 1 0 0 1];
 kf = LinearKalmanFilter(initial_state, P, initial_control);
 
-r_output_x = [];
-r_output_y = [];
-r_output_z = [];
-v_output_x = [];
-v_output_y = [];
-v_output_z = [];
+r_output_x = [kf.X(1)];
+r_output_y = [kf.X(2)];
+r_output_z = [kf.X(3)];
+v_output_x = [kf.X(4)];
+v_output_y = [kf.X(5)];
+v_output_z = [kf.X(6)];
 
 % Run filter
 for i = 2:length(data.t)
     dt = data.t(i) - data.t(i - 1);
-    measurement = [data.r_meas_x(i)];
+    measurement = [data.r_meas_z(i)];
     control = [data.r_meas_x(i); data.a_meas_y(i); data.a_meas_z(i) - 9.8];
     kf = kf.iterate(dt, measurement, control);
-    r_output_x = [r_output_x, kf.X(1)];
-    r_output_y = [r_output_y, kf.X(2)];
-    r_output_z = [r_output_z, kf.X(3)];
-    v_output_x = [v_output_x, kf.X(4)];
-    v_output_y = [v_output_y, kf.X(5)];
-    v_output_z = [v_output_z, kf.X(6)];
+    r_output_x = [r_output_x; kf.X(1)];
+    r_output_y = [r_output_y; kf.X(2)];
+    r_output_z = [r_output_z; kf.X(3)];
+    v_output_x = [v_output_x; kf.X(4)];
+    v_output_y = [v_output_y; kf.X(5)];
+    v_output_z = [v_output_z; kf.X(6)];
 end
 
 output = table(r_output_x, r_output_y, r_output_z, v_output_x, v_output_y, v_output_z);
@@ -61,10 +60,10 @@ output = table(r_output_x, r_output_y, r_output_z, v_output_x, v_output_y, v_out
 
 % Z position vs time (Actual, Measured, Output)
 figure;
-plot(data.t, data.r_act_z, 'r-', 'DisplayName', 'Actual Z Position');
+plot(data.t, data.r_z, 'r-', 'DisplayName', 'Actual Z Position');
 hold on;
-plot(data.t, data.r_meas_z, 'g--', 'DisplayName', 'Measured Z Position');
-plot(data.t(2:end), output.r_output_z, 'b-.', 'DisplayName', 'Output Z Position');
+plot(data.t, data.r_meas_z, 'g*', 'DisplayName', 'Measured Z Position');
+plot(data.t, output.r_output_z, 'b-.', 'DisplayName', 'Output Z Position');
 xlabel('Time (s)');
 ylabel('Z Position (m)');
 title('Z Position vs Time');
@@ -75,7 +74,7 @@ hold off;
 % Plot x, y, z positions vs time
 figure;
 subplot(3,1,1);
-plot(data.t, data.r_meas_x, 'r', 'DisplayName', 'Measured x');
+plot(data.t, data.r_x, 'r', 'DisplayName', 'Measured x');
 hold on;
 plot(data.t, output.r_output_x, 'b', 'DisplayName', 'Output x');
 xlabel('Time (s)');
@@ -85,7 +84,7 @@ legend show;
 grid on;
 
 subplot(3,1,2);
-plot(data.t, data.r_meas_y, 'r', 'DisplayName', 'Measured y');
+plot(data.t, data.r_y, 'r', 'DisplayName', 'Measured y');
 hold on;
 plot(data.t, output.r_output_y, 'b', 'DisplayName', 'Output y');
 xlabel('Time (s)');
@@ -95,7 +94,7 @@ legend show;
 grid on;
 
 subplot(3,1,3);
-plot(data.t, data.r_meas_z, 'r', 'DisplayName', 'Measured z');
+plot(data.t, data.r_z, 'r', 'DisplayName', 'Measured z');
 hold on;
 plot(data.t, output.r_output_z, 'b', 'DisplayName', 'Output z');
 xlabel('Time (s)');
@@ -106,7 +105,7 @@ grid on;
 
 % Plot z velocity vs time
 figure;
-plot(data.t, data.v_meas_z, 'r', 'DisplayName', 'Measured z Velocity');
+plot(data.t, data.v_z, 'r', 'DisplayName', 'Measured z Velocity');
 hold on;
 plot(data.t, output.v_output_z, 'b', 'DisplayName', 'Output z Velocity');
 xlabel('Time (s)');
@@ -118,7 +117,7 @@ grid on;
 % Plot x, y, z velocities vs time
 figure;
 subplot(3,1,1);
-plot(data.t, data.v_meas_x, 'r', 'DisplayName', 'Measured x Velocity');
+plot(data.t, data.v_x, 'r', 'DisplayName', 'Measured x Velocity');
 hold on;
 plot(data.t, output.v_output_x, 'b', 'DisplayName', 'Output x Velocity');
 xlabel('Time (s)');
@@ -128,7 +127,7 @@ legend show;
 grid on;
 
 subplot(3,1,2);
-plot(data.t, data.v_meas_y, 'r', 'DisplayName', 'Measured y Velocity');
+plot(data.t, data.v_y, 'r', 'DisplayName', 'Measured y Velocity');
 hold on;
 plot(data.t, output.v_output_y, 'b', 'DisplayName', 'Output y Velocity');
 xlabel('Time (s)');
@@ -138,7 +137,7 @@ legend show;
 grid on;
 
 subplot(3,1,3);
-plot(data.t, data.v_meas_z, 'r', 'DisplayName', 'Measured z Velocity');
+plot(data.t, data.v_z, 'r', 'DisplayName', 'Measured z Velocity');
 hold on;
 plot(data.t, output.v_output_z, 'b', 'DisplayName', 'Output z Velocity');
 xlabel('Time (s)');

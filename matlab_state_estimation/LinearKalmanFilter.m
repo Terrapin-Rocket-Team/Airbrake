@@ -11,8 +11,13 @@ classdef LinearKalmanFilter
         K % Kalman Gain
         Q % Process Noise Matrix
         c % Drag thing
+
+        meas_uncertainity = .5;
+        process_noise = 1.2;
     end
     
+    % TODO get rid of hardcoded values
+
     methods
         % Constructor
         function obj = LinearKalmanFilter(X, P, U)
@@ -61,7 +66,7 @@ classdef LinearKalmanFilter
                         0, dt,        0;
                         0, 0,       dt];
             
-            obj.Q = obj.G*1.2*1.2*obj.G';
+            obj.Q = obj.G*obj.process_noise*obj.process_noise*obj.G';
             % obj.Q;
             %obj.Q = eye(6)*0.01
             obj = predictState(obj);
@@ -87,15 +92,11 @@ classdef LinearKalmanFilter
                         0, dt,        0;
                         0, 0,       dt];
 
-            obj.Q = obj.G*1.2*1.2*obj.G';
+            obj.Q = obj.G*obj.process_noise*obj.process_noise*obj.G';
 
-            obj.R = [0.5, 0, 0;
-                     0, 0.5, 0;
-                     0, 0, 0.5];
+            obj.R = [obj.meas_uncertainity];
 
-            obj.H = [1, 0, 0, 0, 0, 0;
-                     0, 1, 0, 0, 0, 0;
-                     0, 0, 1, 0, 0, 0];
+            obj.H = [0, 0, 1, 0, 0, 0];
 
 
             obj = calculateKalmanGain(obj);

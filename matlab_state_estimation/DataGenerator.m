@@ -1,4 +1,4 @@
-function DataGenerator(dataFileName,loopFrequency,initialVelocity, accelerometerSigma, barometerSigma)
+function DataGenerator(dataFileName,loopFrequency,initialVelocity, accelerometerSigma, barometerSigma, motorAccel, burnTime, dragCoef, area)
 % DataGenerator creates a mock data file to be used as truth in Kalman
 % filter verification.
 % Inputs Args:
@@ -6,7 +6,9 @@ function DataGenerator(dataFileName,loopFrequency,initialVelocity, accelerometer
 % loopFrequency - The frequency in Hz that the data should be created at
 % initialVelocity - The initial velocity of the rocket in m/s
 
-%% Basic simulation of rocket no drag
+DENSITY = 1.225; % (kg/m^3)
+
+%% Basic simulation of rocket w/ drag and motor
 % Initialization Values
 i = 1; % iteration
 dt = 1/loopFrequency; % (s)
@@ -16,7 +18,7 @@ a_z(1) = -9.8; % acceleration in z (m/s^2)
 
 v_x(1) = 0; % (m/s)
 v_y(1) = 0; % (m/s)
-v_z(1) = initialVelocity; % (m/s)
+v_z(1) = 0; % (m/s)
 
 r_x(1) = 0; % start position in x (m)
 r_y(1) = 0; % start position in y (m)
@@ -32,7 +34,12 @@ while r_z(i) > 0
     % Update accelerations (x and y remain 0)
     a_x(i) = 0;
     a_y(i) = 0;
-    a_z(i) = -9.8;
+    % TODO need to add angle of attack
+    if t(i) < burnTime
+        a_z(i) = motorAccel - .5*DENSITY*dragCoef*area*v_z(i-1) -9.8;
+    else
+        a_z(i) = -.5*DENSITY*dragCoef*area*v_z(i-1) - 9.8;
+    end
     
     % Update velocities using 1D kinematics in each direction
     v_x(i) = v_x(i-1) + dt * a_x(i);
@@ -55,7 +62,13 @@ r_meas_y = GaussianNoiseGenerator(r_y, 0);
 r_meas_z = GaussianNoiseGenerator(r_z, barometerSigma);
 
 % Write data to a csv
-dataTable = table(t, a_x, a_y, a_z, v_x, v_y, v_z, r_x, r_y, r_z, a_meas_x, a_meas_y, a_meas_z, r_meas_x, r_meas_y, r_meas_z);
+dataTable = table(t', a_x', a_y', a_z', v_x', v_y', v_z', r_x', r_y', r_z', ...
+    a_meas_x', a_meas_y', a_meas_z', r_meas_x', r_meas_y', r_meas_z', ...
+    'VariableNames', {'t', 'a_x', 'a_y', 'a_z', ...
+                           'v_x', 'v_y', 'v_z', ...
+                           'r_x', 'r_y', 'r_z', ...
+                           'a_meas_x', 'a_meas_y', 'a_meas_z', ...
+                           'r_meas_x', 'r_meas_y', 'r_meas_z'});
 % Check if directory exists
 [pathstr, ~, ~] = fileparts(dataFileName);
 if ~isfolder(pathstr)
