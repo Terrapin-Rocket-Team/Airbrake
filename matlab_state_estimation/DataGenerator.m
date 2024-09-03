@@ -1,10 +1,11 @@
-function DataGenerator(dataFileName,loopFrequency, accelerometerSigma, barometerSigma, motorAccel, burnTime, dragCoef, area)
+function DataGenerator(dataFileName,loopFrequency, accelerometerSigma, barometerSigma, rocket)
 % DataGenerator creates a mock data file to be used as truth in Kalman
 % filter verification.
 % Inputs Args:
 % dataFileName - Name of the CSV file to be created
 % loopFrequency - The frequency in Hz that the data should be created at
-% initialVelocity - The initial velocity of the rocket in m/s
+% acceleromaterSigma - Gaussian Noise of the accelerameter data
+% barometerSigma - Gaussian Noise of the barometer data
 
 DENSITY = 1.225; % (kg/m^3)
 
@@ -39,10 +40,10 @@ while r_z(i) > 0
     else
         aoa = -1;
     end
-    if t(i) < burnTime
-        a_z(i) = motorAccel + aoa*.5*DENSITY*dragCoef*area*v_z(i-1) -9.8;
+    if t(i) < rocket.burnTime
+        a_z(i) = rocket.motorAccel + aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) -9.8;
     else
-        a_z(i) = aoa*.5*DENSITY*dragCoef*area*v_z(i-1) - 9.8;
+        a_z(i) = aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) - 9.8;
     end
     
     % Update velocities using 1D kinematics in each direction

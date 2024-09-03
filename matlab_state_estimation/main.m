@@ -12,7 +12,8 @@ clc
 
 % Generate Mock Data
 fileName = 'MockData/mock_1.csv';
-DataGenerator(fileName, 50, .1, .5, 500, 5, .5, 7.62*7.62*pi)
+rocket = rocket(100, 5, .5, 0.1524*0.1524*pi);
+DataGenerator(fileName, 50, .1, .5, rocket)
 data = readtable(fileName);
 
 
@@ -67,8 +68,8 @@ output = table(r_output_x, r_output_y, r_output_z, v_output_x, v_output_y, v_out
 figure;
 plot(data.t, data.r_z, 'r-', 'DisplayName', 'Actual Z Position');
 hold on;
-plot(data.t, data.r_meas_z, 'g*', 'DisplayName', 'Measured Z Position');
-plot(data.t, output.r_output_z, 'b-.', 'DisplayName', 'Output Z Position');
+plot(data.t, data.r_meas_z, 'g.', 'DisplayName', 'Measured Z Position');
+plot(data.t, output.r_output_z, 'b', 'DisplayName', 'Output Z Position');
 xlabel('Time (s)');
 ylabel('Z Position (m)');
 title('Z Position vs Time');
