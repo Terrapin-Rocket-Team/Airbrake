@@ -21,11 +21,15 @@ void setup() {
 void loop() {
   /* Read sensor and print values */
  if (vn.Read()) {
-   Serial.print(vn.yaw_rad() * 180 / 3.14159);
-   Serial.print("\t");
-   Serial.print(vn.pitch_rad() * 180 / 3.14159);
-   Serial.print("\t");
-   Serial.println(vn.roll_rad() * 180 / 3.14159);
+   Serial.print(vn.accel_x_mps2()); Serial.print(",");
+   Serial.print(vn.accel_y_mps2()); Serial.print(",");
+   Serial.print(vn.accel_z_mps2()); Serial.print(",");
+   Serial.print(vn.yaw_rad() * 180 / 3.14159); Serial.print(",");
+   Serial.print(vn.pitch_rad() * 180 / 3.14159); Serial.print(",");
+   Serial.print(vn.roll_rad() * 180 / 3.14159); Serial.print(",");
+   Serial.print(vn.mag_x_ut()); Serial.print(",");
+   Serial.print(vn.mag_y_ut()); Serial.print(",");
+   Serial.print(vn.mag_z_ut()); Serial.println(",");
  }
  delay(50);
 }
