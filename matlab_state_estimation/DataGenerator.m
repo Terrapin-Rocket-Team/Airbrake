@@ -1,11 +1,9 @@
-function DataGenerator(dataFileName,loopFrequency, accelerometerSigma, barometerSigma, rocket)
+function DataGenerator(dataFileName,loopFrequency, rocket)
 % DataGenerator creates a mock data file to be used as truth in Kalman
 % filter verification.
 % Inputs Args:
 % dataFileName - Name of the CSV file to be created
 % loopFrequency - The frequency in Hz that the data should be created at
-% acceleromaterSigma - Gaussian Noise of the accelerameter data
-% barometerSigma - Gaussian Noise of the barometer data
 
 DENSITY = 1.225; % (kg/m^3)
 
@@ -41,7 +39,7 @@ while r_z(i) > 0
         aoa = -1;
     end
     if t(i) < rocket.burnTime
-        a_z(i) = rocket.motorAccel + aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) -9.8;
+        a_z(i) = rocket.motorAccel + aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) - 9.8;
     else
         a_z(i) = aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) - 9.8;
     end
@@ -57,23 +55,11 @@ while r_z(i) > 0
     r_z(i) = r_z(i-1) + v_z(i) * dt + 0.5 * a_z(i) * dt^2;
 end
 
-% Generate Measurements from Ideal Data
-a_meas_x = GaussianNoiseGenerator(a_x, accelerometerSigma);
-a_meas_y = GaussianNoiseGenerator(a_y, accelerometerSigma);
-a_meas_z = GaussianNoiseGenerator(a_z - 9.8, accelerometerSigma); % subtract 9.8 to simulate measurments from an accelerameter
-
-r_meas_x = GaussianNoiseGenerator(r_x, 0);
-r_meas_y = GaussianNoiseGenerator(r_y, 0);
-r_meas_z = GaussianNoiseGenerator(r_z, barometerSigma);
-
 % Write data to a csv
 dataTable = table(t', a_x', a_y', a_z', v_x', v_y', v_z', r_x', r_y', r_z', ...
-    a_meas_x', a_meas_y', a_meas_z', r_meas_x', r_meas_y', r_meas_z', ...
     'VariableNames', {'t', 'a_x', 'a_y', 'a_z', ...
                            'v_x', 'v_y', 'v_z', ...
-                           'r_x', 'r_y', 'r_z', ...
-                           'a_meas_x', 'a_meas_y', 'a_meas_z', ...
-                           'r_meas_x', 'r_meas_y', 'r_meas_z'});
+                           'r_x', 'r_y', 'r_z', });
 % Check if directory exists
 [pathstr, ~, ~] = fileparts(dataFileName);
 if ~isfolder(pathstr)

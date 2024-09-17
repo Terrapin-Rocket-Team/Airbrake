@@ -67,8 +67,6 @@ classdef LinearKalmanFilter
                         0, 0,       dt];
             
             obj.Q = obj.G*obj.process_noise*obj.process_noise*obj.G';
-            % obj.Q;
-            %obj.Q = eye(6)*0.01
             obj = predictState(obj);
             obj = covarianceExtrapolate(obj);
         end
@@ -96,7 +94,9 @@ classdef LinearKalmanFilter
 
             obj.R = [obj.meas_uncertainity];
 
-            obj.H = [0, 0, 1, 0, 0, 0];
+            obj.H = [1, 0, 0, 0, 0, 0;
+                     0, 1, 0, 0, 0, 0;
+                     0, 0, 1, 0, 0, 0];
 
 
             obj = calculateKalmanGain(obj);

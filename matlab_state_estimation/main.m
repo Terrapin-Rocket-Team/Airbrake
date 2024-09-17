@@ -8,66 +8,93 @@
 clear
 clc
 
-%% Section 1: Read in Data
-dataType = DataType.OpenRocket;
+%% Section 0: Set Simulation Parameters
+% Set this var to where the data will come from [Mock, OpenRocket, Flight]
+dataType = DataType.Flight;
+mockDataFile = 'mock_1.csv';
+openRocketDataFile = 'openrocket_test_data.csv';
+flightDataFile = 'TADPOL_April_NY_post_processed2.csv';
 
+% Set sensor gaussian noise
+accelNoise = .1; % standard deviation w/ units m/s^2
+baroNoise = .5; % standard deviation w/ units m
+gpsNoise = 1; % standard deviation w/ units m
+g = 9.81; % m/s^2
+
+
+%% Section 1: Read in Data
 
 % Create mock rocket
 if dataType == DataType.Mock
-rocketMotorAccel = 100; % m/s^2
-rocketMotorBurnTime = 1; % seconds
-rocketDragCoef = .5;
-rocketCrossSectionalArea = 0.1524*0.1524*pi; % 6in diameter in m^2 
-rocket = rocket(rocketMotorAccel, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
-
-% Generate Mock Data
-fileName = 'MockData/mock_1.csv';
-loopFrequency = 50; % in Hz
-accelNoise = .1; % standard deviation w/ units m/s^2
-baroNoise = .5; % standard deviation w/ units m
-DataGenerator(fileName, 50, accelNoise, baroNoise, rocket)
-data = readtable(fileName);
+    rocketMotorAccel = 100; % m/s^2
+    rocketMotorBurnTime = 1; % seconds
+    rocketDragCoef = .5;
+    rocketCrossSectionalArea = 0.1524*0.1524*pi; % 6in diameter in m^2 
+    rocket = rocket(rocketMotorAccel, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
+    
+    % Generate Mock Data
+    mockDataFolder = 'MockData';
+    fileName = [mockDataFolder '/' mockDataFile];
+    loopFrequency = 50; % in Hz
+    DataGenerator(fileName, loopFrequency, rocket)
+    data = readtable(fileName);
 end
 
 % Read in Open Rocket Simulation File
 if dataType == DataType.OpenRocket
-accelNoise = .1; % standard deviation w/ units m/s^2
-baroNoise = .5; % standard deviation w/ units m
-
-fileName = 'OpenRocketData/openrocket_test_data.csv';
-dataraw = readtable(fileName);
-data.t = dataraw.x_Time_s_;
-data.r_x = dataraw.PositionEastOfLaunch_m_;
-data.r_y = dataraw.PositionNorthOfLaunch_m_;
-data.r_z = dataraw.Altitude_m_;
-
-delta_t = diff(data.t);
-delta_r_x = diff(data.r_x);
-delta_r_y = diff(data.r_y);
-
-data.v_x = [delta_r_x ./ delta_t; 0];
-data.v_y = [delta_r_y ./ delta_t; 0];
-data.v_z = dataraw.VerticalVelocity_m_s_;
-
-delta_v_x = diff(data.v_x);
-delta_v_y = diff(data.v_y);
-
-data.a_x = [delta_v_x ./ delta_t; 0];
-data.a_y = [delta_v_y ./ delta_t; 0];
-data.a_z = dataraw.VerticalAcceleration_m_s__;
-data.r_meas_x = GaussianNoiseGenerator(data.r_x, baroNoise);
-data.r_meas_y = GaussianNoiseGenerator(data.r_y, baroNoise);
-data.r_meas_z = GaussianNoiseGenerator(data.r_z, baroNoise);
-data.a_meas_x = GaussianNoiseGenerator(data.a_x, accelNoise);
-data.a_meas_y = GaussianNoiseGenerator(data.a_y, accelNoise);
-data.a_meas_z = GaussianNoiseGenerator(data.a_z, accelNoise);
+    openRocketDataFolder = 'OpenRocketData';
+    fileName = [openRocketDataFolder '/' openRocketDataFile];
+    dataraw = readtable(fileName);
+    data.t = dataraw.x_Time_s_;
+    data.r_x = dataraw.PositionEastOfLaunch_m_;
+    data.r_y = dataraw.PositionNorthOfLaunch_m_;
+    data.r_z = dataraw.Altitude_m_;
+    
+    % Diff position to get velocity
+    delta_t = diff(data.t);
+    delta_r_x = diff(data.r_x);
+    delta_r_y = diff(data.r_y);
+    
+    data.v_x = [delta_r_x ./ delta_t; 0];
+    data.v_y = [delta_r_y ./ delta_t; 0];
+    data.v_z = dataraw.VerticalVelocity_m_s_;
+    
+    % Diff velocity to get acceleration
+    delta_v_x = diff(data.v_x);
+    delta_v_y = diff(data.v_y);
+    
+    data.a_x = [delta_v_x ./ delta_t; 0];
+    data.a_y = [delta_v_y ./ delta_t; 0];
+    data.a_z = dataraw.VerticalAcceleration_m_s__;
 end
 
 % Read in Flight Data File
 if dataType == DataType.Flight
-
+    flightDataFolder = 'FlightData';
+    fileName = [flightDataFolder '/' flightDataFile];
+    dataraw = readtable(fileName);
+    
+    data.t = dataraw.Time_ms_;
+    data.r_x = zeros(size(data.t)); data.r_y = zeros(size(data.t)); data.r_z = zeros(size(data.t));
+    data.v_x = zeros(size(data.t)); data.v_y = zeros(size(data.t)); data.v_z = zeros(size(data.t));
+    data.a_x = zeros(size(data.t)); data.a_y = zeros(size(data.t)); data.a_z = zeros(size(data.t));
+    data.r_meas_x = dataraw.GPSPosX;
+    data.r_meas_y = dataraw.GPSPosY;
+    data.r_meas_z = dataraw.BarAltitude;
+    data.a_meas_x = dataraw.IMUAccelX;
+    data.a_meas_y = dataraw.IMUAccelY;
+    data.a_meas_z = dataraw.IMUAccelZ;
 end
 
+% 1.1: Add gaussian noise to generate measurement data
+if dataType ~= DataType.Flight
+    data.r_meas_x = GaussianNoiseGenerator(data.r_x, gpsNoise);
+    data.r_meas_y = GaussianNoiseGenerator(data.r_y, gpsNoise);
+    data.r_meas_z = GaussianNoiseGenerator(data.r_z, baroNoise);
+    data.a_meas_x = GaussianNoiseGenerator(data.a_x, accelNoise);
+    data.a_meas_y = GaussianNoiseGenerator(data.a_y, accelNoise);
+    data.a_meas_z = GaussianNoiseGenerator(data.a_z + 2*g, accelNoise); % Accelerameters at rest read +g in z-axis (when we mock data, including openrocket) it outputs -g in z-axis at rest
+end
 
 
 %% Section 2: Run Filter
@@ -93,8 +120,8 @@ v_output_z = [kf.X(6)];
 % Run filter
 for i = 2:length(data.t)
     dt = data.t(i) - data.t(i - 1);
-    measurement = [data.r_meas_z(i)];
-    control = [data.a_meas_x(i); data.a_meas_y(i); data.a_meas_z(i) - 9.8];
+    measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas_z(i)];
+    control = [data.a_meas_x(i); data.a_meas_y(i); data.a_meas_z(i) - g]; % Accelerameters at rest read +g in z-axis but are at rest
     kf = kf.iterate(dt, measurement, control);
     r_output_x = [r_output_x; kf.X(1)];
     r_output_y = [r_output_y; kf.X(2)];
