@@ -10,7 +10,7 @@ clc
 
 %% Section 0: Set Simulation Parameters
 % Set this var to where the data will come from [Mock, OpenRocket, Flight]
-dataType = DataType.Flight;
+dataType = DataType.Mock;
 mockDataFile = 'mock_1.csv';
 openRocketDataFile = 'openrocket_test_data.csv';
 flightDataFile = 'TADPOL_April_NY_post_processed2.csv';
@@ -153,6 +153,7 @@ figure;
 subplot(3,1,1);
 plot(data.t, data.r_x, 'r', 'DisplayName', 'Actual x');
 hold on;
+plot(data.t, data.r_meas_x, 'g.', 'DisplayName', 'Measured X Position');
 plot(data.t, output.r_output_x, 'b', 'DisplayName', 'Output x');
 xlabel('Time (s)');
 ylabel('x Position (m)');
@@ -163,6 +164,7 @@ grid on;
 subplot(3,1,2);
 plot(data.t, data.r_y, 'r', 'DisplayName', 'Actual y');
 hold on;
+plot(data.t, data.r_meas_y, 'g.', 'DisplayName', 'Measured Y Position');
 plot(data.t, output.r_output_y, 'b', 'DisplayName', 'Output y');
 xlabel('Time (s)');
 ylabel('y Position (m)');
@@ -173,6 +175,7 @@ grid on;
 subplot(3,1,3);
 plot(data.t, data.r_z, 'r', 'DisplayName', 'Actual z');
 hold on;
+plot(data.t, data.r_meas_z, 'g.', 'DisplayName', 'Measured Z Position');
 plot(data.t, output.r_output_z, 'b', 'DisplayName', 'Output z');
 xlabel('Time (s)');
 ylabel('z Position (m)');
