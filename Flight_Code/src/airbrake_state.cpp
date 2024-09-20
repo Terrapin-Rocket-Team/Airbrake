@@ -2,6 +2,11 @@
 
 #include "airbrake_state.h"
 
+void AirbrakeState::updateState(double newTime) {
+    mmfs::State::updateState(newTime); // call base version for sensor updates
+    setAirbrakeStage();
+}
+
 void AirbrakeState::setAirbrakeStage(){
     // TODO implement this
 }
@@ -102,5 +107,5 @@ void AirbrakeState::update_cda_estimate() {
     cda_number_of_measurements++;
     double CdA_rocket_this_time_step =  (2*empty_mass*abs(acceleration.z()))/(density*velocity.z()*velocity.z()); // TODO I think this wrong, needs to be body frame accel and velo
     cda_rocket = (  cda_rocket*(cda_number_of_measurements-1) +  CdA_rocket_this_time_step    )/cda_number_of_measurements ;  
-    logger->recordLogData(mmfs::INFO, 'CdA of the Rocket is ' + String(cda_rocket).c_str());
+    logger.recordLogData(mmfs::INFO_, 'CdA of the Rocket is ' + String(cda_rocket).c_str());
 }

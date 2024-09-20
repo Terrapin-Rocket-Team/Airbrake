@@ -38,8 +38,10 @@ public:
     AirbrakeStages stage = PRELAUNCH;
 
     // Construtor
-    AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::KalmanInterface* kfilter, mmfs::Logger* logger, bool stateRecordsOwnData = true)
-    : mmfs::State(sensors, numSensors, kfilter, logger, stateRecordsOwnData) {}
+    AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter, bool stateRecordsOwnData = true)
+    : mmfs::State(sensors, numSensors, kfilter, stateRecordsOwnData) {}
+
+    void updateState(double newTime = -1) override;
 
     // Helper Functions
     void setAirbrakeStage();
