@@ -2,24 +2,26 @@
 #include <MMFS.h>
 
 #include "airbrake_state.h"
-
-mmfs::Logger logger;
+#include "AirbrakeKF.h"
 
 mmfs::BMP390 barometer;
 mmfs::BNO055 ab_imu; 
 
 mmfs::Sensor* airbrake_sensors[2] = {&barometer, &ab_imu};
 
-mmfs::KalmanInterface kf(3, 3, 6);
+AirbrakeKF kf;
 
-AirbrakeState AIRBRAKE(airbrake_sensors, 2, &kf, &logger);
+AirbrakeState AIRBRAKE(airbrake_sensors, 2, &kf);
 
 
 void setup() {
-    logger.recordLogData(mmfs::INFO, "Entering Setup");
+
+    logger.init();
+
+    logger.recordLogData(mmfs::INFO_, "Entering Setup");
 
 
-    logger.recordLogData(mmfs::INFO, "Leaving Setup");
+    logger.recordLogData(mmfs::INFO_, "Leaving Setup");
 }
 
 
