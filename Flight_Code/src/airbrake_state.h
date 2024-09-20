@@ -38,7 +38,7 @@ public:
     AirbrakeStages stage = PRELAUNCH;
 
     // Construtor
-    AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter, bool stateRecordsOwnData = true)
+    AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter, bool stateRecordsOwnData = true)
     : mmfs::State(sensors, numSensors, kfilter, stateRecordsOwnData) {}
 
     void updateState(double newTime = -1) override;
