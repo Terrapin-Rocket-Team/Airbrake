@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "../../../../GitHub/Airbrake/Flight_Code"
+		},
+		{
+			"name": "Flight_Code",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
