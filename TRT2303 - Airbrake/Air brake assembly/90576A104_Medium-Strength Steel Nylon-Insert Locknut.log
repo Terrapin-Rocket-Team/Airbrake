@@ -1,0 +1,100 @@
+﻿STEP to UG
+! INFO-     NX STEP AP203 - V1980
+! INFO-      
+! INFO-     Start of Translation: 7-MAR-2022  9:30:16 AM
+! INFO-      
+! STATUS-   Converting Part: C:\Users\ebreg\Downloads\90576A104_Medium-Strength Steel Nylon-Insert Locknut.STEP
+! SUMMARY-   
+! SUMMARY-    STEP Header Information
+! SUMMARY-   
+! SUMMARY-  Description      STEP AP203
+! SUMMARY-  Imp_Level        1
+! SUMMARY-  File_Name        90576A104_Medium-Strength Steel Nylon-Insert Locknut.STEP
+! SUMMARY-  Date             2021-09-20T19:45:40
+! SUMMARY-  Author           Administrator
+! SUMMARY-  Organization     Managed by Terraform
+! SUMMARY-  Pre_Version      SwSTEP 2.0
+! SUMMARY-  Orig_System      SolidWorks 2017
+! SUMMARY-  Authorization    Unknown
+! SUMMARY-  Schema_ID        config_control_design
+! SUMMARY-   
+! SUMMARY-    Summary of STEP Entities
+! SUMMARY-   
+! SUMMARY-  Entity Type                                                   Count
+! SUMMARY-  -----------                                                   ------
+! SUMMARY-  advanced_face ..............................................:     54
+! SUMMARY-  application_context ........................................:      2
+! SUMMARY-  approval ...................................................:      3
+! SUMMARY-  approval_date_time .........................................:      3
+! SUMMARY-  approval_person_organization ...............................:      3
+! SUMMARY-  approval_role ..............................................:      3
+! SUMMARY-  approval_status ............................................:      3
+! SUMMARY-  axis2_placement_3d .........................................:     95
+! SUMMARY-  b_spline_curve_with_knots ..................................:     37
+! SUMMARY-  b_spline_curve_with_knots_and_rational_b_spline_curve ......:     26
+! SUMMARY-  b_spline_surface_with_knots_and_rational_b_spline_surface ..:      3
+! SUMMARY-  calendar_date ..............................................:      3
+! SUMMARY-  cartesian_point ............................................:   1595
+! SUMMARY-  circle .....................................................:     43
+! SUMMARY-  closed_shell ...............................................:      2
+! SUMMARY-  conical_surface ............................................:     18
+! SUMMARY-  coordinated_universal_time_offset ..........................:      3
+! SUMMARY-  cylindrical_surface ........................................:     15
+! SUMMARY-  date_and_time ..............................................:      3
+! SUMMARY-  direction ..................................................:    216
+! SUMMARY-  edge_curve .................................................:    132
+! SUMMARY-  edge_loop ..................................................:     60
+! SUMMARY-  face_bound .................................................:      6
+! SUMMARY-  face_outer_bound ...........................................:     54
+! SUMMARY-  geometric_representation_context_and_global_uncertainty_a ..:      1
+! SUMMARY-  length_unit_and_si_unit ....................................:      1
+! SUMMARY-  line .......................................................:     26
+! SUMMARY-  local_time .................................................:      3
+! SUMMARY-  manifold_solid_brep ........................................:      2
+! SUMMARY-  organization ...............................................:      1
+! SUMMARY-  oriented_edge ..............................................:    264
+! SUMMARY-  person .....................................................:      1
+! SUMMARY-  person_and_organization ....................................:      3
+! SUMMARY-  plane ......................................................:     12
+! SUMMARY-  plane_angle_unit_and_si_unit ...............................:      1
+! SUMMARY-  product ....................................................:      1
+! SUMMARY-  product_context ............................................:      1
+! SUMMARY-  product_definition .........................................:      1
+! SUMMARY-  product_definition_context .................................:      1
+! SUMMARY-  product_definition_formation_with_specified_source .........:      1
+! SUMMARY-  product_definition_shape ...................................:      1
+! SUMMARY-  product_related_product_category ...........................:      1
+! SUMMARY-  si_unit_and_solid_angle_unit ...............................:      1
+! SUMMARY-  toroidal_surface ...........................................:      6
+! SUMMARY-  uncertainty_measure_with_unit ..............................:      1
+! SUMMARY-  vector .....................................................:     26
+! SUMMARY-  vertex_point ...............................................:     84
+! SUMMARY-                                                               -------
+! SUMMARY-  Total                                                           2822
+! STATUS-    
+! STATUS-   Converting to Output Form (Phase 2 of 3): 7-MAR-2022 9:30:16 AM
+! STATUS-    
+! STATUS-    
+! STATUS-   Generating UG geometry and placing them in parts
+! STATUS-    
+! STATUS-   Creating the UG part (Phase 3 of 3): 7-MAR-2022  9:30:16 AM
+! INFO-     Filing Part ..: C:\Users\ebreg\Documents\GrabCAD\2021-2022\Aerostructures\Airbrake\Competition\90576A104_Medium-Strength Steel Nylon-Insert Locknut.prt
+! SUMMARY-   
+! SUMMARY-  Summary of Unigraphics Part Entities
+! SUMMARY-   
+! SUMMARY-  Entities Processed             Count
+! SUMMARY-  ------------------             -----
+! SUMMARY-  Solid .......................:     2
+! SUMMARY-                                 -----
+! SUMMARY-  Total                              2
+! INFO-      
+! INFO-     Total number of solids input for this translation       :         2
+! INFO-      
+! INFO-     Number of solids created without body validation faults :         2
+! INFO-      
+! INFO-     Number of solids created with body validation fault(s)  :         0
+! INFO-      
+! INFO-     Number of solids ending up as sheet bodies              :         0
+! INFO-      
+! INFO-     End of Translation: 7-MAR-2022  9:30:16 AM
+! INFO-      

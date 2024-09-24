@@ -1,0 +1,328 @@
+﻿UG to STEP
+! INFO-     NX STEP AP203 - V1980
+! INFO-      
+! INFO-     Start of Translation: 9-FEB-2023  8:39:25 AM
+! INFO-      
+! STATUS-   Converting Part: C:\Users\ebreg\Documents\TerpRockets\TRT23\2023\CAD\TRT2303 - Airbrake\Air brake assembly\Flap_top.prt
+! SUMMARY-   
+! SUMMARY-  Summary of Unigraphics Part Entities
+! SUMMARY-  For Part: C:\Users\ebreg\Documents\TerpRockets\TRT23\2023\CAD\TRT2303 - Airbrake\Air brake assembly\Flap_top.prt 
+! SUMMARY-  Entities Processed             Count
+! SUMMARY-  ------------------             -----
+! SUMMARY-  Part Attribute ..............:     1
+! SUMMARY-  Font ........................:     1
+! SUMMARY-  Color Table .................:     2
+! SUMMARY-  Coordinate System ...........:     2
+! SUMMARY-  Parameter ...................:     1
+! SUMMARY-  Matrix ......................:     1
+! SUMMARY-  Solid .......................:
+! SUMMARY-     Body .....................:     1
+! SUMMARY-                                 -----
+! SUMMARY-  Total                              9
+! STATUS-    
+! STATUS-   Converting to Output Form (Phase 2 of 3): 9-FEB-2023 8:39:26 AM
+! STATUS-    
+! STATUS-    
+! STATUS-   Generating UG geometry and placing them in parts
+! STATUS-    
+! SUMMARY-   
+! SUMMARY-    STEP Header Information
+! SUMMARY-   
+! SUMMARY-  Description      Unknown
+! SUMMARY-  Imp_Level        1
+! SUMMARY-  File_Name        Flap_top.stp
+! SUMMARY-  Date             2023-02-09T08:39:26-05:00
+! SUMMARY-  Author           Unknown
+! SUMMARY-  Organization     Unknown
+! SUMMARY-  Pre_Version      ST-DEVELOPER v18.1
+! SUMMARY-  Orig_System      SIEMENS PLM Software NX 1980
+! SUMMARY-  Authorization    Unknown
+! SUMMARY-  Schema_ID        step_merged_ap_schema
+! SUMMARY-   
+! SUMMARY-    Summary of STEP Entities
+! SUMMARY-   
+! SUMMARY-  Entity Type                                                   Count
+! SUMMARY-  -----------                                                   ------
+! SUMMARY-  advanced_face ..............................................:     23
+! SUMMARY-  application_context ........................................:      1
+! SUMMARY-  approval ...................................................:      3
+! SUMMARY-  approval_date_time .........................................:      3
+! SUMMARY-  approval_person_organization ...............................:      3
+! SUMMARY-  approval_role ..............................................:      3
+! SUMMARY-  approval_status ............................................:      3
+! SUMMARY-  axis2_placement_3d .........................................:     42
+! SUMMARY-  b_spline_curve_with_knots ..................................:      2
+! SUMMARY-  calendar_date ..............................................:      3
+! SUMMARY-  cartesian_point ............................................:    226
+! SUMMARY-  circle .....................................................:     16
+! SUMMARY-  closed_shell ...............................................:      1
+! SUMMARY-  conversion_based_unit_and_length_unit ......................:      1
+! SUMMARY-  conversion_based_unit_and_plane_angle_unit .................:      1
+! SUMMARY-  coordinated_universal_time_offset ..........................:      3
+! SUMMARY-  cylindrical_surface ........................................:      9
+! SUMMARY-  date_and_time ..............................................:      3
+! SUMMARY-  dimensional_exponents ......................................:      2
+! SUMMARY-  direction ..................................................:    116
+! SUMMARY-  edge_curve .................................................:     52
+! SUMMARY-  edge_loop ..................................................:     38
+! SUMMARY-  ellipse ....................................................:      2
+! SUMMARY-  face_bound .................................................:     28
+! SUMMARY-  face_outer_bound ...........................................:     10
+! SUMMARY-  geometric_representation_context_and_global_uncertainty_a ..:      1
+! SUMMARY-  length_measure_with_unit ...................................:      1
+! SUMMARY-  length_unit_and_si_unit ....................................:      1
+! SUMMARY-  line .......................................................:     32
+! SUMMARY-  local_time .................................................:      3
+! SUMMARY-  manifold_solid_brep ........................................:      1
+! SUMMARY-  organization ...............................................:      3
+! SUMMARY-  oriented_edge ..............................................:    104
+! SUMMARY-  person .....................................................:      1
+! SUMMARY-  person_and_organization ....................................:      3
+! SUMMARY-  plane ......................................................:     14
+! SUMMARY-  plane_angle_measure_with_unit ..............................:      1
+! SUMMARY-  plane_angle_unit_and_si_unit ...............................:      1
+! SUMMARY-  product ....................................................:      1
+! SUMMARY-  product_context ............................................:      1
+! SUMMARY-  product_definition .........................................:      1
+! SUMMARY-  product_definition_context .................................:      1
+! SUMMARY-  product_definition_formation_with_specified_source .........:      1
+! SUMMARY-  product_definition_shape ...................................:      1
+! SUMMARY-  product_related_product_category ...........................:      1
+! SUMMARY-  si_unit_and_solid_angle_unit ...............................:      1
+! SUMMARY-  uncertainty_measure_with_unit ..............................:      1
+! SUMMARY-  vector .....................................................:     32
+! SUMMARY-  vertex_point ...............................................:     36
+! SUMMARY-                                                               -------
+! SUMMARY-  Total                                                            837
+! INFO-      
+! INFO-     User interface/default file
+! INFO-     Bspline aprx. value in effect for this translation : 6.451600e-01 mm
+! INFO-      
+! INFO-     Total number of solids input for this translation  :       1
+! INFO-      
+! INFO-     Number of solids processed without problems        :       1
+! INFO-      
+! INFO-     Number of solids with problems output as sheets    :       0
+! INFO-      
+! INFO-     Number of solids not processed                     :       0
+! INFO-      
+! INFO-     End of Translation: 9-FEB-2023  8:39:26 AM
+! INFO-      
+UG to STEP
+! INFO-     NX STEP AP203 - V1980
+! INFO-      
+! INFO-     Start of Translation: 11-FEB-2023  12:51:31 PM
+! INFO-      
+! STATUS-   Converting Part: C:\Users\ebreg\Documents\TerpRockets\TRT23\2023\CAD\TRT2303 - Airbrake\Air brake assembly\Flap_top.prt
+! SUMMARY-   
+! SUMMARY-  Summary of Unigraphics Part Entities
+! SUMMARY-  For Part: C:\Users\ebreg\Documents\TerpRockets\TRT23\2023\CAD\TRT2303 - Airbrake\Air brake assembly\Flap_top.prt 
+! SUMMARY-  Entities Processed             Count
+! SUMMARY-  ------------------             -----
+! SUMMARY-  Part Attribute ..............:     1
+! SUMMARY-  Font ........................:     1
+! SUMMARY-  Color Table .................:     2
+! SUMMARY-  Coordinate System ...........:     2
+! SUMMARY-  Parameter ...................:     1
+! SUMMARY-  Matrix ......................:     1
+! SUMMARY-  Solid .......................:
+! SUMMARY-     Body .....................:     1
+! SUMMARY-                                 -----
+! SUMMARY-  Total                              9
+! STATUS-    
+! STATUS-   Converting to Output Form (Phase 2 of 3): 11-FEB-2023 12:51:33 PM
+! STATUS-    
+! STATUS-    
+! STATUS-   Generating UG geometry and placing them in parts
+! STATUS-    
+! SUMMARY-   
+! SUMMARY-    STEP Header Information
+! SUMMARY-   
+! SUMMARY-  Description      Unknown
+! SUMMARY-  Imp_Level        1
+! SUMMARY-  File_Name        Flap_top.stp
+! SUMMARY-  Date             2023-02-11T12:51:33-05:00
+! SUMMARY-  Author           Unknown
+! SUMMARY-  Organization     Unknown
+! SUMMARY-  Pre_Version      ST-DEVELOPER v18.1
+! SUMMARY-  Orig_System      SIEMENS PLM Software NX 1980
+! SUMMARY-  Authorization    Unknown
+! SUMMARY-  Schema_ID        step_merged_ap_schema
+! SUMMARY-   
+! SUMMARY-    Summary of STEP Entities
+! SUMMARY-   
+! SUMMARY-  Entity Type                                                   Count
+! SUMMARY-  -----------                                                   ------
+! SUMMARY-  advanced_face ..............................................:     35
+! SUMMARY-  application_context ........................................:      1
+! SUMMARY-  approval ...................................................:      3
+! SUMMARY-  approval_date_time .........................................:      3
+! SUMMARY-  approval_person_organization ...............................:      3
+! SUMMARY-  approval_role ..............................................:      3
+! SUMMARY-  approval_status ............................................:      3
+! SUMMARY-  axis2_placement_3d .........................................:     72
+! SUMMARY-  b_spline_curve_with_knots ..................................:     10
+! SUMMARY-  calendar_date ..............................................:      3
+! SUMMARY-  cartesian_point ............................................:    451
+! SUMMARY-  circle .....................................................:     36
+! SUMMARY-  closed_shell ...............................................:      1
+! SUMMARY-  conversion_based_unit_and_length_unit ......................:      1
+! SUMMARY-  conversion_based_unit_and_plane_angle_unit .................:      1
+! SUMMARY-  coordinated_universal_time_offset ..........................:      3
+! SUMMARY-  cylindrical_surface ........................................:     19
+! SUMMARY-  date_and_time ..............................................:      3
+! SUMMARY-  dimensional_exponents ......................................:      2
+! SUMMARY-  direction ..................................................:    183
+! SUMMARY-  edge_curve .................................................:     85
+! SUMMARY-  edge_loop ..................................................:     50
+! SUMMARY-  face_bound .................................................:     28
+! SUMMARY-  face_outer_bound ...........................................:     22
+! SUMMARY-  geometric_representation_context_and_global_uncertainty_a ..:      1
+! SUMMARY-  length_measure_with_unit ...................................:      1
+! SUMMARY-  length_unit_and_si_unit ....................................:      1
+! SUMMARY-  line .......................................................:     39
+! SUMMARY-  local_time .................................................:      3
+! SUMMARY-  manifold_solid_brep ........................................:      1
+! SUMMARY-  organization ...............................................:      3
+! SUMMARY-  oriented_edge ..............................................:    170
+! SUMMARY-  person .....................................................:      1
+! SUMMARY-  person_and_organization ....................................:      3
+! SUMMARY-  plane ......................................................:     16
+! SUMMARY-  plane_angle_measure_with_unit ..............................:      1
+! SUMMARY-  plane_angle_unit_and_si_unit ...............................:      1
+! SUMMARY-  product ....................................................:      1
+! SUMMARY-  product_context ............................................:      1
+! SUMMARY-  product_definition .........................................:      1
+! SUMMARY-  product_definition_context .................................:      1
+! SUMMARY-  product_definition_formation_with_specified_source .........:      1
+! SUMMARY-  product_definition_shape ...................................:      1
+! SUMMARY-  product_related_product_category ...........................:      1
+! SUMMARY-  si_unit_and_solid_angle_unit ...............................:      1
+! SUMMARY-  uncertainty_measure_with_unit ..............................:      1
+! SUMMARY-  vector .....................................................:     39
+! SUMMARY-  vertex_point ...............................................:     57
+! SUMMARY-                                                               -------
+! SUMMARY-  Total                                                           1367
+! INFO-      
+! INFO-     User interface/default file
+! INFO-     Bspline aprx. value in effect for this translation : 6.451600e-01 mm
+! INFO-      
+! INFO-     Total number of solids input for this translation  :       1
+! INFO-      
+! INFO-     Number of solids processed without problems        :       1
+! INFO-      
+! INFO-     Number of solids with problems output as sheets    :       0
+! INFO-      
+! INFO-     Number of solids not processed                     :       0
+! INFO-      
+! INFO-     End of Translation: 11-FEB-2023  12:51:33 PM
+! INFO-      
+UG to STEP
+! INFO-     NX STEP AP203 - V1980
+! INFO-      
+! INFO-     Start of Translation: 11-FEB-2023  1:22:40 PM
+! INFO-      
+! STATUS-   Converting Part: C:\Users\ebreg\Documents\TerpRockets\TRT23\2023\CAD\TRT2303 - Airbrake\Air brake assembly\Flap_top.prt
+! SUMMARY-   
+! SUMMARY-  Summary of Unigraphics Part Entities
+! SUMMARY-  For Part: C:\Users\ebreg\Documents\TerpRockets\TRT23\2023\CAD\TRT2303 - Airbrake\Air brake assembly\Flap_top.prt 
+! SUMMARY-  Entities Processed             Count
+! SUMMARY-  ------------------             -----
+! SUMMARY-  Part Attribute ..............:     1
+! SUMMARY-  Font ........................:     1
+! SUMMARY-  Color Table .................:     2
+! SUMMARY-  Coordinate System ...........:     2
+! SUMMARY-  Parameter ...................:     1
+! SUMMARY-  Matrix ......................:     1
+! SUMMARY-  Solid .......................:
+! SUMMARY-     Body .....................:     1
+! SUMMARY-                                 -----
+! SUMMARY-  Total                              9
+! STATUS-    
+! STATUS-   Converting to Output Form (Phase 2 of 3): 11-FEB-2023 1:22:40 PM
+! STATUS-    
+! STATUS-    
+! STATUS-   Generating UG geometry and placing them in parts
+! STATUS-    
+! SUMMARY-   
+! SUMMARY-    STEP Header Information
+! SUMMARY-   
+! SUMMARY-  Description      Unknown
+! SUMMARY-  Imp_Level        1
+! SUMMARY-  File_Name        Flap_top.stp
+! SUMMARY-  Date             2023-02-11T13:22:40-05:00
+! SUMMARY-  Author           Unknown
+! SUMMARY-  Organization     Unknown
+! SUMMARY-  Pre_Version      ST-DEVELOPER v18.1
+! SUMMARY-  Orig_System      SIEMENS PLM Software NX 1980
+! SUMMARY-  Authorization    Unknown
+! SUMMARY-  Schema_ID        step_merged_ap_schema
+! SUMMARY-   
+! SUMMARY-    Summary of STEP Entities
+! SUMMARY-   
+! SUMMARY-  Entity Type                                                   Count
+! SUMMARY-  -----------                                                   ------
+! SUMMARY-  advanced_face ..............................................:     35
+! SUMMARY-  application_context ........................................:      1
+! SUMMARY-  approval ...................................................:      3
+! SUMMARY-  approval_date_time .........................................:      3
+! SUMMARY-  approval_person_organization ...............................:      3
+! SUMMARY-  approval_role ..............................................:      3
+! SUMMARY-  approval_status ............................................:      3
+! SUMMARY-  axis2_placement_3d .........................................:     72
+! SUMMARY-  b_spline_curve_with_knots ..................................:     10
+! SUMMARY-  calendar_date ..............................................:      3
+! SUMMARY-  cartesian_point ............................................:    451
+! SUMMARY-  circle .....................................................:     36
+! SUMMARY-  closed_shell ...............................................:      1
+! SUMMARY-  conversion_based_unit_and_length_unit ......................:      1
+! SUMMARY-  conversion_based_unit_and_plane_angle_unit .................:      1
+! SUMMARY-  coordinated_universal_time_offset ..........................:      3
+! SUMMARY-  cylindrical_surface ........................................:     19
+! SUMMARY-  date_and_time ..............................................:      3
+! SUMMARY-  dimensional_exponents ......................................:      2
+! SUMMARY-  direction ..................................................:    183
+! SUMMARY-  edge_curve .................................................:     85
+! SUMMARY-  edge_loop ..................................................:     50
+! SUMMARY-  face_bound .................................................:     28
+! SUMMARY-  face_outer_bound ...........................................:     22
+! SUMMARY-  geometric_representation_context_and_global_uncertainty_a ..:      1
+! SUMMARY-  length_measure_with_unit ...................................:      1
+! SUMMARY-  length_unit_and_si_unit ....................................:      1
+! SUMMARY-  line .......................................................:     39
+! SUMMARY-  local_time .................................................:      3
+! SUMMARY-  manifold_solid_brep ........................................:      1
+! SUMMARY-  organization ...............................................:      3
+! SUMMARY-  oriented_edge ..............................................:    170
+! SUMMARY-  person .....................................................:      1
+! SUMMARY-  person_and_organization ....................................:      3
+! SUMMARY-  plane ......................................................:     16
+! SUMMARY-  plane_angle_measure_with_unit ..............................:      1
+! SUMMARY-  plane_angle_unit_and_si_unit ...............................:      1
+! SUMMARY-  product ....................................................:      1
+! SUMMARY-  product_context ............................................:      1
+! SUMMARY-  product_definition .........................................:      1
+! SUMMARY-  product_definition_context .................................:      1
+! SUMMARY-  product_definition_formation_with_specified_source .........:      1
+! SUMMARY-  product_definition_shape ...................................:      1
+! SUMMARY-  product_related_product_category ...........................:      1
+! SUMMARY-  si_unit_and_solid_angle_unit ...............................:      1
+! SUMMARY-  uncertainty_measure_with_unit ..............................:      1
+! SUMMARY-  vector .....................................................:     39
+! SUMMARY-  vertex_point ...............................................:     57
+! SUMMARY-                                                               -------
+! SUMMARY-  Total                                                           1367
+! INFO-      
+! INFO-     User interface/default file
+! INFO-     Bspline aprx. value in effect for this translation : 6.451600e-01 mm
+! INFO-      
+! INFO-     Total number of solids input for this translation  :       1
+! INFO-      
+! INFO-     Number of solids processed without problems        :       1
+! INFO-      
+! INFO-     Number of solids with problems output as sheets    :       0
+! INFO-      
+! INFO-     Number of solids not processed                     :       0
+! INFO-      
+! INFO-     End of Translation: 11-FEB-2023  1:22:40 PM
+! INFO-      
