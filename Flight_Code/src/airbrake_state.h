@@ -13,16 +13,6 @@ enum AirbrakeStages {
     LANDED
 };
 
-enum AirbrakeStages {
-    PRELAUNCH,
-    BOOST,
-    COAST,
-    DROUGE,
-    MAIN,
-    LANDED
-};
-
-
 class AirbrakeState: public mmfs::State{
 
 public:

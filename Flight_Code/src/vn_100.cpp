@@ -1,8 +1,14 @@
 #include "vn_100.h"
-#include "vector_nav.h"
 
-bool VN_100::initialize()
+bool VN_100::begin(bool useBiasCorrection)
 {
+    biasCorrectionMode = useBiasCorrection;
+    return init();
+}
+
+bool VN_100::init()
+{
+    
     if (!vn.Begin())
     {
         return initialized = false;
@@ -12,6 +18,11 @@ bool VN_100::initialize()
 }
 
 void VN_100::update()
+{
+    read();
+}
+
+void VN_100::read()
 {   
     if (vn.Read()) {
         accelerationVec = imu::Vector<3>(vn.accel_x_mps2(), vn.accel_y_mps2(), vn.accel_z_mps2());

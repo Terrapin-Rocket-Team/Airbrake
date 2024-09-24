@@ -17,8 +17,10 @@ public:
     };
     virtual ~VN_100(){};
     virtual void calibrate();
-    virtual bool initialize() override;
+    virtual bool begin(bool useBiasCorrection = true) override;
+    virtual bool init() override;
     virtual void update() override;
+    virtual void read() override;
     virtual imu::Quaternion getOrientation();
     virtual imu::Vector<3> getAcceleration();
     virtual imu::Vector<3> getOrientationEuler();
