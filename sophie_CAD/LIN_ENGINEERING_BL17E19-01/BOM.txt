@@ -1,0 +1,4 @@
+3DX_LIN_ENGINEERING_Supplier: LIN Engineering
+3DX_LIN_ENGINEERING_Manufacturer: LIN Engineering
+3DX_LIN_ENGINEERING_Part Number: BL17E19-01
+3DX_LIN_ENGINEERING_Description: LIN Engineering - BL17 Series - PN: BL17E19-01
