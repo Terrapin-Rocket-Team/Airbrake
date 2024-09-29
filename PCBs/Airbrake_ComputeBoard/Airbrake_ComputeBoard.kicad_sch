@@ -1851,6 +1851,164 @@
 				)
 			)
 		)
+		(symbol "Device:Buzzer"
+			(pin_names
+				(offset 0.0254) hide)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "BZ"
+				(at 3.81 1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "Buzzer"
+				(at 3.81 -1.27 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" ""
+				(at -0.635 2.54 90)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at -0.635 2.54 90)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Buzzer, polarized"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "quartz resonator ceramic"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "*Buzzer*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "Buzzer_0_1"
+				(arc
+					(start 0 -3.175)
+					(mid 3.1612 0)
+					(end 0 3.175)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.651 1.905) (xy -1.143 1.905)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -1.397 2.159) (xy -1.397 1.651)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 3.175) (xy 0 -3.175)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "Buzzer_1_1"
+				(pin passive line
+					(at -2.54 2.54 0)
+					(length 2.54)
+					(name "+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -2.54 -2.54 0)
+					(length 2.54)
+					(name "-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Device:R"
 			(pin_numbers hide)
 			(pin_names
@@ -2554,16 +2712,6 @@
 	)
 	(wire
 		(pts
-			(xy 78.74 86.36) (xy 82.55 86.36)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "0c727648-1e87-4bf7-91c8-99935bc0e5b6")
-	)
-	(wire
-		(pts
 			(xy 186.69 63.5) (xy 157.48 63.5)
 		)
 		(stroke
@@ -2894,16 +3042,6 @@
 	)
 	(wire
 		(pts
-			(xy 78.74 91.44) (xy 82.55 91.44)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "70de6667-d272-4287-a2a0-9dedcd367709")
-	)
-	(wire
-		(pts
 			(xy 105.41 93.98) (xy 109.22 93.98)
 		)
 		(stroke
@@ -3004,6 +3142,16 @@
 	)
 	(wire
 		(pts
+			(xy 78.74 91.44) (xy 82.55 91.44)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "89644b3d-1324-4c2e-a703-7d707ed0d360")
+	)
+	(wire
+		(pts
 			(xy 199.39 57.15) (xy 199.39 55.88)
 		)
 		(stroke
@@ -3021,6 +3169,16 @@
 			(type default)
 		)
 		(uuid "912fbb03-cc6f-435d-95a6-0e3e432fc1fa")
+	)
+	(wire
+		(pts
+			(xy 78.74 83.82) (xy 82.55 83.82)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9bf6f6ee-3389-4784-b8ed-0032a5fb472e")
 	)
 	(wire
 		(pts
@@ -3064,6 +3222,16 @@
 	)
 	(wire
 		(pts
+			(xy 78.74 88.9) (xy 82.55 88.9)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b053453a-b8c2-4679-8ff3-7597c9ad1040")
+	)
+	(wire
+		(pts
 			(xy 125.73 55.88) (xy 125.73 58.42)
 		)
 		(stroke
@@ -3071,6 +3239,16 @@
 			(type default)
 		)
 		(uuid "b27ea6f1-2033-4bec-9d78-37b8462cfe02")
+	)
+	(wire
+		(pts
+			(xy 78.74 86.36) (xy 82.55 86.36)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b2ad4d40-ce35-4694-964e-15028b71dd28")
 	)
 	(wire
 		(pts
@@ -3111,16 +3289,6 @@
 			(type default)
 		)
 		(uuid "c01a3377-8d80-4c20-8273-1cad2c849761")
-	)
-	(wire
-		(pts
-			(xy 78.74 88.9) (xy 82.55 88.9)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "c900d588-6dfb-4f42-a988-988ad0772ffc")
 	)
 	(wire
 		(pts
@@ -3171,16 +3339,6 @@
 			(type default)
 		)
 		(uuid "d9ea56a1-2967-4507-94f2-7ffa0eb75e7f")
-	)
-	(wire
-		(pts
-			(xy 78.74 83.82) (xy 82.55 83.82)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "daed67f3-cd68-4629-b6db-9aadb2e0f9f3")
 	)
 	(wire
 		(pts
@@ -3558,7 +3716,7 @@
 		(uuid "5b91ae52-1ddd-45f3-bfa4-5a4a71031362")
 	)
 	(label "EN"
-		(at 78.74 86.36 180)
+		(at 78.74 88.9 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3602,7 +3760,7 @@
 		(uuid "6f320d95-5ed6-4565-8259-150cb8ccfa88")
 	)
 	(label "F{slash}R"
-		(at 78.74 83.82 180)
+		(at 78.74 91.44 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3611,6 +3769,17 @@
 			(justify right bottom)
 		)
 		(uuid "736a4c6c-b192-4ce9-9ab3-86c91c09d1ba")
+	)
+	(label "buzzer"
+		(at 129.54 96.52 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "7a030130-557a-49cf-83d3-91dab684ae1a")
 	)
 	(label "SCK"
 		(at 109.22 109.22 0)
@@ -3723,7 +3892,7 @@
 		(uuid "aeea7e38-9ed8-4064-aa4b-f504803c1f84")
 	)
 	(label "BK"
-		(at 78.74 88.9 180)
+		(at 78.74 86.36 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3778,7 +3947,7 @@
 		(uuid "cad28f51-3fa0-4683-bf85-eb265c32fc1c")
 	)
 	(label "SV"
-		(at 78.74 91.44 180)
+		(at 78.74 83.82 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3798,6 +3967,17 @@
 			(justify left bottom)
 		)
 		(uuid "e9b2f5ec-aa40-4189-b954-0da37d44cb49")
+	)
+	(label "buzzer"
+		(at 105.41 83.82 0)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "ef40fa8c-d8c0-4dda-a511-ceb69721f296")
 	)
 	(label "ALM_5v"
 		(at 210.82 102.87 0)
@@ -4052,6 +4232,141 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:Buzzer")
+		(at 132.08 99.06 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "14fc7af1-5190-48a6-bc33-0b26b698a4c8")
+		(property "Reference" "BZ1"
+			(at 135.89 97.7899 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "Buzzer"
+			(at 135.89 100.3299 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Buzzer_Beeper:Buzzer_12x9.5RM7.6"
+			(at 131.445 96.52 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 131.445 96.52 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Buzzer, polarized"
+			(at 132.08 99.06 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "275e9409-a16e-41f7-a265-e4015ab9e547")
+		)
+		(pin "2"
+			(uuid "055e3458-72a0-4822-a120-71785b01a547")
+		)
+		(instances
+			(project "Airbrake_ComputeBoard"
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "BZ1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 129.54 101.6 270)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "1ad525a2-3753-4e74-8843-64d26faa6525")
+		(property "Reference" "#PWR015"
+			(at 123.19 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 124.46 101.6 90)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 129.54 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 129.54 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 129.54 101.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "8b9c45c8-89ab-4f24-b55b-056fc6c60292")
+		)
+		(instances
+			(project "Airbrake_ComputeBoard"
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "#PWR015")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Simulation_SPICE:PNP")
 		(at 175.26 80.01 0)
 		(unit 1)
@@ -4079,7 +4394,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
 			(at 210.82 80.01 0)
 			(effects
 				(font
@@ -5505,7 +5820,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
 			(at 229.87 80.01 0)
 			(effects
 				(font
@@ -5684,7 +5999,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
 			(at 190.5 80.01 0)
 			(effects
 				(font
@@ -6680,7 +6995,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
 			(at 247.65 80.01 0)
 			(effects
 				(font
