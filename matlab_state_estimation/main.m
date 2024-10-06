@@ -10,9 +10,9 @@ clc
 
 %% Section 0: Set Simulation Parameters
 % Set this var to where the data will come from [Mock, OpenRocket, Flight]
-dataType = DataType.Mock;
+dataType = DataType.OpenRocket;
 mockDataFile = 'mock_1.csv';
-openRocketDataFile = 'openrocket_test_data.csv';
+openRocketDataFile = 'openrocket_2024_30k.csv';
 flightDataFile = 'TADPOL_April_NY_post_processed2.csv';
 
 % Set sensor gaussian noise
@@ -26,8 +26,8 @@ g = 9.81; % m/s^2
 
 % Create mock rocket
 if dataType == DataType.Mock
-    rocketMotorAccel = 100; % m/s^2
-    rocketMotorBurnTime = 1; % seconds
+    rocketMotorAccel = 125; % m/s^2
+    rocketMotorBurnTime = 5; % seconds
     rocketDragCoef = .5;
     rocketCrossSectionalArea = 0.1524*0.1524*pi; % 6in diameter in m^2 
     rocket = rocket(rocketMotorAccel, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);

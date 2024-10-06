@@ -13,7 +13,7 @@ classdef LinearKalmanFilter
         c % Drag thing
 
         meas_uncertainity = .5;
-        process_noise = 2;
+        process_noise = 5;
     end
     
     % TODO get rid of hardcoded values
@@ -92,7 +92,7 @@ classdef LinearKalmanFilter
 
             obj.Q = obj.G*obj.process_noise*obj.process_noise*obj.G';
 
-            obj.R = [obj.meas_uncertainity];
+            obj.R = eye(3)*[obj.meas_uncertainity];
 
             obj.H = [1, 0, 0, 0, 0, 0;
                      0, 1, 0, 0, 0, 0;
