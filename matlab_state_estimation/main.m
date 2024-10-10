@@ -141,10 +141,10 @@ plot(data.t, data.r_z, 'r-', 'DisplayName', 'Actual Z Position');
 hold on;
 plot(data.t, data.r_meas_z, 'g.', 'DisplayName', 'Measured Z Position');
 plot(data.t, output.r_output_z, 'b', 'DisplayName', 'Output Z Position');
-xlabel('Time (s)');
-ylabel('Z Position (m)');
-title('Z Position vs Time');
-legend('show');
+xlabel('Time (s)', 'FontSize', 16);
+ylabel('Z Position (m)', 'FontSize', 16);
+title('Z Position vs Time', 'FontSize', 18);
+legend('show', 'FontSize', 14);
 grid on;
 hold off;
 
@@ -163,7 +163,6 @@ grid on;
 
 subplot(3,1,2);
 plot(data.t, data.r_y, 'r', 'DisplayName', 'Actual y');
-hold on;
 plot(data.t, data.r_meas_y, 'g.', 'DisplayName', 'Measured Y Position');
 plot(data.t, output.r_output_y, 'b', 'DisplayName', 'Output y');
 xlabel('Time (s)');
@@ -174,7 +173,6 @@ grid on;
 
 subplot(3,1,3);
 plot(data.t, data.r_z, 'r', 'DisplayName', 'Actual z');
-hold on;
 plot(data.t, data.r_meas_z, 'g.', 'DisplayName', 'Measured Z Position');
 plot(data.t, output.r_output_z, 'b', 'DisplayName', 'Output z');
 xlabel('Time (s)');
@@ -182,17 +180,19 @@ ylabel('z Position (m)');
 title('z Position vs Time');
 legend show;
 grid on;
+hold off;
 
 % Plot z velocity vs time
 figure;
 plot(data.t, data.v_z, 'r', 'DisplayName', 'Actual z Velocity');
 hold on;
 plot(data.t, output.v_output_z, 'b', 'DisplayName', 'Output z Velocity');
-xlabel('Time (s)');
-ylabel('z Velocity (m/s)');
-title('z Velocity vs Time');
-legend show;
+xlabel('Time (s)', 'FontSize', 16);
+ylabel('z Velocity (m/s)', 'FontSize', 16);
+title('z Velocity vs Time', 'FontSize', 18);
+legend('show', 'FontSize', 14);
 grid on;
+hold off;
 
 % Plot x, y, z velocities vs time
 figure;
@@ -208,7 +208,6 @@ grid on;
 
 subplot(3,1,2);
 plot(data.t, data.v_y, 'r', 'DisplayName', 'Actual y Velocity');
-hold on;
 plot(data.t, output.v_output_y, 'b', 'DisplayName', 'Output y Velocity');
 xlabel('Time (s)');
 ylabel('y Velocity (m/s)');
@@ -218,10 +217,10 @@ grid on;
 
 subplot(3,1,3);
 plot(data.t, data.v_z, 'r', 'DisplayName', 'Actual z Velocity');
-hold on;
 plot(data.t, output.v_output_z, 'b', 'DisplayName', 'Output z Velocity');
 xlabel('Time (s)');
 ylabel('z Velocity (m/s)');
 title('z Velocity vs Time');
 legend show;
 grid on;
+hold off;
