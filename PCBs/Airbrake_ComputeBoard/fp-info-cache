@@ -1,4 +1,4 @@
-23364790722458905
+23368284469146265
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -371,6 +371,13 @@ BNO055
 10
 10
 Breakout Boards
+Buck_Converter
+
+
+0
+0
+0
+Breakout Boards
 FS-IA6B
 
 
@@ -391,6 +398,13 @@ Teensy_4.1
 0
 48
 48
+Breakout Boards
+Teensy_4.1_USB
+
+
+0
+53
+53
 Button_Switch_Keyboard
 SW_Cherry_MX_1.00u_PCB
 Cherry MX keyswitch, 1.00u, PCB mount, http://cherryamericas.com/wp-content/uploads/2014/12/mx_cat.pdf
