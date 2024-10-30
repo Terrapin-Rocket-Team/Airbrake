@@ -10,7 +10,7 @@ clc
 
 %% Section 0: Set Simulation Parameters
 % Set this var to where the data will come from [Mock, OpenRocket, Flight]
-dataType = DataType.OpenRocket;
+dataType = DataType.Mock;
 mockDataFile = 'mock_1.csv';
 openRocketDataFile = 'openrocket_2024_30k.csv';
 flightDataFile = 'TADPOL_April_NY_post_processed2.csv';
@@ -108,7 +108,8 @@ P = 500 * [1 0 0 1 0 0;
            1 0 0 1 0 0;
            0 1 0 0 1 0;
            0 0 1 0 0 1];
-kf = LinearKalmanFilter(initial_state, P, initial_control);
+initial_dt = data.t(2) - data.t(1);
+kf = LinearKalmanFilter(initial_state, P, initial_control, initial_dt);
 
 r_output_x = [kf.X(1)];
 r_output_y = [kf.X(2)];
