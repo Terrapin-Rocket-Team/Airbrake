@@ -2,28 +2,26 @@
 % pushrod force for all ranges of theta and an input drag force F
 
 % Define the range of theta (in degrees)
-theta_range = 0:.1:90; % angles from 21 to 90 degrees
+force_drag_range = 0:1:3000; % N
 
 % Initialize arrays to store forces
-force_motor = zeros(size(theta_range));
-force_pushrod = zeros(size(theta_range));
+angles = zeros(size(force_drag_range));
 
-force_drag = 200;
+force_motor = 800;
 
 % Loop over the theta range and calculate forces
-for i = 1:length(theta_range)
-    theta = theta_range(i);
-    [force_motor(i), force_pushrod(i)] = flap2motorforce(theta, force_drag);
+for i = 1:length(force_drag_range)
+    force_drag = force_drag_range(i);
+    angles(i) = motorForceAndDragForce2MaxFlap(force_motor, force_drag);
 end
 
 % Plotting the results
 figure;
-plot(theta_range, force_motor, 'r-', 'LineWidth', 2, 'DisplayName', 'Motor Force');
+plot(force_drag_range, angles, 'r-', 'LineWidth', 2);
 hold on;
-plot(theta_range, force_pushrod, 'b-', 'LineWidth', 2, 'DisplayName', 'Pushrod Force');
-xlabel('Flap Angle (degrees)', 'FontSize', 14);
-ylabel('Force Multiplier', 'FontSize', 14);
-title('Motor and Pushrod Forces vs Flap Angle', 'FontSize', 16);
-legend('show', 'FontSize', 12, 'Location', 'northwest');
+xlabel('Drag Force (N)', 'FontSize', 14);
+ylabel('Max Deployment Angle (deg)', 'FontSize', 14);
+title(['Max Deployment Angle vs Drag Force (Motor Force = ' num2str(force_motor) ' N)'], 'FontSize', 16);
+ylim([0,90]);
 grid on;
 hold off;

@@ -1,4 +1,4 @@
-function [force_motor, force_pushrod] = flap2motorforce(theta, force_drag)
+function [force_motor, force_pushrod] = flapAngleAndDragForce2MotorForce(theta, force_drag)
 % This function is used to determine the force on the pushrod and motor in
 % the 2024/25 airbrake design.
 %
