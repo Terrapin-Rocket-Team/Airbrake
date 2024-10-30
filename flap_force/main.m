@@ -21,7 +21,7 @@ plot(force_drag_range, angles, 'r-', 'LineWidth', 2);
 hold on;
 xlabel('Drag Force (N)', 'FontSize', 14);
 ylabel('Max Deployment Angle (deg)', 'FontSize', 14);
-title(['Max Deployment Angle vs Drag Force (Motor Force = ' num2str(force_motor) ' N)'], 'FontSize', 16);
+title(['Max Deployment Angle vs Single Flap Drag Force (Motor Force = ' num2str(force_motor) ' N)'], 'FontSize', 16);
 ylim([0,90]);
 grid on;
 hold off;
