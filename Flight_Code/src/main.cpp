@@ -4,7 +4,12 @@
 #include "airbrake_state.h"
 #include "vn_100.h"
 #include "AirbrakeKF.h"
+#include "e5.h"
 
+const int enc_chan_a = 36;
+const int enc_chan_b = 37;
+
+E5 enc(enc_chan_a, enc_chan_b);
 mmfs::BMP390 barometer;
 mmfs::BNO055 ab_imu; 
 VN_100 vn(&SPI, 10);
