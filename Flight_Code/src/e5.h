@@ -2,13 +2,12 @@
 #define E5_H
 
 #include "Encoder.h"
-#include <Encoder.h>
 #include <MMFS.h>
 
-class E5 : public mmfs::Encoder
+class E5 : public mmfs::Encoder_MMFS
 {
 private:
-    Encoder myEnc();
+    Encoder myEnc;
 
 public:
     E5(const int, const int, const char *name = "E5");

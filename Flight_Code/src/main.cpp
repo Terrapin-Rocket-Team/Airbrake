@@ -2,7 +2,7 @@
 #include <MMFS.h>
 
 #include "airbrake_state.h"
-#include "vn_100.h"
+//#include "vn_100.h"
 #include "AirbrakeKF.h"
 #include "e5.h"
 
@@ -12,14 +12,12 @@ const int enc_chan_b = 37;
 E5 enc(enc_chan_a, enc_chan_b);
 mmfs::BMP390 barometer;
 mmfs::BNO055 ab_imu; 
-VN_100 vn(&SPI, 10);
+//VN_100 vn(&SPI, 10);
 
-mmfs::Sensor* airbrake_sensors[3] = {&barometer, &ab_imu, &vn};
+mmfs::Sensor* airbrake_sensors[3] = {&barometer, &ab_imu, &enc};
 AirbrakeKF kf;
 mmfs::Logger logger;
 AirbrakeState AIRBRAKE(airbrake_sensors, 3, &kf);
-const int SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
-const int SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
 const int UPDATE_RATE = 10;
 const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
 
@@ -29,8 +27,12 @@ void setup() {
     SPI.setSCK(13);
     SPI.begin();
 
+    SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
+    SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
 
-    logger.init();
+    psram = new mmfs::PSRAM();
+
+    logger.init(&AirbrakeState);
 
     logger.recordLogData(mmfs::INFO_, "Entering Setup");
 
@@ -49,6 +51,6 @@ void loop() {
 
     AIRBRAKE.update_cda_estimate();
 
-    double tilt = ab_imu.getOrientationGlobal().x(); // TODO change this
-    AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
+    //double tilt = ab_imu.getOrientationGlobal().x(); // TODO change this
+    //AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
 }
