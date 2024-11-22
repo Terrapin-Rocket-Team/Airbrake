@@ -21,10 +21,13 @@ public:
     virtual bool init() override;
     virtual void update() override;
     virtual void read() override;
-    virtual imu::Quaternion getOrientation();
-    virtual imu::Vector<3> getAcceleration();
-    virtual imu::Vector<3> getOrientationEuler();
-    virtual imu::Vector<3> getMagnetometer();
+    virtual imu::Quaternion getOrientation() const;
+    virtual imu::Vector<3> getAcceleration() const;
+    virtual imu::Vector<3> getOrientationEuler() const;
+    virtual imu::Vector<3> getMagnetometer() const;
+    virtual imu::Vector<3> getDeltaVelocity() const;
+    virtual imu::Vector<3> getDeltaTheta() const;
+    virtual double getDeltaTime() const;
     virtual mmfs::SensorType getType() const override { return mmfs::IMU_; } // TODO
     virtual const char *getTypeString() const override { return "VN_100"; } // TODO
     virtual const char *getCsvHeader() const override;
@@ -37,6 +40,9 @@ protected:
     imu::Vector<3> orientationEuler = imu::Vector<3>(0, 0, 0); // in deg/s
     imu::Quaternion orientation = imu::Quaternion(1, 0, 0, 0);
     imu::Vector<3> magnetometer = imu::Vector<3>(0, 0, 0); // in uT
+    imu::Vector<3> deltaVelocity = imu::Vector<3>(0, 0, 0); // in deg/s
+    imu::Vector<3> deltaTheta = imu::Vector<3>(0, 0, 0); // in m/s^2
+    double deltaTime = 0; // in s
     double pressure = 0; // in Pa
     double temperature = 0; // in deg C
 };
