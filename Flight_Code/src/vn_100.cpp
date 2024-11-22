@@ -29,6 +29,8 @@ void VN_100::read()
         angularVelocity = imu::Vector<3>(vn.gyro_x_radps(), vn.gyro_y_radps(), vn.gyro_z_radps());
         orientationEuler = imu::Vector<3>(vn.yaw_rad() * 180 / 3.14159, vn.pitch_rad() * 180 / 3.14159, vn.roll_rad() * 180 / 3.14159);
         magnetometer = imu::Vector<3>(vn.mag_x_ut(), vn.mag_y_ut(), vn.mag_z_ut());
+
+        
         // TODO quaterion orientation
         pressure = vn.pres_pa();
         temperature = vn.die_temp_c();

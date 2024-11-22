@@ -13,8 +13,8 @@ mmfs::Sensor* airbrake_sensors[3] = {&barometer, &ab_imu, &vn};
 AirbrakeKF kf;
 mmfs::Logger logger;
 AirbrakeState AIRBRAKE(airbrake_sensors, 3, &kf);
-const int SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
-const int SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
+//const int SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
+//const int SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
 const int UPDATE_RATE = 10;
 const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
 
