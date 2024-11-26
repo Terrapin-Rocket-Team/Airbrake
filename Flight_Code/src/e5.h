@@ -1,8 +1,9 @@
 #ifndef E5_H
 #define E5_H
 
+#include <Sensors/Encoder/Encoder_MMFS.h>
+#include <RecordData/Logger.h>
 #include "Encoder.h"
-#include <MMFS.h>
 
 class E5 : public mmfs::Encoder_MMFS
 {
@@ -14,6 +15,5 @@ public:
     virtual bool init() override;
     virtual void read() override;
 };
-
 
 #endif
