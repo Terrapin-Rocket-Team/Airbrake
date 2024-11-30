@@ -55,6 +55,7 @@ void setup() {
 
     AIRBRAKE.init();
 
+
     logger.recordLogData(mmfs::INFO_, "Entering Setup");
 
 
@@ -71,7 +72,6 @@ void loop() {
     //AIRBRAKE.update_cda_estimate();
 
     Serial.println(enc.getSteps());
-
     //double tilt = ab_imu.getOrientationGlobal().x(); // TODO change this
-    //AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
+    AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
 }
