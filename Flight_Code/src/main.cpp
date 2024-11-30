@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <MMFS.h>
 
 #include "airbrake_state.h"
 #include "vn_100.h"
@@ -73,5 +72,5 @@ void loop() {
 
     Serial.println(enc.getSteps());
     //double tilt = ab_imu.getOrientationGlobal().x(); // TODO change this
-    AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
+    //AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
 }
