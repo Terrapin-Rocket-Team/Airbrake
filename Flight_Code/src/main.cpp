@@ -36,7 +36,7 @@ void setup() {
     pinMode(brk_pin, OUTPUT);
     pinMode(dir_pin, OUTPUT);
     digitalWrite(brk_pin, LOW);
-    digitalWrite(dir_pin, LOW);
+    digitalWrite(dir_pin, HIGH);
 
     SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
     SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
@@ -55,6 +55,9 @@ void setup() {
 
 
 void loop() {
+
+
+
     AIRBRAKE.updateState();
 
     //AIRBRAKE.update_cda_estimate();
