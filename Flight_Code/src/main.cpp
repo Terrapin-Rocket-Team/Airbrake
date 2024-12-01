@@ -16,17 +16,17 @@ const int dir_pin = 5;
 E5 enc(enc_chan_a, enc_chan_b, "E5");
 VN_100 vn(&SPI, 10);
 
-AirbrakeState AIRBRAKE(airbrake_sensors, 2, &kf);
-
 mmfs::DPS310 baro1;
 mmfs::MS5611 baro2;
+mmfs::BMI088andLIS3MDL imu;
+mmfs::MAX_M10S gps;
 
-mmfs::Sensor* airbrake_sensors[4] = {&baro1, &baro2, &enc, &vn};
+mmfs::Sensor* airbrake_sensors[6] = {&baro1, &baro2, &imu, &gps, &enc, &vn};
 AirbrakeKF kf;
 mmfs::Logger logger;
 mmfs::ErrorHandler errorHandler;
 mmfs::PSRAM *psram;
-AirbrakeState AIRBRAKE(airbrake_sensors, 4, &kf);
+AirbrakeState AIRBRAKE(airbrake_sensors, 6, &kf);
 const int SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
 const int SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
 
