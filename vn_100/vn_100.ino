@@ -16,20 +16,27 @@ void setup() {
    Serial.println(vn.error_code());
    while (1) {}
  }
+
+ vn.SetAccelFilter(bfs::Vn100::FILTER_COMP_ONLY, 0);
 }
+
+float theta_x = 0;
+float theta_y = 0;
+float theta_z = 0;
 
 void loop() {
   /* Read sensor and print values */
  if (vn.Read()) {
-   Serial.print(vn.accel_x_mps2()); Serial.print(",");
-   Serial.print(vn.accel_y_mps2()); Serial.print(",");
-   Serial.print(vn.accel_z_mps2()); Serial.print(",");
-   Serial.print(vn.yaw_rad() * 180 / 3.14159); Serial.print(",");
-   Serial.print(vn.pitch_rad() * 180 / 3.14159); Serial.print(",");
-   Serial.print(vn.roll_rad() * 180 / 3.14159); Serial.print(",");
-   Serial.print(vn.mag_x_ut()); Serial.print(",");
-   Serial.print(vn.mag_y_ut()); Serial.print(",");
-   Serial.print(vn.mag_z_ut()); Serial.println(",");
+   Serial.print(vn.delta_time()); Serial.print(",\t");
+   Serial.print(vn.delta_velocity_x()); Serial.print(",\t");
+   Serial.print(vn.delta_velocity_y()); Serial.print(",\t");
+   Serial.print(vn.delta_velocity_z()); Serial.print(",\t");
+   Serial.print(vn.delta_theta_x()); Serial.print(",\t");
+   Serial.print(vn.delta_theta_y()); Serial.print(",\t");
+   Serial.print(vn.delta_theta_z()); Serial.print(",\t");
+   Serial.print(theta_x); Serial.print(",\t");
+   Serial.print(theta_y); Serial.print(",\t");
+   Serial.println(theta_z);
  }
  delay(50);
 }

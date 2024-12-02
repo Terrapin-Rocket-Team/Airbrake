@@ -1,0 +1,19 @@
+stages:
+  - lint
+
+Lint:
+  stage: lint
+  tags:
+    - bfs
+  script: 
+    - cpplint --verbose=0 src/registers.h
+    - cpplint --verbose=0 src/vector_nav.h
+    - cpplint --verbose=0 src/vn.h
+    - cpplint --verbose=0 src/vn100.h
+    - cpplint --verbose=0 src/vn200.h
+    - cpplint --verbose=0 src/vn300.h
+    - cpplint --verbose=0 src/vn100.cc
+    - cpplint --verbose=0 src/vn200.cc
+    - cpplint --verbose=0 src/vn300.cc
+
+  

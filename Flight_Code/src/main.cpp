@@ -20,9 +20,11 @@ E5 enc(enc_chan_a, enc_chan_b, "E5");
 mmfs::Sensor* airbrake_sensors[1] = {&enc};
 AirbrakeKF kf;
 mmfs::Logger logger;
+
 mmfs::ErrorHandler errorHandler;
 mmfs::PSRAM *psram;
 AirbrakeState AIRBRAKE(airbrake_sensors, 1, &kf);
+
 const int UPDATE_RATE = 10;
 const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
 
