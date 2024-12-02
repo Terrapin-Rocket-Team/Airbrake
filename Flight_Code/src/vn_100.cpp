@@ -1,26 +1,26 @@
-#include "vn_100.h"
+// #include "vn_100.h"
 
-bool VN_100::begin(bool useBiasCorrection)
-{
-    biasCorrectionMode = useBiasCorrection;
-    return init();
-}
+// bool VN_100::begin(bool useBiasCorrection)
+// {
+//     biasCorrectionMode = useBiasCorrection;
+//     return init();
+// }
 
-bool VN_100::init()
-{
+// bool VN_100::init()
+// {
     
-    if (!vn.Begin())
-    {
-        return initialized = false;
-    }
+//     if (!vn.Begin())
+//     {
+//         return initialized = false;
+//     }
 
-    return initialized = true;
-}
+//     return initialized = true;
+// }
 
-void VN_100::update()
-{
-    read();
-}
+// void VN_100::update()
+// {
+//     read();
+// }
 
 void VN_100::read()
 {   
@@ -39,10 +39,10 @@ void VN_100::read()
     }
 }
 
-void VN_100::calibrate()
-{
-    // TODO
-}
+// void VN_100::calibrate()
+// {
+//     // TODO
+// }
 
 imu::Quaternion VN_100::getOrientation() const
 {
@@ -98,8 +98,8 @@ const char *VN_100::getDataString() const
     return data;
 }
 
-const char *VN_100::getStaticDataString() const
-{
-    sprintf(staticData, "None");
-    return staticData; // TODO
-}
+// const char *VN_100::getStaticDataString() const
+// {
+//     sprintf(staticData, "None");
+//     return staticData; // TODO
+// }
