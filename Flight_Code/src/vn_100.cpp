@@ -1,26 +1,27 @@
-// #include "vn_100.h"
+#include "vn_100.h"
+#include <RecordData/DataReporter.h>
 
-// bool VN_100::begin(bool useBiasCorrection)
-// {
-//     biasCorrectionMode = useBiasCorrection;
-//     return init();
-// }
+bool VN_100::begin(bool useBiasCorrection)
+{
+    biasCorrectionMode = useBiasCorrection;
+    return init();
+}
 
-// bool VN_100::init()
-// {
-    
-//     if (!vn.Begin())
-//     {
-//         return initialized = false;
-//     }
+bool VN_100::init()
+{
+ 
+    if (!vn.Begin())
+    {
+        return initialized = false;
+    }
 
-//     return initialized = true;
-// }
+    return initialized = true;
+}
 
-// void VN_100::update()
-// {
-//     read();
-// }
+void VN_100::update()
+{
+    read();
+}
 
 void VN_100::read()
 {   
@@ -39,10 +40,10 @@ void VN_100::read()
     }
 }
 
-// void VN_100::calibrate()
-// {
-//     // TODO
-// }
+void VN_100::calibrate()
+{
+    // TODO
+}
 
 imu::Quaternion VN_100::getOrientation() const
 {
@@ -87,19 +88,61 @@ imu::Vector<3> convertToEuler(const imu::Quaternion &orientation)
     return euler;
 }
 
-const char *VN_100::getCsvHeader() const
-{                                                                                                    // incl VN- for Vector Nav
-    return "VN-AX (m/s/s),VN-AY (m/s/s),VN-AZ (m/s/s),VN-ULRX (deg),VN-ULRY (deg),VN-ULRZ (deg),VN-QUATX,VN-QUATY,VN-QUATZ,VN-QUATW,VN-ANGVX (rad/s),VN-ANGVY (rad/s),VN-ANGVZ (rad/s),VN-MAGX (uT),VN-MAGY (uT),VN-MAGZ (uT),VN-P (Pa),VN-T (C), VN-DT (s), VN-DV-X (m/s/s), VN-DV-Y (m/s/s), VN-DV-Z (m/s/s), VN-DTH-X (deg/s), VN-DTH-Y (deg/s), VN-DTH-Z (deg/s),"; // trailing comma
-}
-
-const char *VN_100::getDataString() const
+const int VN_100::getNumPackedDataPoints() const
 {
-    sprintf(data, "%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,", accelerationVec.x(), accelerationVec.y(), accelerationVec.z(), orientationEuler.x(), orientationEuler.y(), orientationEuler.z(), orientation.x(), orientation.y(), orientation.z(), orientation.w(), angularVelocity.x(), angularVelocity.y(), angularVelocity.z(), magnetometer.x(), magnetometer.y(), magnetometer.z(), pressure, temperature, deltaTime, deltaVelocity.x(), deltaVelocity.y(), deltaVelocity.z(), deltaTheta.x(), deltaTheta.y(), deltaTheta.z()); // trailing comma"
-    return data;
+    return 25;
 }
 
-// const char *VN_100::getStaticDataString() const
-// {
-//     sprintf(staticData, "None");
-//     return staticData; // TODO
-// }
+const mmfs::PackedType *VN_100::getPackedOrder() const
+{
+    mmfs::PackedType result[] = {mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE,
+            mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE,
+            mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE,
+            mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE,
+            mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE, mmfs::DOUBLE};
+
+    return result;
+}
+
+const char **VN_100::getPackedDataLabels() const
+{
+    const char *labels[] = {"VN-AX (m/s/s)", "VN-AY (m/s/s)", "VN-AZ (m/s/s)", "VN-ULRX (deg)", "VN-ULRY (deg)",
+                            "VN-ULRZ (deg)", "VN-QUATX", "VN-QUATY", "VN-QUATZ", "VN-QUATW",
+                            "VN-ANGVX (rad/s)", "VN-ANGVY (rad/s)", "VN-ANGVZ (rad/s)", "VN-MAGX (uT)", "VN-MAGY (uT)",
+                            "VN-MAGZ (uT)", "VN-P (Pa)", "VN-T (C)", "VN-DT (s)", "VN-DV-X (m/s/s)",
+                            "VN-DV-Y (m/s/s)", "VN-DV-Z (m/s/s)", "VN-DTH-X (deg/s)", "VN-DTH-Y (deg/s)", "VN-DTH-Z (deg/s)"};
+    
+    return labels;
+}
+
+void VN_100::packData()
+{
+    struct PackedData data;
+    data.ax = accelerationVec.x();
+    data.ay = accelerationVec.y();
+    data.az = accelerationVec.z();
+    data.ulrx = orientationEuler.x();
+    data.ulry = orientationEuler.y();
+    data.ulrz = orientationEuler.z();
+    data.quatx = orientation.x();
+    data.quaty = orientation.y();
+    data.quatz = orientation.z();
+    data.quatw = orientation.w();
+    data.angvx = angularVelocity.x();
+    data.angvy = angularVelocity.y();
+    data.angvz = angularVelocity.z();
+    data.magx = magnetometer.x();
+    data.magy = magnetometer.y();
+    data.magz = magnetometer.z();
+    data.p = pressure;
+    data.t = temperature;
+    data.dt = deltaTime;
+    data.dv_x = deltaVelocity.x();
+    data.dv_y = deltaVelocity.y();
+    data.dv_z = deltaVelocity.z();
+    data.dth_x = deltaTheta.x();
+    data.dth_y = deltaTheta.y();
+    data.dth_z = deltaTheta.z();
+
+    packedData = (uint8_t*) &data;
+}
