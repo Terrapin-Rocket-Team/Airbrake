@@ -2,7 +2,7 @@
 #include <MMFS.h>
 
 #include "airbrake_state.h"
-//#include "vn_100.h"
+#include "vn_100.h"
 #include "AirbrakeKF.h"
 #include "e5.h"
 
@@ -15,15 +15,15 @@ const int brk_pin = 3;
 const int dir_pin = 5; 
 
 E5 enc(enc_chan_a, enc_chan_b, "E5");
-//VN_100 vn(&SPI, 10);
+VN_100 vn(&SPI, 10);
 
-mmfs::Sensor* airbrake_sensors[1] = {&enc};
+mmfs::Sensor* airbrake_sensors[2] = {&enc, &vn};
 AirbrakeKF kf;
 mmfs::Logger logger;
 
 mmfs::ErrorHandler errorHandler;
 mmfs::PSRAM *psram;
-AirbrakeState AIRBRAKE(airbrake_sensors, 1, &kf);
+AirbrakeState AIRBRAKE(airbrake_sensors, 2, &kf);
 
 const int UPDATE_RATE = 10;
 const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
@@ -65,16 +65,6 @@ void loop() {
     //AIRBRAKE.update_cda_estimate();
 
     Serial.println(enc.getSteps());
-
-    // if(millis() > 25000){
-    //     logger.recordLogData(mmfs::INFO_, "Stopping Motor");
-    //     digitalWrite(brk_pin, HIGH);
-    // }
-    // else if(millis() > 20000){
-    //     logger.recordLogData(mmfs::INFO_, "Going the other way");
-    //     digitalWrite(dir_pin, HIGH);
-    // }
-    delay(50);
 
     //double tilt = ab_imu.getOrientationGlobal().x(); // TODO change this
     //AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
