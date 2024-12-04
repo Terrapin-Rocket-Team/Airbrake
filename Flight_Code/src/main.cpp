@@ -5,6 +5,10 @@
 #include "AirbrakeKF.h"
 #include "e5.h"
 
+const int BUZZER_PIN = 1; //TODO changes this
+int allowedPins[] = {BUZZER_PIN};
+BlinkBuzz bb(allowedPins, 1, true);
+
 // Encoder pins
 const int enc_chan_a = 36;
 const int enc_chan_b = 37;
@@ -18,10 +22,10 @@ VN_100 vn(&SPI, 10);
 
 mmfs::DPS310 baro1;
 mmfs::MS5611 baro2;
-mmfs::BMI088andLIS3MDL imu;
+mmfs::BMI088andLIS3MDL airbrake_imu;
 mmfs::MAX_M10S gps;
 
-mmfs::Sensor* airbrake_sensors[6] = {&baro1, &baro2, &imu, &gps, &enc, &vn};
+mmfs::Sensor* airbrake_sensors[6] = {&baro1, &baro2, &airbrake_imu, &gps, &enc, &vn};
 AirbrakeKF kf;
 mmfs::Logger logger;
 mmfs::ErrorHandler errorHandler;
@@ -32,6 +36,8 @@ const int SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
 
 const int UPDATE_RATE = 10;
 const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
+
+mmfs::ErrorHandler errorHandler;
 
 void setup() {
     Serial.begin(115200);
