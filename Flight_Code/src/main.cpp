@@ -7,7 +7,7 @@
 
 
 // Buzzer
-const int BUZZER_PIN = 1; //TODO changes this
+const int BUZZER_PIN = 23;
 int allowedPins[] = {BUZZER_PIN};
 BlinkBuzz bb(allowedPins, 1, true);
 
@@ -61,9 +61,33 @@ void setup() {
 
     logger.recordLogData(mmfs::INFO_, "Entering Setup");
 
-    // Initialize State (runs Begin/Init for each sensor)
-    AIRBRAKE.init();
+    // Check the sd card
+    if (!(logger.isSdCardReady())){
+        logger.recordLogData(mmfs::INFO_, "SD Card Failed to Initialize");
+        bb.onoff(BUZZER_PIN, 200, 3);
+    } else{
+        bb.onoff(BUZZER_PIN, 1000, 1);
+    }
 
+    // Check the psram
+    if (!(logger.isPsramReady())){
+        logger.recordLogData(mmfs::INFO_, "PSRAM Failed to Initialize");
+        bb.onoff(BUZZER_PIN, 200, 3);
+    } else {
+        bb.onoff(BUZZER_PIN, 1000, 1);
+    } 
+    
+    // Initialize State (runs Begin/Init for each sensor)
+    if(!AIRBRAKE.init()){
+        logger.recordLogData(mmfs::INFO_, "State Failed to Completely Initialize");
+        bb.onoff(BUZZER_PIN, 200, 3);
+    } else{ 
+        bb.onoff(BUZZER_PIN, 1000, 1);
+        baro1.setBiasCorrectionMode(true);
+        baro2.setBiasCorrectionMode(true);
+        gps.setBiasCorrectionMode(true);
+    }
+    logger.writeCsvHeader();
     logger.recordLogData(mmfs::INFO_, "Leaving Setup");
 }
 
@@ -71,6 +95,18 @@ void setup() {
 void loop() {
     // Record and log data and set stage
     AIRBRAKE.updateState();
+    logger.recordFlightData();
+
+    if(AIRBRAKE.stage == BOOST){
+        baro1.setBiasCorrectionMode(false);
+        baro2.setBiasCorrectionMode(false);
+        gps.setBiasCorrectionMode(false);
+    }
+
+    Serial.println(enc.getSteps());
+
+    digitalWrite(brk_pin, LOW);
+    digitalWrite(dir_pin, HIGH);
 
 
     if(AIRBRAKE.stage == DEPLOY){
