@@ -31,13 +31,9 @@ mmfs::Logger logger;
 mmfs::ErrorHandler errorHandler;
 mmfs::PSRAM *psram;
 AirbrakeState AIRBRAKE(airbrake_sensors, 6, &kf);
-const int SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
-const int SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
 
 const int UPDATE_RATE = 10;
 const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
-
-mmfs::ErrorHandler errorHandler;
 
 void setup() {
     Serial.begin(115200);
