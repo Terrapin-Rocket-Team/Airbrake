@@ -13,6 +13,6 @@ bool E5::init()
 
 void E5::read()
 {
-    currentRelativeSteps += myEnc.read();
+    currentRelativeSteps = myEnc.read();
 }
 

@@ -14,6 +14,12 @@ enum AirbrakeStages {
     LANDED
 };
 
+// Motor driver pins
+const int brk_pin = 3; 
+const int dir_pin = 5;
+
+const int stepGranularity = 1000;
+
 class AirbrakeState: public mmfs::State{
 
 public:
@@ -45,6 +51,11 @@ public:
 
     // Helper Functions
     void setAirbrakeStage();
+
+    // Motor and encoder functions
+    void goToStep(int step);
+    void goToDegree(int degree);
+    int desiredStep = 0;
 
     // Airbrake functions from last year
     // int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);

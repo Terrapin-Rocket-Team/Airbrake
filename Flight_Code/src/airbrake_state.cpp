@@ -2,15 +2,38 @@
 
 #include "airbrake_state.h"
 
+
+
 void AirbrakeState::updateState(double newTime) {
     mmfs::State::updateState(newTime); // call base version for sensor updates
     setAirbrakeStage();
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+    
+    if(enc->getSteps() - desiredStep > stepGranularity) {
+        digitalWrite(dir_pin, LOW);
+        digitalWrite(brk_pin, LOW);
+    }
+    else if(enc->getSteps() - desiredStep < -stepGranularity) {
+        digitalWrite(dir_pin, HIGH);
+        digitalWrite(brk_pin, LOW);
+    }
+    else {
+        digitalWrite(brk_pin, HIGH);
+    }
+
 }
 
 void AirbrakeState::setAirbrakeStage(){
     // TODO implement this
 }
 
+void AirbrakeState::goToStep(int step) {
+    desiredStep = step;
+}
+
+void AirbrakeState::goToDegree(int degree) {
+    desiredStep = degree * 10537;
+}
 
 // Airbrake Functions from last year
 // // Calculate Actuation Angle

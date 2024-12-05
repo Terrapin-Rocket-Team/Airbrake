@@ -15,10 +15,6 @@ BlinkBuzz bb(allowedPins, 1, true);
 const int enc_chan_a = 36;
 const int enc_chan_b = 37;
 
-// Motor driver pins
-const int brk_pin = 3; 
-const int dir_pin = 5;
-
 // Sensors
 E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
 VN_100 vn(&SPI, 10); // Vector Nav
@@ -105,9 +101,7 @@ void loop() {
 
     Serial.println(enc.getSteps());
 
-    digitalWrite(brk_pin, LOW);
-    digitalWrite(dir_pin, HIGH);
-
+    AIRBRAKE.goToStep(-50'000);
 
     if(AIRBRAKE.stage == DEPLOY){
         // Go to 15 degrees
