@@ -28,11 +28,17 @@ void AirbrakeState::setAirbrakeStage(){
 }
 
 void AirbrakeState::goToStep(int step) {
+    // Negative steps is opening the airbrake and positive is closing.
     desiredStep = step;
 }
 
 void AirbrakeState::goToDegree(int degree) {
-    desiredStep = degree * 10537;
+    // Check to make sure degree is within [0, 90]
+    if(degree > 90 || degree < 0) {
+        errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 90 (open).");
+        return;
+    }
+    desiredStep = -degree * 10537; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open
 }
 
 // Airbrake Functions from last year

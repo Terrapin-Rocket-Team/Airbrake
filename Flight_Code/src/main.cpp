@@ -104,7 +104,7 @@ void loop() {
     AIRBRAKE.goToStep(-50'000);
 
     if(AIRBRAKE.stage == DEPLOY){
-        // Go to 15 degrees
+        AIRBRAKE.goToDegree(15);
     }
 
 }
