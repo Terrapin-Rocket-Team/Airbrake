@@ -99,12 +99,11 @@ void loop() {
         gps.setBiasCorrectionMode(false);
     }
 
-    Serial.println(enc.getSteps());
-
-    AIRBRAKE.goToStep(-50'000);
-
     if(AIRBRAKE.stage == DEPLOY){
         AIRBRAKE.goToDegree(15);
+        // TODO after a few seconds go to 30 degrees
+    } else {
+        AIRBRAKE.goToDegree(0);
     }
 
 }

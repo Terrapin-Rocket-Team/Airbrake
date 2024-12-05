@@ -7,17 +7,19 @@
 void AirbrakeState::updateState(double newTime) {
     mmfs::State::updateState(newTime); // call base version for sensor updates
     setAirbrakeStage();
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
     
+    // Move the motor to desired location
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
     if(enc->getSteps() - desiredStep > stepGranularity) {
-        digitalWrite(dir_pin, LOW);
+        digitalWrite(dir_pin, LOW); // Open the flaps
         digitalWrite(brk_pin, LOW);
     }
     else if(enc->getSteps() - desiredStep < -stepGranularity) {
-        digitalWrite(dir_pin, HIGH);
+        digitalWrite(dir_pin, HIGH); // Close the flaps
         digitalWrite(brk_pin, LOW);
     }
     else {
+        // If the encoder is within the margin defined by stepGranularity, turn the motor off
         digitalWrite(brk_pin, HIGH);
     }
 
