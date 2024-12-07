@@ -29,7 +29,7 @@ AirbrakeKF kf;
 AirbrakeState AIRBRAKE(airbrake_sensors, 5, &kf, BUZZER_PIN);
 
 // MMFS Stuff
-mmfs::Logger logger(10, 5);
+mmfs::Logger logger(120, 5);
 mmfs::ErrorHandler errorHandler;
 mmfs::PSRAM *psram;
 const int UPDATE_RATE = 10;
@@ -98,6 +98,7 @@ void loop() {
     last = millis();
 
     // Record and log data and set stage
+    Serial.println(airbrake_imu.getAccelerationGlobal().z());
     AIRBRAKE.updateState();
     logger.recordFlightData();
     //Serial.println(airbrake_imu.getOrientation().z());

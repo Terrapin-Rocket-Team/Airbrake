@@ -30,7 +30,7 @@ void AirbrakeState::setAirbrakeStage(){
     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));
     
-    if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 20){
+    if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 50){
         logger.setRecordMode(mmfs::FLIGHT);
         bb.aonoff(buzzerPin, 200);
         stage = BOOST;
@@ -50,7 +50,7 @@ void AirbrakeState::setAirbrakeStage(){
         bb.aonoff(buzzerPin, 200, 2);
         timeOfLastStage = currentTime;
         stage = COAST;
-        logger.recordLogData(mmfs::INFO_, "Coasting detected.");
+        logger.recordLogData(mmfs::INFO_, "Boost detected.");
     }
     else if(stage == COAST && (currentTime - timeOfLastStage) > 1){ 
         bb.aonoff(buzzerPin, 200, 2);
