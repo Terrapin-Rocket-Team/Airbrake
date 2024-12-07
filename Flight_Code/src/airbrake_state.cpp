@@ -9,24 +9,97 @@ void AirbrakeState::updateState(double newTime) {
     setAirbrakeStage();
     
     // Move the motor to desired location
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-    if(enc->getSteps() - desiredStep > stepGranularity) {
-        digitalWrite(dir_pin, LOW); // Open the flaps
-        digitalWrite(brk_pin, LOW);
-    }
-    else if(enc->getSteps() - desiredStep < -stepGranularity) {
-        digitalWrite(dir_pin, HIGH); // Close the flaps
-        digitalWrite(brk_pin, LOW);
-    }
-    else {
-        // If the encoder is within the margin defined by stepGranularity, turn the motor off
-        digitalWrite(brk_pin, HIGH);
-    }
+    // auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+    // if(enc->getSteps() - desiredStep > stepGranularity) {
+    //     digitalWrite(dir_pin, LOW); // Open the flaps
+    //     digitalWrite(brk_pin, LOW);
+    // }
+    // else if(enc->getSteps() - desiredStep < -stepGranularity) {
+    //     digitalWrite(dir_pin, HIGH); // Close the flaps
+    //     digitalWrite(brk_pin, LOW);
+    // }
+    // else {
+    //     // If the encoder is within the margin defined by stepGranularity, turn the motor off
+    //     digitalWrite(brk_pin, HIGH);
+    // }
 
 }
 
 void AirbrakeState::setAirbrakeStage(){
-    // TODO implement this
+    int timeSinceLaunch = currentTime - timeOfLaunch;
+    mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
+    mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));
+    
+    if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 20){
+        logger.setRecordMode(mmfs::FLIGHT);
+        bb.aonoff(buzzerPin, 200);
+        stage = BOOST;
+        timeOfLaunch = currentTime;
+        timeOfLastStage = currentTime;
+        logger.recordLogData(mmfs::INFO_, "Launch detected.");
+        logger.recordLogData(mmfs::INFO_, "Printing static data.");
+        for (int i = 0; i < maxNumSensors; i++)
+        {
+            if (sensorOK(sensors[i]))
+            {
+                sensors[i]->setBiasCorrectionMode(false);
+            }
+        }
+    }
+    else if(stage == BOOST && imu->getAccelerationGlobal().z() < 0){
+        bb.aonoff(buzzerPin, 200, 2);
+        timeOfLastStage = currentTime;
+        stage = COAST;
+        logger.recordLogData(mmfs::INFO_, "Coasting detected.");
+    }
+    else if(stage == COAST && (currentTime - timeOfLastStage) > 1){ 
+        bb.aonoff(buzzerPin, 200, 2);
+        timeOfLastStage = currentTime;
+        stage = DEPLOY;
+        logger.recordLogData(mmfs::INFO_, "Coasting detected.");
+    }
+    else if(stage == DEPLOY && baroVelocity <= 0 && (currentTime - timeOfLastStage) > 5){
+        bb.aonoff(buzzerPin, 200, 2);
+        timeOfLastStage = currentTime;
+        char logData[100];
+        snprintf(logData, 100, "Apogee detected at %.2f m.", position.z());
+        logger.recordLogData(mmfs::INFO_, logData);
+        stage = DROUGE;
+        logger.recordLogData(mmfs::INFO_, "Drogue detected.");
+    }
+    else if(stage == DROUGE && baro->getAGLAltFt() < 1000){ 
+        bb.aonoff(buzzerPin, 200, 2);
+        timeOfLastStage = currentTime;
+        stage = MAIN;
+        logger.recordLogData(mmfs::INFO_, "Main detected.");
+    }
+    else if(stage == MAIN && ((baro->getAGLAltFt() < 100) || ((currentTime - timeOfLastStage) > 60))){
+        bb.aonoff(buzzerPin, 200, 2);
+        timeOfLastStage = currentTime;
+        stage = LANDED;
+        logger.recordLogData(mmfs::INFO_, "Landing detected.");
+        logger.setRecordMode(mmfs::GROUND);
+        logger.recordLogData(mmfs::INFO_, "Dumped data after landing.");
+    }
+    else if (stage == LANDED && currentTime - timeOfLastStage > 60) // TODO check if it can dump data in 60 seconds
+    {
+        stage = DUMPED;
+    }
+    else if((stage == PRELAUNCH || stage == BOOST) && baro->getAGLAltFt() > 250){
+        logger.setRecordMode(mmfs::FLIGHT);
+        bb.aonoff(buzzerPin, 200, 2);
+        timeOfLastStage = currentTime;
+        stage = COAST;
+        logger.recordLogData(mmfs::INFO_, "Launch detected. Using Backup Condition.");
+        logger.recordLogData(mmfs::INFO_, "Printing static data.");
+        for (int i = 0; i < maxNumSensors; i++)
+        {
+            if (sensorOK(sensors[i]))
+            {
+                sensors[i]->setBiasCorrectionMode(false);
+            }
+        }
+    }
 }
 
 void AirbrakeState::goToStep(int step) {
@@ -35,8 +108,8 @@ void AirbrakeState::goToStep(int step) {
 }
 
 void AirbrakeState::goToDegree(int degree) {
-    // Check to make sure degree is within [0, 90]
-    if(degree > 90 || degree < 0) {
+    // Check to make sure degree is within [-90, 90]
+    if(degree > 90 || degree < -90) {
         errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 90 (open).");
         return;
     }

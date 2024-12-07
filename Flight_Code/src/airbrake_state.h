@@ -11,7 +11,8 @@ enum AirbrakeStages {
     DEPLOY,
     DROUGE,
     MAIN,
-    LANDED
+    LANDED,
+    DUMPED
 };
 
 // Motor driver pins
@@ -23,6 +24,8 @@ const int stepGranularity = 1000;
 class AirbrakeState: public mmfs::State{
 
 public:
+
+    int buzzerPin = 0;
 
     // Flight configuation parameters
     // double empty_mass = 40;      // in kg
@@ -44,8 +47,8 @@ public:
     AirbrakeStages stage = PRELAUNCH;
 
     // Construtor
-    AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter)
-    : mmfs::State(sensors, numSensors, kfilter) {}
+    AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter, int buzzPin)
+    : mmfs::State(sensors, numSensors, kfilter) {buzzerPin = buzzPin;}
 
     void updateState(double newTime = -1) override;
 
@@ -64,6 +67,8 @@ public:
     // void update_cda_estimate();
 
 private:
+    double timeOfLaunch;
+    double timeOfLastStage;
 
 };
 
