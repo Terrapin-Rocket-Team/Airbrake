@@ -1,5 +1,5 @@
 
-classdef LinearKalmanFilter
+classdef LinearKalmanFilterMoreMeasurements
     properties
         F % State Transition Matrix
         G % Control Matrix
@@ -18,7 +18,7 @@ classdef LinearKalmanFilter
 
     methods
         % Constructor
-        function obj = LinearKalmanFilter(X, P, U, dt)
+        function obj = LinearKalmanFilterMoreMeasurements(X, P, U, dt)
             if nargin ~= 3 && (~ismatrix(U) || ~ismatrix(X) || ~ismatrix(P))
                 error('Incorrect amount of arguments passed in or incorrect arg formats.');
             end
@@ -27,7 +27,7 @@ classdef LinearKalmanFilter
             obj.X = X;
             obj.P = P;
 
-            obj.R = eye(3) * obj.meas_uncertainity;
+            obj.R = eye(5) * obj.meas_uncertainity;
             obj = obj.calculateInitialValues(dt);
         end
 
@@ -68,7 +68,9 @@ classdef LinearKalmanFilter
                         0, 0,       dt];
             obj.H =    [1, 0, 0, 0, 0, 0;
                         0, 1, 0, 0, 0, 0;
-                        0, 0, 1, 0, 0, 0;];
+                        0, 0, 1, 0, 0, 0;
+                        0, 0, 1, 0, 0, 0;
+                        0, 0, 1, 0, 0, 0];
             
             obj.Q = [(dt^4)/4, 0, 0, 0, 0, 0;
                      0, (dt^4)/4, 0, 0, 0, 0;
