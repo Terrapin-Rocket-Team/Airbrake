@@ -1,4 +1,4 @@
-function plotFilterResults(dataType, data, output)
+function plotFilterResults(dataType, data, output, P_output)
      
 % Plot Z position vs time (Actual, Measured, Output)
 figure;
@@ -193,6 +193,32 @@ if dataType ~= DataType.Flight
     title('z Velo State Error vs Time');
     legend show;
     grid on;
+end
+
+if dataType ~= DataType.Flight
+    % Calculated NEES
+    NEES = [];
+    for i = 1:height(output)
+        X_true = [data.r_x(i); data.r_y(i); data.r_z(i); data.v_x(i); data.v_y(i); data.v_z(i)];
+        X_est = [output.r_output_x(i); output.r_output_y(i); output.r_output_z(i); 
+            output.v_output_x(i); output.v_output_y(i); output.v_output_z(i)];
+        NEES = [NEES; (X_true - X_est)' * P_output(:, :, i) * (X_true - X_est) / 6];
+    end
+
+    % Plot NEES
+    figure;
+    plot(data.t, NEES);
+    xlabel('Time (s)');
+    ylabel('NEES');
+    ylim([0, 10])
+    title('Normalized Estimation Error Squared (NEES)');
+    legend show;
+    grid on;
+end
+
+if dataType ~= DataType.Flight
+    % Calculated NEES
+    fprintf('Max Altitude Diff: %.2f [m]\n', max(data.r_z) - max(output.r_output_z));
 end
 
 end

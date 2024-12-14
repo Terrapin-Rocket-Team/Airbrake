@@ -10,7 +10,7 @@ clc
 
 %% Section 0: Set Simulation Parameters
 % Set this var to where the data will come from [Mock, OpenRocket, Flight]
-dataType = DataType.Flight;
+dataType = DataType.OpenRocket;
 mockDataFile = 'mock_1.csv';
 openRocketDataFile = 'openrocket_2024_30k.csv';
 flightDataFile = 'avionics_12_8_24_post.csv';
@@ -122,6 +122,7 @@ r_output_z = [kf.X(3)];
 v_output_x = [kf.X(4)];
 v_output_y = [kf.X(5)];
 v_output_z = [kf.X(6)];
+P_output = [P];
 
 % Run filter
 for i = 2:length(data.t)
@@ -135,10 +136,11 @@ for i = 2:length(data.t)
     v_output_x = [v_output_x; kf.X(4)];
     v_output_y = [v_output_y; kf.X(5)];
     v_output_z = [v_output_z; kf.X(6)];
+    P_output = cat(3, P_output, kf.P);
 end
 
-output = table(r_output_x, r_output_y, r_output_z, v_output_x, v_output_y, v_output_z);
+X_output = table(r_output_x, r_output_y, r_output_z, v_output_x, v_output_y, v_output_z);
 
 %% Section 3: Analyize Output
 
-plotFilterResults(dataType, data, output)
+plotFilterResults(dataType, data, X_output, P_output)
