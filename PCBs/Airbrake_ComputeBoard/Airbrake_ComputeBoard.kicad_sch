@@ -2147,6 +2147,142 @@
 				)
 			)
 		)
+		(symbol "Device:C"
+			(pin_numbers hide)
+			(pin_names
+				(offset 0.254)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(property "Reference" "C"
+				(at 0.635 2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "C"
+				(at 0.635 -2.54 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" ""
+				(at 0.9652 -3.81 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Datasheet" "~"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "Description" "Unpolarized capacitor"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_keywords" "cap capacitor"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(property "ki_fp_filters" "C_*"
+				(at 0 0 0)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(hide yes)
+				)
+			)
+			(symbol "C_0_1"
+				(polyline
+					(pts
+						(xy -2.032 -0.762) (xy 2.032 -0.762)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.032 0.762) (xy 2.032 0.762)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "C_1_1"
+				(pin passive line
+					(at 0 3.81 270)
+					(length 2.794)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -3.81 90)
+					(length 2.794)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+		)
 		(symbol "Device:R"
 			(pin_numbers hide)
 			(pin_names
@@ -4528,7 +4664,7 @@
 		(uuid "2507518e-21a1-4b0a-a199-c0da6f489486")
 	)
 	(label "Encoder_B"
-		(at 166.37 120.65 180)
+		(at 166.37 115.57 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4583,7 +4719,7 @@
 		(uuid "3948de8b-10ca-43fb-8df1-afe5b0613e21")
 	)
 	(label "SV"
-		(at 166.37 115.57 180)
+		(at 166.37 125.73 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4605,7 +4741,7 @@
 		(uuid "45710418-08ed-4906-b1e6-1ad991cefc87")
 	)
 	(label "SV_5V"
-		(at 191.77 115.57 0)
+		(at 191.77 125.73 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4660,7 +4796,7 @@
 		(uuid "5b646e88-543c-4591-bf35-438de9ba6692")
 	)
 	(label "BK"
-		(at 166.37 110.49 180)
+		(at 166.37 120.65 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4737,7 +4873,7 @@
 		(uuid "7a030130-557a-49cf-83d3-91dab684ae1a")
 	)
 	(label "Encoder_B_5V"
-		(at 191.77 120.65 0)
+		(at 191.77 115.57 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4869,7 +5005,7 @@
 		(uuid "b6110da7-8e94-4ffd-95e0-61092a9372e5")
 	)
 	(label "Encoder_A"
-		(at 166.37 125.73 180)
+		(at 166.37 110.49 180)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4891,7 +5027,7 @@
 		(uuid "c42ade89-a860-45da-b013-e8dd32b85c7d")
 	)
 	(label "BK_5V"
-		(at 191.77 110.49 0)
+		(at 191.77 120.65 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -4913,7 +5049,7 @@
 		(uuid "dc7dcb9d-09f5-4be4-bba3-02fb2c4b5f32")
 	)
 	(label "Encoder_A_5V"
-		(at 191.77 125.73 0)
+		(at 191.77 110.49 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -5093,6 +5229,72 @@
 			(project ""
 				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
 					(reference "#PWR032")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 144.78 107.95 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "0e74c35f-82c7-4ad5-9133-f9291bc67af7")
+		(property "Reference" "#PWR035"
+			(at 144.78 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 144.78 113.03 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 144.78 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 144.78 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 144.78 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "d32fc8c1-5e05-4cbc-be98-3ede29583268")
+		)
+		(instances
+			(project "Airbrake_ComputeBoard"
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "#PWR035")
 					(unit 1)
 				)
 			)
@@ -5891,7 +6093,7 @@
 				)
 			)
 		)
-		(property "Value" "10kΩ"
+		(property "Value" "180Ω"
 			(at 195.58 93.98 90)
 			(effects
 				(font
@@ -6141,6 +6343,72 @@
 		)
 	)
 	(symbol
+		(lib_id "power:GND")
+		(at 130.81 107.95 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "35e671c2-f356-45b0-8c8c-158e91538bf1")
+		(property "Reference" "#PWR029"
+			(at 130.81 114.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 130.81 113.03 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 130.81 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 130.81 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 130.81 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "3daa783b-28e4-4f2a-b980-9952387180a9")
+		)
+		(instances
+			(project "Airbrake_ComputeBoard"
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "#PWR029")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R")
 		(at 199.39 64.77 0)
 		(mirror y)
@@ -6158,7 +6426,7 @@
 				)
 			)
 		)
-		(property "Value" "10kΩ"
+		(property "Value" "180Ω"
 			(at 195.58 64.77 90)
 			(effects
 				(font
@@ -7053,6 +7321,76 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C")
+		(at 130.81 104.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "74317449-08ec-46e8-a1df-f68040f45c07")
+		(property "Reference" "C1"
+			(at 134.62 102.8699 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.1µF"
+			(at 134.62 105.4099 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
+			(at 131.7752 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 130.81 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 130.81 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "a8fe64df-8e16-4f84-8210-1cf68cc654e6")
+		)
+		(pin "1"
+			(uuid "dcda482f-641c-462e-b909-ce1de308be73")
+		)
+		(instances
+			(project ""
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "C1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 199.39 68.58 0)
 		(unit 1)
@@ -7242,6 +7580,72 @@
 			(project "Airbrake_ComputeBoard"
 				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
 					(reference "H1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 144.78 100.33 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "8f1a4a26-82f0-44e2-a96d-5d9ccb954cd8")
+		(property "Reference" "#PWR030"
+			(at 144.78 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+5V"
+			(at 144.78 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 144.78 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 144.78 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 144.78 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "f177fcfa-1de0-4b76-966b-4241a6773a29")
+		)
+		(instances
+			(project "Airbrake_ComputeBoard"
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "#PWR030")
 					(unit 1)
 				)
 			)
@@ -7533,6 +7937,76 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C")
+		(at 144.78 104.14 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "9a9e3bf3-dcdb-4ea1-a725-aae0428ba3bb")
+		(property "Reference" "C2"
+			(at 148.59 102.8699 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "0.1µF"
+			(at 148.59 105.4099 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder"
+			(at 145.7452 107.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "~"
+			(at 144.78 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 144.78 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "9eb8aa71-96aa-4903-929a-79911d7655c8")
+		)
+		(pin "1"
+			(uuid "7bc9fefd-163a-48ee-9735-6c3451e55274")
+		)
+		(instances
+			(project "Airbrake_ComputeBoard"
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "C2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Mechanical:MountingHole")
 		(at 132.08 80.01 0)
 		(unit 1)
@@ -7591,6 +8065,72 @@
 			(project "Airbrake_ComputeBoard"
 				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
 					(reference "H2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3.3V")
+		(at 130.81 100.33 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "9f8df904-1c20-43f0-99a6-dff15bb9e82c")
+		(property "Reference" "#PWR028"
+			(at 130.81 104.14 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "+3.3V"
+			(at 130.81 95.25 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 130.81 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 130.81 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+			(at 130.81 100.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "fc05aaa7-2e77-4039-8d0b-71398628b3c7")
+		)
+		(instances
+			(project "Airbrake_ComputeBoard"
+				(path "/a93fadd6-4c47-4cef-bf58-a00d85999e83"
+					(reference "#PWR028")
 					(unit 1)
 				)
 			)
@@ -8415,7 +8955,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_JST:JST_XH_B2B-XH-A_1x02_P2.50mm_Vertical"
 			(at 217.17 135.89 0)
 			(effects
 				(font
