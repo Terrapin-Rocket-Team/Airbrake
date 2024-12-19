@@ -466,10 +466,10 @@
       "gencad": "",
       "idf": "",
       "netlist": "",
-      "plot": "Airbrake_ComputeBoard_v1.1/",
+      "plot": "Airbrake_ComputeBoard_v1.2/",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "Airbrake_ComputeBoard_v1_2.step",
       "svg": "",
       "vrml": ""
     },
