@@ -10,10 +10,12 @@ clc
 
 %% Section 0: Set Simulation Parameters
 % Set this var to where the data will come from [Mock, OpenRocket, Flight]
-dataType = DataType.OpenRocket;
+dataType = DataType.Mock;
 mockDataFile = 'mock_1.csv';
 openRocketDataFile = 'openrocket_2024_30k.csv';
 flightDataFile = 'avionics_12_8_24_post.csv';
+
+filterType = FilterType.LKFMM;
 
 % Set sensor gaussian noise
 accelNoise = .1; % standard deviation w/ units m/s^2
@@ -27,11 +29,15 @@ g = 9.81; % m/s^2
 
 % Create mock rocket
 if dataType == DataType.Mock
-    rocketMotorAccel = 125; % m/s^2
+    rocketThrust = 1650; % [N]
+    rocketDryMass = 90; % kg
+    rocketWetMass = 125; % kg
     rocketMotorBurnTime = 5; % seconds
     rocketDragCoef = .5;
     rocketCrossSectionalArea = 0.1524*0.1524*pi; % 6in diameter in m^2 
-    rocket = rocket(rocketMotorAccel, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
+    rocket = rocket(rocketThrust, rocketWetMass, rocketDryMass, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
+    tilt = 0;
+    yaw = 0;
     
     % Generate Mock Data
     mockDataFolder = 'MockData';
@@ -114,7 +120,14 @@ P = 500 * [1 0 0 0 0 0;
            0 0 0 0 1 0;
            0 0 0 0 0 1];
 initial_dt = data.t(2) - data.t(1);
-kf = LinearKalmanFilterMoreMeasurements(initial_state, P, initial_control, initial_dt);
+
+if(filterType == FilterType.LKF)
+    kf = LinearKalmanFilterMoreMeasurements(initial_state, P, initial_control, initial_dt);
+elseif (filterType == FilterType.LKFMM)
+    kf = LinearKalmanFilterMoreMeasurements(initial_state, P, initial_control, initial_dt);
+elseif (filterType == FilterType.EKF)
+    kf = ExtendedKalmanFilter(initial_state, P, initial_dt, wet_mass, dry_mass, rocketMotorBurnTime);
+end
 
 r_output_x = [kf.X(1)];
 r_output_y = [kf.X(2)];

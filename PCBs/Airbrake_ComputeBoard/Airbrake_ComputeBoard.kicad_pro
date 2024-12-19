@@ -469,7 +469,7 @@
       "plot": "Airbrake_ComputeBoard_v1.1/",
       "pos_files": "",
       "specctra_dsn": "",
-      "step": "",
+      "step": "../../../../../Downloads/Airbrake_ComputeBoard.step",
       "svg": "",
       "vrml": ""
     },

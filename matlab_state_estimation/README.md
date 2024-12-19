@@ -109,7 +109,7 @@ x_{gps} \\ y_{gps} \\ z_{gps} \\ z_{baro1} \\ z_{baro2} \\ \ddot{x}_{imu} \\ \dd
 x \\ y \\ z \\ z \\ z \\
 \frac{-F_{D_R}}{m(t)}sin([IB]_{33})cos([IB]_{11})\\
 \frac{-F_{D_R}}{m(t)}sin([IB]_{33})sin([IB]_{11})\\
-\frac{-F_{D_R}}{m(t)}cos([IB]_{33}) + \frac{-g}{m(t)}
+\frac{-F_{D_R}}{m(t)}cos([IB]_{33})
 \end{bmatrix}
 $$
 

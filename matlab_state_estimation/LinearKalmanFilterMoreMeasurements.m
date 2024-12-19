@@ -26,11 +26,11 @@ classdef LinearKalmanFilterMoreMeasurements
             obj.X = X;
             obj.P = P;
 
-            obj.R = [1, 0, 0, 0, 0;
-                     0, 1, 0, 0, 0;
-                     0, 0, 1, 0, 0;
-                     0, 0, 0, .2, 0;
-                     0, 0, 0, 0, .5;];
+            obj.R = [1.^2, 0, 0, 0, 0;
+                     0, 1.^2, 0, 0, 0;
+                     0, 0, 1.^2, 0, 0;
+                     0, 0, 0, .2.^2, 0;
+                     0, 0, 0, 0, .5.^2;];
             obj = obj.calculateInitialValues(dt);
         end
 

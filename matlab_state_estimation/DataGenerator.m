@@ -38,10 +38,18 @@ while r_z(i) > 0
     else
         aoa = -1;
     end
+
     if t(i) < rocket.burnTime
-        a_z(i) = rocket.motorAccel + aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) - 9.8;
+        m = rocket.wetMass - rocket.mdot * t(i);
     else
-        a_z(i) = aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) - 9.8;
+        m = rocket.dryMass;
+    end
+
+    if t(i) < rocket.burnTime
+        motorAccel = rocket.thrust / m;
+        a_z(i) = motorAccel - aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1)*v_z(i-1) - 9.8;
+    else
+        a_z(i) = aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1)*v_z(i-1) - 9.8;
     end
     
     % Update velocities using 1D kinematics in each direction
