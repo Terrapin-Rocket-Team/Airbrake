@@ -13,14 +13,14 @@ classdef LinearKalmanFilter
         c % Drag thing
 
         meas_uncertainity = .5;
-        process_noise = 2;
+        process_noise = 5;
     end
     
     % TODO get rid of hardcoded values
 
     methods
         % Constructor
-        function obj = LinearKalmanFilter(X, P, U)
+        function obj = LinearKalmanFilter(X, P, U, dt)
             if nargin ~= 3 && (~ismatrix(U) || ~ismatrix(X) || ~ismatrix(P))
                 error('Incorrect amount of arguments passed in or incorrect arg formats.');
             end
@@ -28,6 +28,9 @@ classdef LinearKalmanFilter
             obj.U = U;
             obj.X = X;
             obj.P = P;
+
+            obj.R = eye(3) * obj.meas_uncertainity;
+            obj = obj.calculateInitialValues(dt);
         end
 
         function obj = predictState(obj)
@@ -43,7 +46,7 @@ classdef LinearKalmanFilter
         end
 
         function obj = covarianceUpdate(obj)
-            n = 6;
+            n = size(obj.P, 1);
             obj.P = (eye(n) - obj.K*obj.H)*obj.P*(eye(n) - obj.K*obj.H)' + obj.K*obj.R*obj.K';
         end
 
@@ -65,6 +68,9 @@ classdef LinearKalmanFilter
                         dt, 0,        0;
                         0, dt,        0;
                         0, 0,       dt];
+            obj.H =    [1, 0, 0, 0, 0, 0;
+                        0, 1, 0, 0, 0, 0;
+                        0, 0, 1, 0, 0, 0];
             
             obj.Q = obj.G*obj.process_noise*obj.process_noise*obj.G';
             obj = predictState(obj);
@@ -73,8 +79,7 @@ classdef LinearKalmanFilter
 
         function obj = iterate(obj, dt, measurement, control)
             % Update step
-            z = measurement;
-            u = control;
+            obj.U = control;
 
             obj.F =    [1, 0, 0, dt, 0, 0;
                         0, 1, 0, 0, dt, 0;
@@ -82,28 +87,21 @@ classdef LinearKalmanFilter
                         0, 0, 0, 1, 0,  0;
                         0, 0, 0, 0, 1,  0;
                         0, 0, 0, 0, 0,  1];
-
-            obj.G =    [0.5*dt*dt, 0, 0;
-                        0, 0.5*dt*dt, 0;
-                        0, 0, 0.5*dt*dt;
-                        dt, 0,        0;
-                        0, dt,        0;
-                        0, 0,       dt];
-
-            obj.Q = obj.G*obj.process_noise*obj.process_noise*obj.G';
-
-            obj.R = [obj.meas_uncertainity];
-
-            obj.H = [1, 0, 0, 0, 0, 0;
-                     0, 1, 0, 0, 0, 0;
-                     0, 0, 1, 0, 0, 0];
-
-
+        
+            obj.G = [0.5*dt*dt, 0, 0;
+                     0, 0.5*dt*dt, 0;
+                     0, 0, 0.5*dt*dt;
+                     dt, 0,        0;
+                     0, dt,        0;
+                     0, 0,       dt];
+        
+            % Recalculate Q based on updated G
+            obj.Q = obj.G * obj.process_noise^2 * obj.G';
+        
+            % Kalman Filter Steps
             obj = calculateKalmanGain(obj);
             obj = estimateState(obj, measurement);
             obj = covarianceUpdate(obj);
-
-            % Predict step
             obj = predictState(obj);
             obj = covarianceExtrapolate(obj);
         end

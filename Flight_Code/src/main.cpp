@@ -1,24 +1,61 @@
 #include <Arduino.h>
-#include <MMFS.h>
 
 #include "airbrake_state.h"
+#include "vn_100.h"
 #include "AirbrakeKF.h"
+#include "e5.h"
 
-mmfs::BMP390 barometer;
-mmfs::BNO055 ab_imu; 
-mmfs::Sensor* airbrake_sensors[2] = {&barometer, &ab_imu};
+const int BUZZER_PIN = 1; //TODO changes this
+int allowedPins[] = {BUZZER_PIN};
+BlinkBuzz bb(allowedPins, 1, true);
+
+// Encoder pins
+const int enc_chan_a = 36;
+const int enc_chan_b = 37;
+
+// Motor driver pins
+const int brk_pin = 3; 
+const int dir_pin = 5; 
+
+E5 enc(enc_chan_a, enc_chan_b, "E5");
+VN_100 vn(&SPI, 10);
+
+mmfs::DPS310 baro1;
+mmfs::MS5611 baro2;
+mmfs::BMI088andLIS3MDL airbrake_imu;
+mmfs::MAX_M10S gps;
+
+mmfs::Sensor* airbrake_sensors[6] = {&baro1, &baro2, &airbrake_imu, &gps, &enc, &vn};
 AirbrakeKF kf;
 mmfs::Logger logger;
-AirbrakeState AIRBRAKE(airbrake_sensors, 2, &kf);
+mmfs::ErrorHandler errorHandler;
+mmfs::PSRAM *psram;
+AirbrakeState AIRBRAKE(airbrake_sensors, 6, &kf);
 
-const int SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
-const int SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
 const int UPDATE_RATE = 10;
 const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
 
 void setup() {
+    Serial.begin(115200);
+    SPI.setMOSI(11);
+    SPI.setMISO(12);
+    SPI.setSCK(13);
+    SPI.begin();
 
-    logger.init();
+    pinMode(brk_pin, OUTPUT);
+    pinMode(dir_pin, OUTPUT);
+    digitalWrite(brk_pin, LOW);
+    digitalWrite(dir_pin, HIGH);
+
+    SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
+    SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
+
+    psram = new mmfs::PSRAM();
+
+    logger.init(&AIRBRAKE);
+
+    AIRBRAKE.init();
+
 
     logger.recordLogData(mmfs::INFO_, "Entering Setup");
 
@@ -27,16 +64,15 @@ void setup() {
 }
 
 
-double previous_time = millis(); // TODO should this live as functionality in MMFS?
-double loop_time;
-
 void loop() {
-    loop_time = millis() - loop_time;
-    previous_time = millis();
+
+
+
     AIRBRAKE.updateState();
 
-    AIRBRAKE.update_cda_estimate();
+    //AIRBRAKE.update_cda_estimate();
 
-    double tilt = ab_imu.getOrientationGlobal().x(); // TODO change this
-    AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
+    Serial.println(enc.getSteps());
+    //double tilt = ab_imu.getOrientationGlobal().x(); // TODO change this
+    //AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
 }

@@ -13,7 +13,6 @@ enum AirbrakeStages {
     LANDED
 };
 
-
 class AirbrakeState: public mmfs::State{
 
 public:
@@ -38,8 +37,8 @@ public:
     AirbrakeStages stage = PRELAUNCH;
 
     // Construtor
-    AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter, bool stateRecordsOwnData = true)
-    : mmfs::State(sensors, numSensors, kfilter, stateRecordsOwnData) {}
+    AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter)
+    : mmfs::State(sensors, numSensors, kfilter) {}
 
     void updateState(double newTime = -1) override;
 
