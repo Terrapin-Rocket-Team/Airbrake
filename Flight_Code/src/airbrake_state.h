@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 #include <MMFS.h>
+#include "BR.h"
+#include "vn_100.h"
 
 enum AirbrakeStages {
     PRELAUNCH,
