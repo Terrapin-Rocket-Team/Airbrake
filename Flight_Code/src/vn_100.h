@@ -11,36 +11,34 @@ private:
 
     struct PackedData
     {
-        double ax;
-        double ay;
-        double az;
-        double ulrx;
-        double ulry;
-        double ulrz;
-        double quatx;
-        double quaty;
-        double quatz;
-        double quatw;
-        double angvx;
-        double angvy;
-        double angvz;
-        double magx;
-        double magy;
-        double magz;
-        double p;
-        double t;
-        double dt;
-        double dv_x;
-        double dv_y;
-        double dv_z;
-        double dth_x;
-        double dth_y;
-        double dth_z;
+        float ax;
+        float ay;
+        float az;
+        float ulrx;
+        float ulry;
+        float ulrz;
+        float angvx;
+        float angvy;
+        float angvz;
+        float magx;
+        float magy;
+        float magz;
+        float p;
+        float t;
+        float dt;
+        float dv_x;
+        float dv_y;
+        float dv_z;
+        float dth_x;
+        float dth_y;
+        float dth_z;
     } __attribute__((packed));
 
 public:
-    VN_100(SPIClass *spiBus, const uint8_t chipSelectPin) : vn(spiBus, chipSelectPin)
+    VN_100(SPIClass *spiBus, const uint8_t chipSelectPin, const char *name = "VN_100") : vn(spiBus, chipSelectPin)
     {
+        setName(name);
+        setUpPackedData();
     };
     virtual ~VN_100(){};
     virtual void calibrate();
@@ -55,7 +53,7 @@ public:
     virtual imu::Vector<3> getDeltaVelocity() const;
     virtual imu::Vector<3> getDeltaTheta() const;
     virtual double getDeltaTime() const;
-    virtual const mmfs::SensorType getType() const override { return mmfs::IMU_; } // TODO
+    virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; } // TODO
     virtual const char *getTypeString() const override { return "VN_100"; } // TODO
     
     virtual const int getNumPackedDataPoints() const override;
