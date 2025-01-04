@@ -99,7 +99,7 @@ void loop() {
     last = millis();
 
     // Record and log data and set stage
-    Serial.println(airbrake_imu.getAccelerationGlobal().z());
+    Serial.println(blueRaven.getTemperature());
     AIRBRAKE.updateState();
     logger.recordFlightData();
     //Serial.println(airbrake_imu.getOrientation().z());
