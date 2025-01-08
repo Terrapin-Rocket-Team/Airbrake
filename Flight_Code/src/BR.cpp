@@ -1,85 +1,76 @@
-#include "BR.h"
+#ifndef BR_H
+#define BR_H
 
+#include <MMFS.h>
+#include <USBHost_t36.h>
 
-bool BR::begin(bool useBiasCorrection) {
-    myusb.begin();
-    blueRaven.begin(115200);  // Baud rate doesn't matter but required
-    return init();
-}
+extern USBHost myusb;
 
-
-bool BR::init() {
-    return initialized = true;
-}
-
-void BR::update() {
-    read();
-    packData();
-}
-
-void BR::read() {
-    if (blueRaven.available()) {
-        int bytesRead = blueRaven.readBytesUntil('\n', buffer, BUFFER_SIZE);
-        buffer[bytesRead] = '\0';
-        
-        if (strncmp(buffer, "@ BLR_STAT", 10) == 0) {
-            parseMessage(buffer);
-        }
-    }
-}
-
-bool BR::parseMessage(const char* message) {
-    char* ptr;
+class BR : public mmfs::Sensor {
+private:
+    USBHub hub1;
+    USBSerial_BigBuffer blueRaven;
     
-    // Parse pressure
-    ptr = strstr(message, "Bo:");
-    if (ptr) {
-        sscanf(ptr, "Bo: %f", &pressure);
-    }
+    static const int BUFFER_SIZE = 512;
+    char buffer[BUFFER_SIZE];
     
-    // Parse altitude
-    ptr = strstr(message, "AGL");
-    if (ptr) {
-        sscanf(ptr, "AGL %f", &altitude);
-    }
+    struct PackedData {
+        float altitude;     // in feet
+        float pressure;     // in Pa
+        float temperature;  // in C
+        float velocity;     // in m/s
+        float angle;        // in degrees
+        float acceleration; // in m/s^2
+        float gyro;        // in rad/s
+    } __attribute__((packed));
     
-    // Parse temperature (if available in your data)
-    ptr = strstr(message, "temp:");
-    if (ptr) {
-        sscanf(ptr, "temp: %f", &temperature);
+    bool parseMessage(const char* message);
+
+protected:
+    float altitude = 0;      // in feet
+    float pressure = 0;      // in Pa
+    float temperature = 0;   // in C
+    float velocity = 0;      // in m/s
+    float angle = 0;        // in degrees
+    float acceleration = 0;  // in m/s^2
+    float gyro = 0;         // in rad/s
+
+public:
+    BR(const char *name = "BR") : 
+        mmfs::Sensor(),  // Add base class constructor
+        hub1(myusb), 
+        blueRaven(myusb, 1) 
+    {
+        setName(name);
+        setUpPackedData();
     }
     
-    return true;
-}
+    virtual ~BR() {}
 
-const int BR::getNumPackedDataPoints() const {
-    return 3; // altitude, pressure, temperature
-}
+    // Core functions
+    virtual bool begin(bool useBiasCorrection = true) override;
+    virtual bool init() override;
+    virtual void update() override;
+    virtual void read() override;
 
-const mmfs::PackedType* BR::getPackedOrder() const {
-    static const mmfs::PackedType result[] = {
-        mmfs::FLOAT, // altitude
-        mmfs::FLOAT, // pressure
-        mmfs::FLOAT  // temperature
-    };
-    return result;
-}
+    // Getters
+    float getAltitude() const { return altitude; }
+    float getPressure() const { return pressure; }
+    float getTemperature() const { return temperature; }
+    float getVelocity() const { return velocity; }
+    float getAngle() const { return angle; }
+    float getAcceleration() const { return acceleration; }
+    float getGyro() const { return gyro; }
 
-const char** BR::getPackedDataLabels() const {
-    static const char* labels[] = {
-        "BR-ALT (ft)",
-        "BR-PRES (Pa)",
-        "BR-TEMP (C)"
-    };
-    return labels;
-}
+    // Sensor type information
+    virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; }
+    virtual const char* getTypeString() const override { return "BLUE_RAVEN"; }
 
-void BR::packData() {
-    struct PackedData data;
-    data.altitude = altitude;
-    data.pressure = pressure;
-    data.temperature = temperature;
-    memcpy(packedData, &data, sizeof(PackedData));
-}
+    // Data packing functions
+    virtual const int getNumPackedDataPoints() const override;
+    virtual const mmfs::PackedType* getPackedOrder() const override;
+    virtual const char** getPackedDataLabels() const override;
+    virtual void packData() override;  // Add override specifier
+};
 
- // namespace mmfs
+#endif

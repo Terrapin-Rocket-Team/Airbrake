@@ -61,6 +61,7 @@ class BR : public mmfs::Sensor{
         float getVelocity() const { return velocity;}
         float getAcceleration() const { return acceleration;}
         float getGyro() const { return gyro;}
+        
         // Sensor type information
         virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; }
         virtual const char* getTypeString() const override { return "BLUE_RAVEN"; }
