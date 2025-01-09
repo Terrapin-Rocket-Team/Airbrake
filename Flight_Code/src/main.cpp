@@ -109,6 +109,9 @@ void loop() {
         gps.setBiasCorrectionMode(false);
     }
     
+
+    //Commented Code:
+    
     // if(AIRBRAKE.stage == DEPLOY){
     //     AIRBRAKE.goToDegree(-10);
     // } else {
