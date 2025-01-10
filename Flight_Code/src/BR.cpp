@@ -1,76 +1,177 @@
-#ifndef BR_H
-#define BR_H
+#include "BR.h"
+#include <math.h>
 
-#include <MMFS.h>
-#include <USBHost_t36.h>
+bool BR::begin(bool useBiasCorrection) {
+    myusb.begin();
+    //resetSensorValues();
+    return init();
+}
 
-extern USBHost myusb;
-
-class BR : public mmfs::Sensor {
-private:
-    USBHub hub1;
-    USBSerial_BigBuffer blueRaven;
-    
-    static const int BUFFER_SIZE = 512;
-    char buffer[BUFFER_SIZE];
-    
-    struct PackedData {
-        float altitude;     // in feet
-        float pressure;     // in Pa
-        float temperature;  // in C
-        float velocity;     // in m/s
-        float angle;        // in degrees
-        float acceleration; // in m/s^2
-        float gyro;        // in rad/s
-    } __attribute__((packed));
-    
-    bool parseMessage(const char* message);
-
-protected:
-    float altitude = 0;      // in feet
-    float pressure = 0;      // in Pa
-    float temperature = 0;   // in C
-    float velocity = 0;      // in m/s
-    float angle = 0;        // in degrees
-    float acceleration = 0;  // in m/s^2
-    float gyro = 0;         // in rad/s
-
-public:
-    BR(const char *name = "BR") : 
-        mmfs::Sensor(),  // Add base class constructor
-        hub1(myusb), 
-        blueRaven(myusb, 1) 
-    {
-        setName(name);
-        setUpPackedData();
+bool BR::init() {
+    if (!blueRaven) {
+        initialized = false;
+        return false;
     }
     
-    virtual ~BR() {}
+    initialized = true;
+    return true;
+}
 
-    // Core functions
-    virtual bool begin(bool useBiasCorrection = true) override;
-    virtual bool init() override;
-    virtual void update() override;
-    virtual void read() override;
+void BR::update() {
+    read();
+    packData();
+}
 
-    // Getters
-    float getAltitude() const { return altitude; }
-    float getPressure() const { return pressure; }
-    float getTemperature() const { return temperature; }
-    float getVelocity() const { return velocity; }
-    float getAngle() const { return angle; }
-    float getAcceleration() const { return acceleration; }
-    float getGyro() const { return gyro; }
+void BR::resetSensorValues() {
+    altitude = pressure = temperature = velocity = angle = 0;
+    accelX = accelY = accelZ = 0;
+    gyroX = gyroY = gyroZ = 0;
+    rollAngle = tiltAngle = 0;
+}
 
-    // Sensor type information
-    virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; }
-    virtual const char* getTypeString() const override { return "BLUE_RAVEN"; }
+void BR::read() {
+    if (blueRaven.available()) {
+        int bytesRead = blueRaven.readBytesUntil('\n', buffer, BUFFER_SIZE - 1);
+        if (bytesRead > 0) {
+            buffer[bytesRead] = '\0';
+            Serial.print("Raw message: ");
+            Serial.println(buffer);
+            if (strncmp(buffer, "@ BLR_STAT", 10) == 0) {
+                if (parseMessage(buffer)) {
+                    lastReadTime = millis();
+                    Serial.println("Message parsed successfully");
+                } else {
+                    Serial.println("Failed to parse message");
+                }
+            } else {
+                Serial.println("Received message does not start with @ BLR_STAT");
+            }
+        } else {
+            Serial.println("No bytes read from blueRaven");
+        }
+    } else {
+        Serial.println("No data available from blueRaven");
+    }
+    
+    if (!isConnected()) {
+        resetSensorValues();
+        Serial.println("Connection timed out. Sensor values reset.");
+    }
+}
 
-    // Data packing functions
-    virtual const int getNumPackedDataPoints() const override;
-    virtual const mmfs::PackedType* getPackedOrder() const override;
-    virtual const char** getPackedDataLabels() const override;
-    virtual void packData() override;  // Add override specifier
-};
 
-#endif
+
+bool BR::parseMessage(const char* message) {
+    if (!message) return false;
+    
+    char* ptr;
+    bool success = false;
+    float tempValues[3];  // Temporary storage for vector values
+    
+    // Parse accelerometer data
+    ptr = strstr(message, "HG:");
+    if (ptr && sscanf(ptr, "HG: %f %f %f", &tempValues[0], &tempValues[1], &tempValues[2]) == 3) {
+        accelX = tempValues[0];
+        accelY = tempValues[1];
+        accelZ = tempValues[2];
+        success = true;
+    }
+    
+    // Parse pressure and temperature
+    ptr = strstr(message, "Bo:");
+    if (ptr && sscanf(ptr, "Bo: %f %f", &pressure, &temperature) == 2) {
+        success = true;
+    }
+    
+    // Parse gyroscope data
+    ptr = strstr(message, "gy:");
+    if (ptr && sscanf(ptr, "gy: %f %f %f", &tempValues[0], &tempValues[1], &tempValues[2]) == 3) {
+        gyroX = tempValues[0];
+        gyroY = tempValues[1];
+        gyroZ = tempValues[2];
+        success = true;
+    }
+    
+    // Parse angle data
+    ptr = strstr(message, "ang:");
+    if (ptr && sscanf(ptr, "ang: %f %f", &tiltAngle, &rollAngle) == 2) {
+        success = true;
+    }
+    
+    // Parse velocity
+    ptr = strstr(message, "vel");
+    if (ptr && sscanf(ptr, "vel %f", &velocity) == 1) {
+        success = true;
+    }
+    
+    // Parse altitude
+    ptr = strstr(message, "AGL");
+    if (ptr && sscanf(ptr, "AGL %f", &altitude) == 1) {
+        success = true;
+    }
+    
+    return success;
+}
+
+const int BR::getNumPackedDataPoints() const {
+    return 13;  // Updated to match all data points
+}
+
+const mmfs::PackedType* BR::getPackedOrder() const {
+    static const mmfs::PackedType result[] = {
+        mmfs::FLOAT,  // altitude
+        mmfs::FLOAT,  // pressure
+        mmfs::FLOAT,  // temperature
+        mmfs::FLOAT,  // velocity
+        mmfs::FLOAT,  // angle
+        mmfs::FLOAT,  // accelX
+        mmfs::FLOAT,  // accelY
+        mmfs::FLOAT,  // accelZ
+        mmfs::FLOAT,  // gyroX
+        mmfs::FLOAT,  // gyroY
+        mmfs::FLOAT,  // gyroZ
+        mmfs::FLOAT,  // rollAngle
+        mmfs::FLOAT   // tiltAngle
+    };
+    return result;
+}
+
+const char** BR::getPackedDataLabels() const {
+    static const char* labels[] = {
+        "BR-ALT (ft)",
+        "BR-PRES (Pa)",
+        "BR-TEMP (C)",
+        "BR-VEL (m/s)",
+        "BR-ANG (deg)",
+        "BR-ACCX (m/s^2)",
+        "BR-ACCY (m/s^2)",
+        "BR-ACCZ (m/s^2)",
+        "BR-GYROX (rad/s)",
+        "BR-GYROY (rad/s)",
+        "BR-GYROZ (rad/s)",
+        "BR-ROLL (deg)",
+        "BR-TILT (deg)"
+    };
+    return labels;
+}
+
+void BR::packData() {
+    if (!initialized) return;
+    
+    PackedData data = {
+        altitude,
+        pressure,
+        temperature,
+        velocity,
+        angle,
+        accelX,
+        accelY,
+        accelZ,
+        gyroX,
+        gyroY,
+        gyroZ,
+        rollAngle,
+        tiltAngle
+    };
+    memcpy(packedData, &data, sizeof(PackedData));
+}
