@@ -17,6 +17,7 @@ enum AirbrakeStages {
 
 // Motor driver pins
 const int brk_pin = 3; 
+const int stop_pin = 4; //set to low to STOP the motor, high to let the motor move (it is just an enable pin)
 const int dir_pin = 5;
 
 const int stepGranularity = 1000;
