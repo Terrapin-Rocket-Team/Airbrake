@@ -4,6 +4,7 @@
 #include "vn_100.h"
 #include "AirbrakeKF.h"
 #include "e5.h"
+#include "BR.h"
 
 
 // Buzzer
@@ -22,11 +23,12 @@ mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
 mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
 mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
-mmfs::Sensor* airbrake_sensors[6] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc};
+BR blueRaven;
+mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc, &blueRaven};
 
 // Initialize Airbrake State
 AirbrakeKF kf;
-AirbrakeState AIRBRAKE(airbrake_sensors, 6, &kf, BUZZER_PIN);
+AirbrakeState AIRBRAKE(airbrake_sensors, 7, &kf, BUZZER_PIN);
 
 // MMFS Stuff
 mmfs::Logger logger(120, 5);
@@ -100,7 +102,7 @@ void loop() {
     last = millis();
 
     // Record and log data and set stage
-    Serial.println(enc.getSteps());
+    //Serial.println(enc.getSteps());
     AIRBRAKE.updateState();
     logger.recordFlightData();
 
@@ -110,17 +112,44 @@ void loop() {
         gps.setBiasCorrectionMode(false);
     }
 
+    ////////////// Blue Raven Checks //////////////////////
+    Serial.println("--- Blue Raven Update ---");
+    // Check connection status
+    Serial.print("Connection status: ");
+    if (blueRaven.isDeviceConnected()) {
+        Serial.println("Connected");
+    } else {
+        Serial.println("Disconnected");
+        //return;
+    }
+
+    // Print raw buffer availability, this check is for hardware, see if the teensy is getting any data
+    Serial.print("Raw buffer available: ");
+    Serial.println(blueRaven.getAvailableBytes());
+
+    // Blue Raven Stuff
+    Serial.println("Sensor Readings:");
+    Serial.print("Altitude: "); Serial.print(blueRaven.getAltitude()); Serial.println(" ft");
+    Serial.print("Pressure: "); Serial.print(blueRaven.getPressure()); Serial.println(" Pa");
+    Serial.print("Temperature: "); Serial.print(blueRaven.getTemperature()); Serial.println(" C");
+    Serial.print("Velocity: "); Serial.print(blueRaven.getVelocity()); Serial.println(" m/s");
+    Serial.print("Tilt Angle: "); Serial.print(blueRaven.getTiltAngle()); Serial.println(" deg");
+    Serial.print("Roll Angle: "); Serial.print(blueRaven.getRollAngle()); Serial.println(" deg");
+    ////////////////////////////////////////////////////////
+    
+
+    ////////////// Deployment Stuff ///////////////////////
+    //Test Code
     if (millis() > 20000){
         digitalWrite(stop_pin, LOW);
     }
-    
 
-    //Commented Code:
-    
+    //Launch Code:
     // if(AIRBRAKE.stage == DEPLOY){
     //     AIRBRAKE.goToDegree(-10);
     // } else {
     //     AIRBRAKE.goToDegree(0);
     // }
+    ////////////////////////////////////////////////////////
 
 }
