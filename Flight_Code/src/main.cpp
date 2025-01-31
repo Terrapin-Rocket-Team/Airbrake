@@ -28,7 +28,7 @@ mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &
 
 // Initialize Airbrake State
 AirbrakeKF kf;
-AirbrakeState AIRBRAKE(airbrake_sensors, 7, &kf, BUZZER_PIN);
+AirbrakeState AIRBRAKE(airbrake_sensors, 7, nullptr, BUZZER_PIN);
 
 // MMFS Stuff
 mmfs::Logger logger(120, 5);
@@ -99,11 +99,12 @@ void setup() {
 
 }
 
+
 //static double last = 0; // for better timing than "delay(100)"
+static unsigned long lastUpdateTime = 0;
 void loop() {
 
     bb.update();
-    static unsigned long lastUpdateTime = 0;
     const unsigned long UPDATE_INTERVAL = 100; // 100ms between updates
 
     if (millis() - lastUpdateTime < UPDATE_INTERVAL) {
@@ -113,8 +114,9 @@ void loop() {
 
     Serial.println("--- Blue Raven Update ---");
 
-    // Update Blue Raven
-    blueRaven.update();
+    // Update state and log data
+    AIRBRAKE.updateState();
+    logger.recordFlightData();
 
     // Check connection status
     Serial.print("Connection status: ");
@@ -169,9 +171,6 @@ void loop() {
     Serial.println(blueRaven.getTiltAngle());
     */
 
-    // Update state and log data
-    AIRBRAKE.updateState();
-    logger.recordFlightData();
 
     // Additional state checks and actions
     if (AIRBRAKE.stage == BOOST) {
