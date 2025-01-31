@@ -8,18 +8,15 @@ bool BR::begin(bool useBiasCorrection) {
 }
 
 bool BR::init() {
-    if (!blueRaven) {
-        initialized = false;
-        return false;
-    }
-    
     initialized = true;
     return true;
 }
 
 void BR::update() {
     read();
+    Serial.println("first");
     packData();
+    Serial.println("second");
 }
 
 void BR::resetSensorValues() {
@@ -118,7 +115,7 @@ const int BR::getNumPackedDataPoints() const {
 }
 
 const mmfs::PackedType* BR::getPackedOrder() const {
-    static const mmfs::PackedType result[] = {
+    static const mmfs::PackedType result[13] = {
         mmfs::FLOAT,  // altitude
         mmfs::FLOAT,  // pressure
         mmfs::FLOAT,  // temperature
@@ -137,7 +134,7 @@ const mmfs::PackedType* BR::getPackedOrder() const {
 }
 
 const char** BR::getPackedDataLabels() const {
-    static const char* labels[] = {
+    static const char* labels[13] = {
         "BR-ALT (ft)",
         "BR-PRES (Pa)",
         "BR-TEMP (C)",
@@ -157,7 +154,6 @@ const char** BR::getPackedDataLabels() const {
 
 void BR::packData() {
     if (!initialized) return;
-    
     PackedData data = {
         altitude,
         pressure,

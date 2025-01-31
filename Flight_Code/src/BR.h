@@ -62,6 +62,7 @@ public:
         hub1(myusb), 
         blueRaven(myusb, 1) {
         setName(name);
+        setUpPackedData();
     }
     
     virtual ~BR() {

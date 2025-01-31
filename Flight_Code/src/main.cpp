@@ -28,7 +28,7 @@ mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &
 
 // Initialize Airbrake State
 AirbrakeKF kf;
-AirbrakeState AIRBRAKE(airbrake_sensors, 7, &kf, BUZZER_PIN);
+AirbrakeState AIRBRAKE(airbrake_sensors, 7, nullptr, BUZZER_PIN);
 
 // MMFS Stuff
 mmfs::Logger logger(120, 5);
@@ -89,31 +89,35 @@ void setup() {
         baro2.setBiasCorrectionMode(true);
         gps.setBiasCorrectionMode(true);
     }
+
     logger.writeCsvHeader();
     logger.recordLogData(mmfs::INFO_, "Leaving Setup");
+    
+
+    
+    
+
 }
 
-static double last = 0; // for better timing than "delay(100)"
+
+//static double last = 0; // for better timing than "delay(100)"
+static unsigned long lastUpdateTime = 0;
 void loop() {
+
     bb.update();
+    const unsigned long UPDATE_INTERVAL = 100; // 100ms between updates
 
-    if (millis() - last < 100)
+    if (millis() - lastUpdateTime < UPDATE_INTERVAL) {
         return;
-    last = millis();
+    }
+    lastUpdateTime = millis();
 
-    // Record and log data and set stage
-    //Serial.println(enc.getSteps());
+    Serial.println("--- Blue Raven Update ---");
+
+    // Update state and log data
     AIRBRAKE.updateState();
     logger.recordFlightData();
 
-    if(AIRBRAKE.stage == BOOST){
-        baro1.setBiasCorrectionMode(false);
-        baro2.setBiasCorrectionMode(false);
-        gps.setBiasCorrectionMode(false);
-    }
-
-    ////////////// Blue Raven Checks //////////////////////
-    Serial.println("--- Blue Raven Update ---");
     // Check connection status
     Serial.print("Connection status: ");
     if (blueRaven.isDeviceConnected()) {
@@ -127,7 +131,9 @@ void loop() {
     Serial.print("Raw buffer available: ");
     Serial.println(blueRaven.getAvailableBytes());
 
-    // Blue Raven Stuff
+    // First way to print sensor data
+    
+    
     Serial.println("Sensor Readings:");
     Serial.print("Altitude: "); Serial.print(blueRaven.getAltitude()); Serial.println(" ft");
     Serial.print("Pressure: "); Serial.print(blueRaven.getPressure()); Serial.println(" Pa");
@@ -135,21 +141,47 @@ void loop() {
     Serial.print("Velocity: "); Serial.print(blueRaven.getVelocity()); Serial.println(" m/s");
     Serial.print("Tilt Angle: "); Serial.print(blueRaven.getTiltAngle()); Serial.println(" deg");
     Serial.print("Roll Angle: "); Serial.print(blueRaven.getRollAngle()); Serial.println(" deg");
-    ////////////////////////////////////////////////////////
-    
 
-    ////////////// Deployment Stuff ///////////////////////
-    //Test Code
-    if (millis() > 20000){
-        digitalWrite(stop_pin, LOW);
+    
+   
+   // Second way to print sensor data
+   /*
+    Serial.print(blueRaven.getPressure());
+    Serial.print("\t");
+    Serial.print(blueRaven.getTemperature());
+    Serial.print("\t");
+    Serial.print(blueRaven.getAltitude());
+    Serial.print("\t");
+    Serial.print(blueRaven.getVelocity());
+    Serial.print("\t");
+    Serial.print(blueRaven.getAccelerationX());
+    Serial.print("\t");
+    Serial.print(blueRaven.getAccelerationY());
+    Serial.print("\t");
+    Serial.print(blueRaven.getAccelerationZ());
+    Serial.print("\t");
+    Serial.print(blueRaven.getGyroX());
+    Serial.print("\t");
+    Serial.print(blueRaven.getGyroY());
+    Serial.print("\t");
+    Serial.print(blueRaven.getGyroZ());
+    Serial.print("\t");
+    Serial.print(blueRaven.getRollAngle());
+    Serial.print("\t");
+    Serial.println(blueRaven.getTiltAngle());
+    */
+
+
+    // Additional state checks and actions
+    if (AIRBRAKE.stage == BOOST) {
+        baro1.setBiasCorrectionMode(false);
+        baro2.setBiasCorrectionMode(false);
+        gps.setBiasCorrectionMode(false);
     }
 
-    //Launch Code:
-    // if(AIRBRAKE.stage == DEPLOY){
-    //     AIRBRAKE.goToDegree(-10);
-    // } else {
-    //     AIRBRAKE.goToDegree(0);
-    // }
-    ////////////////////////////////////////////////////////
 
+    //Commented Code:
+    
+    Serial.println("--- End of Update ---\n");
 }
+
