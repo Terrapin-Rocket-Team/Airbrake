@@ -14,9 +14,7 @@ bool BR::init() {
 
 void BR::update() {
     read();
-    Serial.println("first");
     packData();
-    Serial.println("second");
 }
 
 void BR::resetSensorValues() {
@@ -31,23 +29,24 @@ void BR::read() {
         int bytesRead = blueRaven.readBytesUntil('\n', buffer, BUFFER_SIZE - 1);
         if (bytesRead > 0) {
             buffer[bytesRead] = '\0';
-            Serial.print("Raw message: ");
-            Serial.println(buffer);
+
+            //Serial.print("Raw message: ");
+            //Serial.println(buffer);
             if (strncmp(buffer, "@ BLR_STAT", 10) == 0) {
                 if (parseMessage(buffer)) {
                     lastReadTime = millis();
-                    Serial.println("Message parsed successfully");
+                    //Serial.println("Message parsed successfully");
                 } else {
-                    Serial.println("Failed to parse message");
+                    logger.recordLogData(mmfs::INFO_, "Failed to parse message");
                 }
             } else {
-                Serial.println("Received message does not start with @ BLR_STAT");
+                logger.recordLogData(mmfs::INFO_, "Received message does not start with @ BLR_STAT");
             }
         } else {
-            Serial.println("No bytes read from blueRaven");
+            logger.recordLogData(mmfs::INFO_, "No bytes read from blueRaven");
         }
     } else {
-        Serial.println("No data available from blueRaven");
+        //Serial.println("No data available from blueRaven");
     }
     
     if (!isConnected()) {

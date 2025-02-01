@@ -13,14 +13,14 @@ enum AirbrakeStages {
     DEPLOY,
     DROUGE,
     MAIN,
-    LANDED,
-    DUMPED
+    LANDED
 };
 
 // Motor driver pins
 const int brk_pin = 3; 
 const int stop_pin = 4; //set to low to STOP the motor, high to let the motor move (it is just an enable pin)
-const int dir_pin = 5;
+const int dir_pin = 5; // set low to open the airbrake, high to close the airbrake
+const int speed_pin = 2; // set to 255 for full speed, set to 0 for no speed
 
 const int stepGranularity = 1000;
 
@@ -29,6 +29,7 @@ class AirbrakeState: public mmfs::State{
 public:
 
     int buzzerPin = 0;
+    uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
     // double empty_mass = 40;      // in kg
@@ -57,11 +58,13 @@ public:
 
     // Helper Functions
     void setAirbrakeStage();
+    void updateMotor();
 
     // Motor and encoder functions
     void goToStep(int step);
     void goToDegree(int degree);
     int desiredStep = 0;
+    int dir_change_time = 0;
 
     // Airbrake functions from last year
     // int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);
@@ -69,9 +72,11 @@ public:
     // double get_density(double h);
     // void update_cda_estimate();
 
+    double timeOfLastStage; // in seconds
+
 private:
-    double timeOfLaunch;
-    double timeOfLastStage;
+    double timeOfLaunch; // in seconds
+    
 
 };
 
