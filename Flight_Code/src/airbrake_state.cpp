@@ -11,7 +11,6 @@ void AirbrakeState::updateState(double newTime) {
 }
 
 void AirbrakeState::setAirbrakeStage(){
-    Serial.println(stage);
     int timeSinceLaunch = currentTime - timeOfLaunch;
     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));

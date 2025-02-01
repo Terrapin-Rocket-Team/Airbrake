@@ -110,18 +110,27 @@ void loop() {
     AIRBRAKE.updateState();
     logger.recordFlightData();
 
-    // Additional state checks and actions
+    // Turn off bias correction during flight
     if (AIRBRAKE.stage == BOOST) {
         baro1.setBiasCorrectionMode(false);
         baro2.setBiasCorrectionMode(false);
         gps.setBiasCorrectionMode(false);
+    } else if (AIRBRAKE.stage == PRELAUNCH) {
+        baro1.setBiasCorrectionMode(true);
+        baro2.setBiasCorrectionMode(true);
+        gps.setBiasCorrectionMode(true);
     }
 
     // Test Deployment Code //
-    if (millis() > 40000){
-        AIRBRAKE.goToDegree(30);
-    } else if (millis() > 60000){
+    if (millis() > 50000){
+        logger.setRecordMode(mmfs::GROUND);
         AIRBRAKE.goToDegree(0);
+        Serial.println(enc.getSteps());
+    } else if (millis() > 40000){
+        logger.setRecordMode(mmfs::FLIGHT);
+        AIRBRAKE.goToDegree(30);
+        Serial.println("here2");
+        Serial.println(enc.getSteps());
     }
 
     // Flight Deployment Code //

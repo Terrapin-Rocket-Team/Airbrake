@@ -51,7 +51,7 @@ void BR::read() {
     
     if (!isConnected()) {
         resetSensorValues();
-        Serial.println("Connection timed out. Sensor values reset.");
+        //Serial.println("Connection timed out. Sensor values reset.");
     }
 }
 
