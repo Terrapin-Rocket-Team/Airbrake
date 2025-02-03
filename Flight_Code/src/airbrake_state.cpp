@@ -7,22 +7,7 @@
 void AirbrakeState::updateState(double newTime) {
     mmfs::State::updateState(newTime); // call base version for sensor updates
     setAirbrakeStage();
-    
-    // Move the motor to desired location
-    // auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-    // if(enc->getSteps() - desiredStep > stepGranularity) {
-    //     digitalWrite(dir_pin, LOW); // Open the flaps
-    //     digitalWrite(brk_pin, LOW);
-    // }
-    // else if(enc->getSteps() - desiredStep < -stepGranularity) {
-    //     digitalWrite(dir_pin, HIGH); // Close the flaps
-    //     digitalWrite(brk_pin, LOW);
-    // }
-    // else {
-    //     // If the encoder is within the margin defined by stepGranularity, turn the motor off
-    //     digitalWrite(brk_pin, HIGH);
-    // }
-
+    updateMotor();
 }
 
 void AirbrakeState::setAirbrakeStage(){
@@ -30,7 +15,7 @@ void AirbrakeState::setAirbrakeStage(){
     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));
     
-    if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 50){
+    if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 40){
         logger.setRecordMode(mmfs::FLIGHT);
         bb.aonoff(buzzerPin, 200);
         stage = BOOST;
@@ -81,9 +66,10 @@ void AirbrakeState::setAirbrakeStage(){
         logger.setRecordMode(mmfs::GROUND);
         logger.recordLogData(mmfs::INFO_, "Dumped data after landing.");
     }
-    else if (stage == LANDED && currentTime - timeOfLastStage > 60) // TODO check if it can dump data in 60 seconds
+    else if (stage == LANDED && (currentTime - timeOfLastStage) > 60)
     {
-        stage = DUMPED;
+        bb.aonoff(buzzerPin, 200, 2);
+        stage = PRELAUNCH;
     }
     else if((stage == PRELAUNCH || stage == BOOST) && baro->getAGLAltFt() > 250){
         logger.setRecordMode(mmfs::FLIGHT);
@@ -114,6 +100,63 @@ void AirbrakeState::goToDegree(int degree) {
         return;
     }
     desiredStep = -degree * 10537; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open
+}
+
+void AirbrakeState::updateMotor() {
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+
+    // Set direction
+    int step_diff = desiredStep - enc->getSteps();
+
+    if(step_diff > stepGranularity) {
+        // Open the flaps
+        if(currentDirection == HIGH) {
+            // Start opening the flaps
+            analogWrite(speed_pin, 128);
+            digitalWrite(stop_pin, LOW);
+            digitalWrite(dir_pin, HIGH);
+        }
+        else {
+            // Switch direction first
+            analogWrite(speed_pin, 0);
+            digitalWrite(stop_pin, HIGH);
+
+            if(dir_change_time == 0) {
+                dir_change_time = millis();
+            }
+            else if(millis() - dir_change_time >= 500) {
+                dir_change_time = 0;
+                currentDirection = HIGH;
+            }
+        }
+    }
+    else if(step_diff < -stepGranularity) {
+        // Close the flaps
+        if(currentDirection == LOW) {
+            // Start closing the flaps
+            analogWrite(speed_pin, 128);
+            digitalWrite(stop_pin, LOW);
+            digitalWrite(dir_pin, LOW);
+        }
+        else {
+            // Switch direction first
+            analogWrite(speed_pin, 0);
+            digitalWrite(stop_pin, HIGH);
+
+            if(dir_change_time == 0) {
+                dir_change_time = millis();
+            }
+            else if(millis() - dir_change_time >= 500) {
+                dir_change_time = 0;
+                currentDirection = LOW;
+            }
+        }
+    }
+    else {
+        // If the encoder is within the margin defined by stepGranularity, turn the motor off
+        digitalWrite(stop_pin, HIGH);
+        analogWrite(speed_pin, 0);
+    }
 }
 
 // Airbrake Functions from last year

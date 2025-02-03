@@ -4,6 +4,7 @@
 #include "vn_100.h"
 #include "AirbrakeKF.h"
 #include "e5.h"
+#include "BR.h"
 
 
 // Buzzer
@@ -16,17 +17,18 @@ const int enc_chan_a = 36;
 const int enc_chan_b = 37;
 
 // Sensors
-//E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
+E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
 VN_100 vn(&SPI, 10); // Vector Nav
 mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
 mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
 mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
-mmfs::Sensor* airbrake_sensors[5] = {&baro1, &baro2, &airbrake_imu, &gps, &vn};
+BR blueRaven;
+mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc, &blueRaven};
 
 // Initialize Airbrake State
 AirbrakeKF kf;
-AirbrakeState AIRBRAKE(airbrake_sensors, 5, &kf, BUZZER_PIN);
+AirbrakeState AIRBRAKE(airbrake_sensors, 7, nullptr, BUZZER_PIN);
 
 // MMFS Stuff
 mmfs::Logger logger(120, 5);
@@ -45,11 +47,15 @@ void setup() {
 
     if (CrashReport) Serial.println(CrashReport);
 
-    // Immediately turn the motor off (needs the break pin set to high)
+    // Immediately turn the motor off (needs the stop pin set to high)
     pinMode(brk_pin, OUTPUT);
+    pinMode(stop_pin, OUTPUT);
     pinMode(dir_pin, OUTPUT);
-    digitalWrite(brk_pin, HIGH);
+    pinMode(speed_pin, OUTPUT);
+    digitalWrite(brk_pin, LOW);
+    digitalWrite(stop_pin, HIGH);
     digitalWrite(dir_pin, LOW);
+    analogWrite(speed_pin, 0);
 
     // MMFS Stuff
     SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
@@ -85,37 +91,53 @@ void setup() {
         baro2.setBiasCorrectionMode(true);
         gps.setBiasCorrectionMode(true);
     }
+
     logger.writeCsvHeader();
     logger.recordLogData(mmfs::INFO_, "Leaving Setup");
 }
 
-static double last = 0; // for better timing than "delay(100)"
+static unsigned long lastUpdateTime = 0;
 void loop() {
+
     bb.update();
 
-    if (millis() - last < 100)
+    if (millis() - lastUpdateTime < UPDATE_INTERVAL) {
         return;
-    last = millis();
+    }
+    lastUpdateTime = millis();
 
-    // Record and log data and set stage
-    Serial.println(airbrake_imu.getAccelerationGlobal().z());
+    // Update state and log data
     AIRBRAKE.updateState();
     logger.recordFlightData();
-    //Serial.println(airbrake_imu.getOrientation().z());
 
-    if(AIRBRAKE.stage == BOOST){
+    // Turn off bias correction during flight
+    if (AIRBRAKE.stage == BOOST) {
         baro1.setBiasCorrectionMode(false);
         baro2.setBiasCorrectionMode(false);
         gps.setBiasCorrectionMode(false);
+    } else if (AIRBRAKE.stage == PRELAUNCH) {
+        baro1.setBiasCorrectionMode(true);
+        baro2.setBiasCorrectionMode(true);
+        gps.setBiasCorrectionMode(true);
     }
-    
 
-    //Commented Code:
-    
-    // if(AIRBRAKE.stage == DEPLOY){
-    //     AIRBRAKE.goToDegree(-10);
-    // } else {
-    //     AIRBRAKE.goToDegree(0);
+    // Test Deployment Code //
+    // Serial.println(enc.getSteps());
+    // if (millis() > 80000){
+    //     logger.setRecordMode(mmfs::GROUND);
+    //     AIRBRAKE.goToDegree(0);  
+    // } else if (millis() > 40000){
+    //     Serial.println("moving down");
+    //     logger.setRecordMode(mmfs::FLIGHT);
+    //     AIRBRAKE.goToDegree(40);
     // }
 
+    // Flight Deployment Code //
+    if (AIRBRAKE.stage == DEPLOY){
+        AIRBRAKE.goToDegree(45);
+    } else {
+        AIRBRAKE.goToDegree(0);
+    }
+
 }
+
