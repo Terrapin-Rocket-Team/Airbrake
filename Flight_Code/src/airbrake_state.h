@@ -22,7 +22,7 @@ const int stop_pin = 4; //set to low to STOP the motor, high to let the motor mo
 const int dir_pin = 5; // set low to open the airbrake, high to close the airbrake
 const int speed_pin = 2; // set to 255 for full speed, set to 0 for no speed
 
-const int stepGranularity = 1000;
+const int stepGranularity = 7500;
 
 class AirbrakeState: public mmfs::State{
 

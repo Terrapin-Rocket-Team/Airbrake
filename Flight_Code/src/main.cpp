@@ -122,26 +122,22 @@ void loop() {
     }
 
     // Test Deployment Code //
-    if (millis() > 50000){
-        logger.setRecordMode(mmfs::GROUND);
-        AIRBRAKE.goToDegree(0);
-        Serial.println(enc.getSteps());
-    } else if (millis() > 40000){
-        logger.setRecordMode(mmfs::FLIGHT);
-        AIRBRAKE.goToDegree(30);
-        Serial.println("here2");
-        Serial.println(enc.getSteps());
-    }
+    // Serial.println(enc.getSteps());
+    // if (millis() > 80000){
+    //     logger.setRecordMode(mmfs::GROUND);
+    //     AIRBRAKE.goToDegree(0);  
+    // } else if (millis() > 40000){
+    //     Serial.println("moving down");
+    //     logger.setRecordMode(mmfs::FLIGHT);
+    //     AIRBRAKE.goToDegree(40);
+    // }
 
     // Flight Deployment Code //
-    // if (AIRBRAKE.stage == DEPLOY){
-    //     if (AIRBRAKE.timeOfLastStage < 40){
-    //         AIRBRAKE.goToDegree(30);
-    //     }
-    // }
-    // AIRBRAKE.goToDegree(0);
-
-
+    if (AIRBRAKE.stage == DEPLOY){
+        AIRBRAKE.goToDegree(45);
+    } else {
+        AIRBRAKE.goToDegree(0);
+    }
 
 }
 
