@@ -54,10 +54,10 @@ public:
     AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter, int buzzPin)
     : mmfs::State(sensors, numSensors, kfilter) {buzzerPin = buzzPin;}
 
-    void updateState(double newTime = -1) override;
+    //void updateState(double newTime = -1) override;
 
     // Helper Functions
-    void setAirbrakeStage();
+    void determineStage() override;
     void updateMotor();
 
     // Motor and encoder functions

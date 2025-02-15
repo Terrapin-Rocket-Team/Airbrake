@@ -9,8 +9,6 @@
 
 // Buzzer
 const int BUZZER_PIN = 23;
-int allowedPins[] = {BUZZER_PIN};
-BlinkBuzz bb(allowedPins, 1, true);
 
 // Encoder pins
 const int enc_chan_a = 36;
@@ -24,18 +22,25 @@ mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
 mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
 BR blueRaven;
-mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc, &blueRaven};
+mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
 
 // Initialize Airbrake State
 AirbrakeKF kf;
 AirbrakeState AIRBRAKE(airbrake_sensors, 7, nullptr, BUZZER_PIN);
 
 // MMFS Stuff
-mmfs::Logger logger(120, 5);
-mmfs::ErrorHandler errorHandler;
-mmfs::PSRAM *psram;
-const int UPDATE_RATE = 10;
-const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
+mmfs::MMFSConfig config = mmfs::MMFSConfig()
+                        .withState(&AIRBRAKE)
+                        .withBuzzerPin(BUZZER_PIN)
+                        .withUpdateRate(25);
+
+mmfs::MMFSSystem sys(&config);
+
+// mmfs::Logger logger(120, 5);
+// mmfs::ErrorHandler errorHandler;
+// mmfs::PSRAM *psram;
+// const int UPDATE_RATE = 10;
+// const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
 
 void setup() {
     // Initialize Serial and SPI Buses
@@ -58,59 +63,19 @@ void setup() {
     analogWrite(speed_pin, 0);
 
     // MMFS Stuff
-    SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
-    SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
-    psram = new mmfs::PSRAM();
-    logger.init(&AIRBRAKE);
+    sys.init();
 
-    logger.recordLogData(mmfs::INFO_, "Entering Setup");
-
-    // Check the sd card
-    if (!(logger.isSdCardReady())){
-        logger.recordLogData(mmfs::INFO_, "SD Card Failed to Initialize");
-        bb.onoff(BUZZER_PIN, 200, 3);
-    } else{
-        bb.onoff(BUZZER_PIN, 1000, 1);
-    }
-
-    // Check the psram
-    if (!(logger.isPsramReady())){
-        logger.recordLogData(mmfs::INFO_, "PSRAM Failed to Initialize");
-        bb.onoff(BUZZER_PIN, 200, 3);
-    } else {
-        bb.onoff(BUZZER_PIN, 1000, 1);
-    } 
-    
-    // Initialize State (runs Begin/Init for each sensor)
-    if(!AIRBRAKE.init()){
-        logger.recordLogData(mmfs::INFO_, "State Failed to Completely Initialize");
-        bb.onoff(BUZZER_PIN, 200, 3);
-    } else{ 
-        bb.onoff(BUZZER_PIN, 1000, 1);
-        baro1.setBiasCorrectionMode(true);
-        baro2.setBiasCorrectionMode(true);
-        gps.setBiasCorrectionMode(true);
-    }
-
-    logger.writeCsvHeader();
-    logger.recordLogData(mmfs::INFO_, "Leaving Setup");
+    baro1.setBiasCorrectionMode(true);
+    baro2.setBiasCorrectionMode(true);
+    gps.setBiasCorrectionMode(true);
 }
 
 static unsigned long lastUpdateTime = 0;
 void loop() {
 
-    bb.update();
+    sys.update();
 
-    if (millis() - lastUpdateTime < UPDATE_INTERVAL) {
-        return;
-    }
-    lastUpdateTime = millis();
-
-    // Update state and log data
-    AIRBRAKE.updateState();
-    logger.recordFlightData();
-
-    // Turn off bias correction during flight
+    // // Turn off bias correction during flight
     if (AIRBRAKE.stage == BOOST) {
         baro1.setBiasCorrectionMode(false);
         baro2.setBiasCorrectionMode(false);
@@ -121,7 +86,7 @@ void loop() {
         gps.setBiasCorrectionMode(true);
     }
 
-    // Test Deployment Code //
+    // // Test Deployment Code //
     // Serial.println(enc.getSteps());
     // if (millis() > 80000){
     //     logger.setRecordMode(mmfs::GROUND);
@@ -133,11 +98,11 @@ void loop() {
     // }
 
     // Flight Deployment Code //
-    if (AIRBRAKE.stage == DEPLOY){
-        AIRBRAKE.goToDegree(45);
-    } else {
-        AIRBRAKE.goToDegree(0);
-    }
+    // if (AIRBRAKE.stage == DEPLOY){
+    //     AIRBRAKE.goToDegree(45);
+    // } else {
+    //     AIRBRAKE.goToDegree(0);
+    // }
 
 }
 

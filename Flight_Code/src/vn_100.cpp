@@ -1,6 +1,7 @@
 #include "vn_100.h"
 #include <RecordData/DataReporter.h>
 
+
 bool VN_100::begin(bool useBiasCorrection)
 {
     biasCorrectionMode = useBiasCorrection;
@@ -87,58 +88,4 @@ imu::Vector<3> convertToEuler(const imu::Quaternion &orientation)
     // reverse the vector, since it returns in z, y, x
     euler = imu::Vector<3>(euler.x(), euler.y(), euler.z());
     return euler;
-}
-
-const int VN_100::getNumPackedDataPoints() const
-{
-    return 21;
-}
-
-const mmfs::PackedType *VN_100::getPackedOrder() const
-{
-    static const mmfs::PackedType result[] = {mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT,
-            mmfs::FLOAT,
-            mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT,
-            mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT,
-            mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT, mmfs::FLOAT};
-
-    return result;
-}
-
-const char **VN_100::getPackedDataLabels() const
-{
-    static const char *labels[] = {"VN-AX (m/s/s)", "VN-AY (m/s/s)", "VN-AZ (m/s/s)", "VN-ULRX (deg)", "VN-ULRY (deg)",
-                            "VN-ULRZ (deg)",
-                            "VN-ANGVX (rad/s)", "VN-ANGVY (rad/s)", "VN-ANGVZ (rad/s)", "VN-MAGX (uT)", "VN-MAGY (uT)",
-                            "VN-MAGZ (uT)", "VN-P (Pa)", "VN-T (C)", "VN-DT (s)", "VN-DV-X (m/s/s)",
-                            "VN-DV-Y (m/s/s)", "VN-DV-Z (m/s/s)", "VN-DTH-X (deg/s)", "VN-DTH-Y (deg/s)", "VN-DTH-Z (deg/s)"};
-    
-    return labels;
-}
-
-void VN_100::packData()
-{
-    struct PackedData data;
-    data.ax = accelerationVec.x();
-    data.ay = accelerationVec.y();
-    data.az = accelerationVec.z();
-    data.ulrx = orientationEuler.x();
-    data.ulry = orientationEuler.y();
-    data.ulrz = orientationEuler.z();
-    data.angvx = angularVelocity.x();
-    data.angvy = angularVelocity.y();
-    data.angvz = angularVelocity.z();
-    data.magx = magnetometer.x();
-    data.magy = magnetometer.y();
-    data.magz = magnetometer.z();
-    data.p = pressure;
-    data.t = temperature;
-    data.dt = deltaTime;
-    data.dv_x = deltaVelocity.x();
-    data.dv_y = deltaVelocity.y();
-    data.dv_z = deltaVelocity.z();
-    data.dth_x = deltaTheta.x();
-    data.dth_y = deltaTheta.y();
-    data.dth_z = deltaTheta.z();
-    memcpy(packedData, &data, sizeof(PackedData));
 }
