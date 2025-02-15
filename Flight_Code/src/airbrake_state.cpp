@@ -4,25 +4,25 @@
 
 
 
-void AirbrakeState::updateState(double newTime) {
-    mmfs::State::updateState(newTime); // call base version for sensor updates
-    setAirbrakeStage();
-    updateMotor();
-}
+// void AirbrakeState::updateState(double newTime) {
+//     mmfs::State::updateState(newTime); // call base version for sensor updates
+//     determineStage();
+//     updateMotor();
+// }
 
-void AirbrakeState::setAirbrakeStage(){
+void AirbrakeState::determineStage(){
     int timeSinceLaunch = currentTime - timeOfLaunch;
     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));
     
     if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 40){
-        logger.setRecordMode(mmfs::FLIGHT);
+        mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
         bb.aonoff(buzzerPin, 200);
         stage = BOOST;
         timeOfLaunch = currentTime;
         timeOfLastStage = currentTime;
-        logger.recordLogData(mmfs::INFO_, "Launch detected.");
-        logger.recordLogData(mmfs::INFO_, "Printing static data.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Launch detected.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Printing static data.");
         for (int i = 0; i < maxNumSensors; i++)
         {
             if (sensorOK(sensors[i]))
@@ -35,36 +35,36 @@ void AirbrakeState::setAirbrakeStage(){
         bb.aonoff(buzzerPin, 200, 2);
         timeOfLastStage = currentTime;
         stage = COAST;
-        logger.recordLogData(mmfs::INFO_, "Boost detected.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Boost detected.");
     }
     else if(stage == COAST && (currentTime - timeOfLastStage) > 1){ 
         bb.aonoff(buzzerPin, 200, 2);
         timeOfLastStage = currentTime;
         stage = DEPLOY;
-        logger.recordLogData(mmfs::INFO_, "Coasting detected.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Coasting detected.");
     }
     else if(stage == DEPLOY && baroVelocity <= 0 && (currentTime - timeOfLastStage) > 5){
         bb.aonoff(buzzerPin, 200, 2);
         timeOfLastStage = currentTime;
         char logData[100];
         snprintf(logData, 100, "Apogee detected at %.2f m.", position.z());
-        logger.recordLogData(mmfs::INFO_, logData);
+        mmfs::getLogger().recordLogData(mmfs::INFO_, logData);
         stage = DROUGE;
-        logger.recordLogData(mmfs::INFO_, "Drogue detected.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Drogue detected.");
     }
     else if(stage == DROUGE && baro->getAGLAltFt() < 1000){ 
         bb.aonoff(buzzerPin, 200, 2);
         timeOfLastStage = currentTime;
         stage = MAIN;
-        logger.recordLogData(mmfs::INFO_, "Main detected.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Main detected.");
     }
     else if(stage == MAIN && ((baro->getAGLAltFt() < 100) || ((currentTime - timeOfLastStage) > 60))){
         bb.aonoff(buzzerPin, 200, 2);
         timeOfLastStage = currentTime;
         stage = LANDED;
-        logger.recordLogData(mmfs::INFO_, "Landing detected.");
-        logger.setRecordMode(mmfs::GROUND);
-        logger.recordLogData(mmfs::INFO_, "Dumped data after landing.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Landing detected.");
+        mmfs::getLogger().setRecordMode(mmfs::GROUND);
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Dumped data after landing.");
     }
     else if (stage == LANDED && (currentTime - timeOfLastStage) > 60)
     {
@@ -72,12 +72,12 @@ void AirbrakeState::setAirbrakeStage(){
         stage = PRELAUNCH;
     }
     else if((stage == PRELAUNCH || stage == BOOST) && baro->getAGLAltFt() > 250){
-        logger.setRecordMode(mmfs::FLIGHT);
+        mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
         bb.aonoff(buzzerPin, 200, 2);
         timeOfLastStage = currentTime;
         stage = COAST;
-        logger.recordLogData(mmfs::INFO_, "Launch detected. Using Backup Condition.");
-        logger.recordLogData(mmfs::INFO_, "Printing static data.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Launch detected. Using Backup Condition.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Printing static data.");
         for (int i = 0; i < maxNumSensors; i++)
         {
             if (sensorOK(sensors[i]))
