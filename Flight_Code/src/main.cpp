@@ -36,12 +36,6 @@ mmfs::MMFSConfig config = mmfs::MMFSConfig()
 
 mmfs::MMFSSystem sys(&config);
 
-// mmfs::Logger logger(120, 5);
-// mmfs::ErrorHandler errorHandler;
-// mmfs::PSRAM *psram;
-// const int UPDATE_RATE = 10;
-// const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
-
 void setup() {
     // Initialize Serial and SPI Buses
     Serial.begin(115200);
@@ -71,6 +65,7 @@ void setup() {
 }
 
 static unsigned long lastUpdateTime = 0;
+int actuationAngle;
 void loop() {
 
     sys.update();
@@ -98,11 +93,12 @@ void loop() {
     // }
 
     // Flight Deployment Code //
-    // if (AIRBRAKE.stage == DEPLOY){
-    //     AIRBRAKE.goToDegree(45);
-    // } else {
-    //     AIRBRAKE.goToDegree(0);
-    // }
+    actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
+    if (AIRBRAKE.stage == DEPLOY){
+        AIRBRAKE.goToDegree(45);
+    } else {
+        AIRBRAKE.goToDegree(0);
+    }
 
 }
 
