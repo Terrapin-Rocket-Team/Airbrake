@@ -15,7 +15,7 @@ mockDataFile = 'mock_1.csv';
 openRocketDataFile = 'openrocket_2024_30k.csv';
 flightDataFile = 'avionics_12_8_24_post.csv';
 
-filterType = FilterType.LKFMM;
+filterType = FilterType.EKF;
 
 % Set sensor gaussian noise
 accelNoise = .1; % standard deviation w/ units m/s^2
@@ -29,20 +29,20 @@ g = 9.81; % m/s^2
 
 % Create mock rocket
 if dataType == DataType.Mock
-    rocketThrust = 1650; % [N]
-    rocketDryMass = 90; % kg
+    rocketTotalImpulse = 320000; % [Ns]
+    rocketDryMass = 70; % kg
     rocketWetMass = 125; % kg
-    rocketMotorBurnTime = 5; % seconds
+    rocketMotorBurnTime = 4.5; % seconds
     rocketDragCoef = .5;
     rocketCrossSectionalArea = 0.1524*0.1524*pi; % 6in diameter in m^2 
-    rocket = rocket(rocketThrust, rocketWetMass, rocketDryMass, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
+    rocket = rocket(rocketTotalImpulse, rocketWetMass, rocketDryMass, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
     tilt = 0;
     yaw = 0;
     
     % Generate Mock Data
     mockDataFolder = 'MockData';
     fileName = [mockDataFolder '/' mockDataFile];
-    loopFrequency = 50; % in Hz
+    loopFrequency = 25; % in Hz
     DataGenerator(fileName, loopFrequency, rocket)
     data = readtable(fileName);
 end
@@ -126,7 +126,7 @@ if(filterType == FilterType.LKF)
 elseif (filterType == FilterType.LKFMM)
     kf = LinearKalmanFilterMoreMeasurements(initial_state, P, initial_control, initial_dt);
 elseif (filterType == FilterType.EKF)
-    kf = ExtendedKalmanFilter(initial_state, P, initial_dt, wet_mass, dry_mass, rocketMotorBurnTime);
+    kf = ExtendedKalmanFilter(initial_state, P, initial_dt, rocketWetMass, rocketWetMass, rocketMotorBurnTime);
 end
 
 r_output_x = [kf.X(1)];
@@ -138,11 +138,15 @@ v_output_z = [kf.X(6)];
 P_output = [P];
 
 % Run filter
+stage = 1;
 for i = 2:length(data.t)
     dt = data.t(i) - data.t(i - 1);
     measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas1_z(i); data.r_meas2_z(i); data.r_meas3_z(i)];
     control = [data.a_meas_x(i); data.a_meas_y(i); data.a_meas_z(i) - g]; % Accelerameters at rest read +g in z-axis but are at rest
-    kf = kf.iterate(dt, measurement, control);
+    if (stage == 1) && (data.a_meas_z(i) < 0)
+        stage = 2;
+    end
+    kf = kf.iterate(dt, measurement, control, stage, 0, 0);
     r_output_x = [r_output_x; kf.X(1)];
     r_output_y = [r_output_y; kf.X(2)];
     r_output_z = [r_output_z; kf.X(3)];

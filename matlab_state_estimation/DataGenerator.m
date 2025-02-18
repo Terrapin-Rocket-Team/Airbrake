@@ -26,6 +26,7 @@ r_z(1) = 0.1; % start position in z (m)
 t(1) = 0; % start time (s)
 
 % Run simple propagation
+rocketThrust = rocket.totalImpulse / rocket.burnTime;
 while r_z(i) > 0
     i = i + 1;
     t(i) = t(i-1) + dt;
@@ -46,8 +47,8 @@ while r_z(i) > 0
     end
 
     if t(i) < rocket.burnTime
-        motorAccel = rocket.thrust / m;
-        a_z(i) = motorAccel - aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1)*v_z(i-1) - 9.8;
+        motorAccel = rocketThrust / m;
+        a_z(i) = motorAccel + aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1)*v_z(i-1) - 9.8;
     else
         a_z(i) = aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1)*v_z(i-1) - 9.8;
     end

@@ -19,18 +19,19 @@ classdef ExtendedKalmanFilter
         stage % 0, 1, 2 [prelaunch, boost, post boost]
         dt % change in time [s]
         m % object current mass (kg)
+        g = 9.81 % earth acceleration due to gravity [m/s^2]
 
         % Orientation Stuff
         tilt % in degrees DCM 3x3
-        Yaw % in degrees DCM 1x1
+        yaw % in degrees DCM 1x1
 
-        process_noise = 1;
+        process_noise = .1; % [m/s^2]
     end
 
     methods
         % Constructor
         function obj = ExtendedKalmanFilter(X, P, dt, wet_mass, dry_mass, burn_time)
-            if nargin ~= 3 && (~ismatrix(U) || ~ismatrix(X) || ~ismatrix(P))
+            if nargin ~= 6 && (~ismatrix(X) || ~ismatrix(P))
                 error('Incorrect amount of arguments passed in or incorrect arg formats.');
             end
 
@@ -45,15 +46,25 @@ classdef ExtendedKalmanFilter
                      0, 0, 0, 0, 0, .1.^2, 0, 0;
                      0, 0, 0, 0, 0, 0, .1.^2, 0;
                      0, 0, 0, 0, 0, 0, 0, .1.^2;];
-            obj = obj.calculateInitialValues(dt);
 
             obj.m_wet = wet_mass;
             obj.m_dry = dry_mass;
             obj.t_b = burn_time;
+            obj = obj.calculateInitialValues(dt, 0, 0, 0);
         end
 
         function obj = predictState(obj)
-            obj.X = ;
+            a = obj.tilt;
+            b = obj.yaw;
+            D = getD(obj);
+
+            obj.X = [obj.X(4);
+                     obj.X(5);
+                     obj.X(6);
+                     (D/obj.m)*sin(a)*cos(b);
+                     (D/obj.m)*sin(a)*cos(b);
+                     (D/obj.m)*cos(b) - obj.g/obj.m
+                ];
         end
         
         function obj = updateState(obj, measurement)
@@ -73,7 +84,7 @@ classdef ExtendedKalmanFilter
             obj.P = obj.F*obj.P*obj.F'+ obj.Q;
         end
         
-        function obj = calculateInitialValues(obj, dt)
+        function obj = calculateInitialValues(obj, dt, stage, tilt, yaw)
             
             obj.Q = [(dt^4)/4, 0, 0, (dt^3)/2, 0, 0;
                      0, (dt^4)/4, 0, 0, (dt^3)/2, 0;
@@ -81,10 +92,18 @@ classdef ExtendedKalmanFilter
                      (dt^3)/2, 0, dt^2, 0, 0, 0;
                      0, (dt^3)/2, 0, 0, dt^2, 0;
                      0, 0, (dt^3)/2, 0, 0, dt^2]*obj.process_noise*obj.process_noise;
+            
+            % Kalman Filter Steps
+            obj.dt = dt;
+            obj.stage = stage;
+            obj.tilt = tilt;
+            obj.yaw = yaw;
+            obj = obj.calcMass();
+
+            % Dyanmics prediction
+            obj = calcF(obj, dt);
             obj = predictState(obj);
             obj = covarianceExtrapolate(obj);
-            obj.stage = 0;
-            obj.dt = dt;
         end
 
         function obj = iterate(obj, dt, measurement, control, stage, tilt, yaw)
@@ -113,11 +132,15 @@ classdef ExtendedKalmanFilter
             obj.stage = stage;
             obj.tilt = tilt;
             obj.yaw = yaw;
-            obj = obj.calcMass(obj);
+            obj = obj.calcMass();
+
+            % Measurement Update
             obj = calcH(obj);
             obj = calculateKalmanGain(obj);
             obj = updateState(obj, measurement);
             obj = covarianceUpdate(obj);
+
+            % Dyanmics prediction
             obj = calcF(obj, dt);
             obj = predictState(obj);
             obj = covarianceExtrapolate(obj);
@@ -126,7 +149,7 @@ classdef ExtendedKalmanFilter
         function obj = calcF(obj, dt)
             a = obj.tilt;
             b = obj.yaw;
-            D = getD();
+            D = getD(obj);
 
             A = [
                 0, 0, 0, 1, 0, 0;
@@ -143,7 +166,7 @@ classdef ExtendedKalmanFilter
         function obj = calcH(obj)
             a = obj.tilt;
             b = obj.yaw;
-            D = getD();
+            D = getD(obj);
 
             obj.H = [
                     1, 0, 0, 0, 0, 0;
@@ -160,7 +183,7 @@ classdef ExtendedKalmanFilter
         function Hx = measurementFun(X)
             a = obj.tilt;
             b = obj.yaw;
-            D = getD();
+            D = getD(obj);
 
             Hx = [
                 X(1);
@@ -175,11 +198,11 @@ classdef ExtendedKalmanFilter
         end
 
         function D = getD(obj)
-            A = pi * (6/(2*39.37)).^2; % 6 diameter to m then A=pi*r^2
+            area = pi * (6/(2*39.37)).^2; % 6 diameter to m then A=pi*r^2
             rho = 1.225; % sea level denisty kg/m3
             Cd = .5; % coeffient of drag
 
-            D = rho * Cd * A / obj.m;
+            D = rho * Cd * area / obj.m;
 
         end
 
@@ -187,7 +210,7 @@ classdef ExtendedKalmanFilter
             if(obj.stage == 0)
                 obj.m = obj.m_wet;
             elseif(obj.stage == 1)
-                obj.m = obj.m - (obj.m_wet - obj.m_dry)*obj.dt/obj.t_b;
+                obj.m = obj.m - ((obj.m_wet - obj.m_dry)/obj.t_b)*obj.dt;
             else
                 obj.m = obj.m_dry;
             end

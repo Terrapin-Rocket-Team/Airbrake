@@ -1,7 +1,7 @@
 classdef rocket
 
     properties
-        thrust % [N]
+        totalImpulse % [Ns]
         wetMass % [kg]
         dryMass % [kg]
         burnTime % constant accel approx in s
@@ -12,9 +12,9 @@ classdef rocket
     
     methods
         % Constructor method
-        function obj = rocket(thrust, wetMass, dryMass, burnTime, dragCoef, crossSectionalArea)
+        function obj = rocket(totalImpulse, wetMass, dryMass, burnTime, dragCoef, crossSectionalArea)
             if nargin > 0
-                obj.thrust = thrust;
+                obj.totalImpulse = totalImpulse;
                 obj.wetMass = wetMass;
                 obj.dryMass = dryMass;
                 obj.burnTime = burnTime;
