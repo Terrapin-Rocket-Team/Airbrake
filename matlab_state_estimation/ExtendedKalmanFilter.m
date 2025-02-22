@@ -58,17 +58,17 @@ classdef ExtendedKalmanFilter
             b = obj.yaw;
             D = getD(obj);
 
-            obj.X = [obj.X(4);
-                     obj.X(5);
-                     obj.X(6);
-                     (D/obj.m)*sin(a)*cos(b);
-                     (D/obj.m)*sin(a)*cos(b);
-                     (D/obj.m)*cos(b) - obj.g/obj.m
-                ];
+            obj.X = obj.X + obj.dt* [obj.X(4);
+                                 obj.X(5);
+                                 obj.X(6);
+                                 (D/obj.m)*sin(a)*cos(b);
+                                 (D/obj.m)*sin(a)*cos(b);
+                                 (D/obj.m)*cos(b) - obj.g/obj.m
+                                ];
         end
         
         function obj = updateState(obj, measurement)
-            obj.X = obj.X + obj.K*(measurement - measurementFun(obj.X));
+            obj.X = obj.X + obj.K*(measurement - obj.measurementFun(obj.X));
         end
 
         function obj = calculateKalmanGain(obj)
@@ -180,7 +180,7 @@ classdef ExtendedKalmanFilter
                     ];
         end
 
-        function Hx = measurementFun(X)
+        function Hx = measurementFun(obj, X)
             a = obj.tilt;
             b = obj.yaw;
             D = getD(obj);

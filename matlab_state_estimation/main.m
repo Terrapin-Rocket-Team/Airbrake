@@ -29,12 +29,12 @@ g = 9.81; % m/s^2
 
 % Create mock rocket
 if dataType == DataType.Mock
-    rocketTotalImpulse = 320000; % [Ns]
-    rocketDryMass = 70; % kg
-    rocketWetMass = 125; % kg
+    rocketTotalImpulse = 32000; % [Ns]
+    rocketDryMass = 39; % kg
+    rocketWetMass = 56.25; % kg
     rocketMotorBurnTime = 4.5; % seconds
     rocketDragCoef = .5;
-    rocketCrossSectionalArea = 0.1524*0.1524*pi; % 6in diameter in m^2 
+    rocketCrossSectionalArea = 0.0762*0.0762*pi; % 6in diameter in m^2 
     rocket = rocket(rocketTotalImpulse, rocketWetMass, rocketDryMass, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
     tilt = 0;
     yaw = 0;
@@ -141,12 +141,17 @@ P_output = [P];
 stage = 1;
 for i = 2:length(data.t)
     dt = data.t(i) - data.t(i - 1);
-    measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas1_z(i); data.r_meas2_z(i); data.r_meas3_z(i)];
     control = [data.a_meas_x(i); data.a_meas_y(i); data.a_meas_z(i) - g]; % Accelerameters at rest read +g in z-axis but are at rest
     if (stage == 1) && (data.a_meas_z(i) < 0)
         stage = 2;
     end
-    kf = kf.iterate(dt, measurement, control, stage, 0, 0);
+    if (filterType == FilterType.EKF)
+        measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas1_z(i); data.r_meas2_z(i); data.r_meas3_z(i); data.a_meas_x(i); data.a_meas_y(i); data.a_meas_z(i)-g];
+        kf = kf.iterate(dt, measurement, control, stage, 0, 0);
+    else
+        measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas1_z(i); data.r_meas2_z(i); data.r_meas3_z(i)];
+        kf = kf.iterate(dt, measurement, control);
+    end
     r_output_x = [r_output_x; kf.X(1)];
     r_output_y = [r_output_y; kf.X(2)];
     r_output_z = [r_output_z; kf.X(3)];
