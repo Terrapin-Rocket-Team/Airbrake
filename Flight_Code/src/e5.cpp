@@ -7,7 +7,7 @@ E5::E5(const int chan_a, const int chan_b, const char *name) : myEnc(chan_a, cha
 }
 
 bool E5::init()
-{
+{ 
     return initialized = true;
 }
 
