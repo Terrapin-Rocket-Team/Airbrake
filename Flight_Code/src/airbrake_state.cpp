@@ -159,6 +159,57 @@ void AirbrakeState::updateMotor() {
     }
 }
 
+void AirbrakeState::updateKF() {
+    // Based on linear kalman filter more measurements:
+    // https://github.com/Terrapin-Rocket-Team/Airbrake/blob/main/matlab_state_estimation/LinearKalmanFilterMoreMeasurements.m
+    mmfs::GPS *gps = reinterpret_cast<mmfs::GPS *>(getSensor(mmfs::GPS_));
+    mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
+    mmfs::Barometer *baro1 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 1));
+    mmfs::Barometer *baro2 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 2));
+
+    double *measurements = new double[filter->getMeasurementSize()];
+    double *inputs = new double[filter->getInputSize()];
+    double *stateVars = new double[filter->getStateSize()];
+
+    // Measurements 3 gps, 2 baro
+    measurements[0] = sensorOK(gps) ? gps->getDisplacement().x() : 0;
+    measurements[1] = sensorOK(gps) ? gps->getDisplacement().y() : 0;
+    measurements[2] = sensorOK(gps) ? gps->getDisplacement().z() : 0;
+    measurements[3] = baro1->getAGLAltM();
+    measurements[4] = baro2->getAGLAltM();
+
+    // imu x y z
+    inputs[0] = acceleration.x() = imu->getAccelerationGlobal().x();
+    inputs[1] = acceleration.y() = imu->getAccelerationGlobal().y();
+    inputs[2] = acceleration.z() = imu->getAccelerationGlobal().z() - 9.81;
+
+    stateVars[0] = position.x();
+    stateVars[1] = position.y();
+    stateVars[2] = position.z();
+    stateVars[3] = velocity.x();
+    stateVars[4] = velocity.y();
+    stateVars[5] = velocity.z();
+
+    filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+    // pos x, y, z, vel x, y, z
+    position.x() = stateVars[0];
+    position.y() = stateVars[1];
+    position.z() = stateVars[2];
+    velocity.x() = stateVars[3];
+    velocity.y() = stateVars[4];
+    velocity.z() = stateVars[5];
+
+    if (sensorOK(baro1))
+    {
+        baroVelocity = (baro1->getAGLAltM() - baroOldAltitude) / (currentTime - lastTime);
+        baroOldAltitude = baro1->getAGLAltM();
+    }
+
+    delete[] stateVars;
+    delete[] inputs;
+    delete[] measurements;
+}
+
 // Airbrake Functions from last year
 // // Calculate Actuation Angle
 int AirbrakeState::calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time) { 

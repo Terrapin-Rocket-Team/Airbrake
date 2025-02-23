@@ -76,6 +76,9 @@ public:
 
 private:
     double timeOfLaunch; // in seconds
+
+protected:
+    void updateKF() override;
     
 
 };
