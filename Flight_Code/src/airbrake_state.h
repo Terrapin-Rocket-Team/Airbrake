@@ -79,8 +79,8 @@ private:
 
 protected:
     void updateKF() override;
+    bool isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold);
     
-
 };
 
 #endif

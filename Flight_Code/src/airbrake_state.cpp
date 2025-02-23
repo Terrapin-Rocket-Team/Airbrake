@@ -159,6 +159,7 @@ void AirbrakeState::updateMotor() {
     }
 }
 
+// Kalman filter functions
 void AirbrakeState::updateKF() {
     // Based on linear kalman filter more measurements:
     // https://github.com/Terrapin-Rocket-Team/Airbrake/blob/main/matlab_state_estimation/LinearKalmanFilterMoreMeasurements.m
@@ -190,7 +191,10 @@ void AirbrakeState::updateKF() {
     stateVars[4] = velocity.y();
     stateVars[5] = velocity.z();
 
-    filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+    if (~isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
+        filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+    }
+    
     // pos x, y, z, vel x, y, z
     position.x() = stateVars[0];
     position.y() = stateVars[1];
@@ -208,6 +212,26 @@ void AirbrakeState::updateKF() {
     delete[] stateVars;
     delete[] inputs;
     delete[] measurements;
+}
+
+bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {
+    // Check for valid input sizes
+    if (stateSize < 3 || measSize < 5) {
+        // Invalid input sizes
+        return false;
+    }
+
+    // Calculate residuals for GPS Z, Barometer 1, and Barometer 2
+    double gpsZResid = std::abs(measurements[2] - stateVars[2]);  // GPS Z Residual (3rd element of measurements)
+    double baro1Resid = std::abs(measurements[3] - stateVars[2]); // Barometer 1 Residual (4th element of measurements)
+    double baro2Resid = std::abs(measurements[4] - stateVars[2]); // Barometer 2 Residual (5th element of measurements)
+
+    // Check if any of the residuals are above the threshold
+    if (gpsZResid > threshold || baro1Resid > threshold || baro2Resid > threshold) {
+        return true;  // Outlier detected
+    }
+
+    return false;  // No outlier
 }
 
 // Airbrake Functions from last year
