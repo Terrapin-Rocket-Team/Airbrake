@@ -14,7 +14,6 @@ bool BR::init() {
 
 void BR::update() {
     read();
-    packData();
 }
 
 void BR::resetSensorValues() {

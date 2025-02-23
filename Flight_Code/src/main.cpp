@@ -93,9 +93,11 @@ void loop() {
     // }
 
     // Flight Deployment Code //
-    actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, loop_time);
+    mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
+    double tilt = acos(dcm.get(2,2));
+    actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, UPDATE_RATE);
     if (AIRBRAKE.stage == DEPLOY){
-        AIRBRAKE.goToDegree(45);
+        AIRBRAKE.goToDegree(actuationAngle);
     } else {
         AIRBRAKE.goToDegree(0);
     }

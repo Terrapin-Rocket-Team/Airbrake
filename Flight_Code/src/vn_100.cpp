@@ -22,7 +22,6 @@ bool VN_100::init()
 void VN_100::update()
 {
     read();
-    packData();
 }
 
 void VN_100::read()
