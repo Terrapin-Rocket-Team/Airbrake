@@ -2,13 +2,12 @@
 
 #include "airbrake_state.h"
 
-
-
-// void AirbrakeState::updateState(double newTime) {
-//     mmfs::State::updateState(newTime); // call base version for sensor updates
-//     determineStage();
-//     updateMotor();
-// }
+AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter): mmfs::State(sensors, numSensors, kfilter) {
+    insertColumn(1, mmfs::INT, &stage, "Stage");
+    addColumn(mmfs::DOUBLE, &actuationAngle, "Actuation Angle (deg)");
+    addColumn(mmfs::DOUBLE, &CdA_rocket, "CdA");
+    addColumn(mmfs::DOUBLE, &estimated_apogee, "Est Apo (m)");
+};
 
 void AirbrakeState::determineStage(){
     int timeSinceLaunch = currentTime - timeOfLaunch;
@@ -17,7 +16,7 @@ void AirbrakeState::determineStage(){
     
     if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 40){
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-        bb.aonoff(buzzerPin, 200);
+        bb.aonoff(mmfs::BUZZER, 200);
         stage = BOOST;
         timeOfLaunch = currentTime;
         timeOfLastStage = currentTime;
@@ -32,19 +31,19 @@ void AirbrakeState::determineStage(){
         }
     }
     else if(stage == BOOST && imu->getAccelerationGlobal().z() < 0){
-        bb.aonoff(buzzerPin, 200, 2);
+        bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = COAST;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Boost detected.");
     }
     else if(stage == COAST && (currentTime - timeOfLastStage) > 1){ 
-        bb.aonoff(buzzerPin, 200, 2);
+        bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = DEPLOY;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Coasting detected.");
     }
     else if(stage == DEPLOY && baroVelocity <= 0 && (currentTime - timeOfLastStage) > 5){
-        bb.aonoff(buzzerPin, 200, 2);
+        bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         char logData[100];
         snprintf(logData, 100, "Apogee detected at %.2f m.", position.z());
@@ -53,13 +52,13 @@ void AirbrakeState::determineStage(){
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Drogue detected.");
     }
     else if(stage == DROUGE && baro->getAGLAltFt() < 1000){ 
-        bb.aonoff(buzzerPin, 200, 2);
+        bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = MAIN;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Main detected.");
     }
     else if(stage == MAIN && ((baro->getAGLAltFt() < 100) || ((currentTime - timeOfLastStage) > 60))){
-        bb.aonoff(buzzerPin, 200, 2);
+        bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = LANDED;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Landing detected.");
@@ -68,12 +67,12 @@ void AirbrakeState::determineStage(){
     }
     else if (stage == LANDED && (currentTime - timeOfLastStage) > 60)
     {
-        bb.aonoff(buzzerPin, 200, 2);
+        bb.aonoff(mmfs::BUZZER, 200, 2);
         stage = PRELAUNCH;
     }
     else if((stage == PRELAUNCH || stage == BOOST) && baro->getAGLAltFt() > 250){
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-        bb.aonoff(buzzerPin, 200, 2);
+        bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = COAST;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Launch detected. Using Backup Condition.");
@@ -241,17 +240,12 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
     int i = 0;
     // initial flap guesses
     double low = 0; 
-    double high = 90;
+    double high = 75;
             
     while (i < max_guesses) {
  
-        double sim_apogee = predict_apogee(loop_time, cda_rocket, actuationAngle, tilt, velocity, altitude, ground_altitude, empty_mass); 
+        estimated_apogee = predict_apogee(loop_time, tilt, velocity, altitude); 
         double apogee_difference = estimated_apogee - target_apogee;
-
-         if(estimated_apogee != estimated_apogee){ // TODO why does isnan(estimated_apogee) not work?
-          actuationAngle = 0;
-          break;
-         }
         
         if (abs(apogee_difference) < threshold) {
             break;
@@ -270,42 +264,41 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
 }
 
 // Calculate apogee
-double AirbrakeState::predict_apogee(double time_step, double CdA_rocket, double flap_angle, double tilt, double cur_velocity, double cur_height, double ground_alt, double empty_mass) {
-    
+double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height) {
+    // Uses RK2 (two-stage Runge-Kutta or midpoint method) for integration
+
     double time_intergrating = 0.0;
     double x = 0.0;
     double dx = sin(tilt)*cur_velocity;
-    double ddx = 0.0;
     double y = cur_height;
     double dy = cos(tilt)*cur_velocity;
-    double ddy = 0.0;
     double k1x = 0.0;
     double k1y = 0.0;
     double s1x = 0.0;
     double s1y = 0.0;
     double k2x = 0.0;
     double k2y = 0.0;
-    double CdA_flaps = 4*0.95*0.00645*sin(flap_angle*3.141592/180);
+    double CdA_flaps = 4*0.95*single_flap_area*sin(actuationAngle*3.141592/180);
 
-    while (time_intergrating < 60){
-    k1x = -0.5*get_density(y+ground_alt)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dx/empty_mass;
-    k1y = -0.5*get_density(y+ground_alt)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dy/empty_mass - 9.81;
+    while (time_intergrating < sim_time_to_apogee){
+        k1x = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dx/empty_mass;
+        k1y = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dy/empty_mass - 9.81;
 
-    s1x = dx + (time_step * k1x);
-    s1y = dy + (time_step * k1y);
+        s1x = dx + (time_step * k1x);
+        s1y = dy + (time_step * k1y);
 
-    k2x = -0.5*get_density(y+ground_alt)*(CdA_rocket+CdA_flaps)*sqrt(pow(s1x,2)+pow(s1y,2))*(s1x)/empty_mass;
-    k2y = -0.5*get_density(y+ground_alt)*(CdA_rocket+CdA_flaps)*sqrt(pow(s1x,2)+pow(s1y,2))*(s1y)/empty_mass - 9.81;
+        k2x = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(pow(s1x,2)+pow(s1y,2))*(s1x)/empty_mass;
+        k2y = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(pow(s1x,2)+pow(s1y,2))*(s1y)/empty_mass - 9.81;
 
-    dx += time_step*(k1x+k2x)/2;
-    dy += time_step*(k1y+k2y)/2;
-    x += time_step*dx;
-    y += time_step*dy;
-    time_intergrating += time_step;
+        dx += time_step*(k1x+k2x)/2;
+        dy += time_step*(k1y+k2y)/2;
+        x += time_step*dx;
+        y += time_step*dy;
+        time_intergrating += time_step;
 
-    if (dy <= 0){
-    return y;
-    }
+        if (dy <= 0){
+        return y;
+        }
     
     }
     return y; 
@@ -313,23 +306,24 @@ double AirbrakeState::predict_apogee(double time_step, double CdA_rocket, double
 
 // Calculate air density
 double AirbrakeState::get_density(double h){
+    // Input h in ASL [m]
+
     // Constants
     double R=8.31446;  //universal gas constant (J/(mol·K))
     double M=.0289652; //molar mass of air (kg/mol)
     double L=0.0065;  //temperature lapse rate in the troposphere (K/m)
 
-    double p0=101325; //ground pressure (Pa) // TODO update. get from baro in MMFS
-    double T0=288.15; //ground temperature (K) // TODO update. get from baro in MMFS
+    double p0=101325; //ground pressure (Pa) //
+    double T0=288.15; //ground temperature (K) //
 
   
     density = p0*M/R/T0*pow((1-L*h/T0),((9.8*M/R/L)-1));
   
 }
 
-// estimate CdA
-void AirbrakeState::update_cda_estimate() {
-    cda_number_of_measurements++;
-    double CdA_rocket_this_time_step =  (2*empty_mass*abs(acceleration.z()))/(density*velocity.z()*velocity.z()); // TODO I think this wrong, needs to be body frame accel and velo
-    cda_rocket = (  cda_rocket*(cda_number_of_measurements-1) +  CdA_rocket_this_time_step    )/cda_number_of_measurements ;  
-    mmfs::getLogger().recordLogData(mmfs::INFO_, 'CdA of the Rocket is ' + String(cda_rocket).c_str());
+// estimate CdAs
+void AirbrakeState::update_CdA_estimate() {
+    CdA_number_of_measurements++;
+    double CdA_rocket_this_time_step =  (2*empty_mass*abs(acceleration.z()))/(density*velocity.z()*velocity.z()); // TODO This is wrong, needs to be body frame accel and velo
+    CdA_rocket = (  CdA_rocket*(CdA_number_of_measurements-1) +  CdA_rocket_this_time_step    )/CdA_number_of_measurements ;
 }

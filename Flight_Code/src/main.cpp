@@ -25,8 +25,8 @@ BR blueRaven;
 mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
 
 // Initialize Airbrake State
-AirbrakeKF kf;
-AirbrakeState AIRBRAKE(airbrake_sensors, 7, nullptr, BUZZER_PIN);
+AirbrakeKF lkfmm;
+AirbrakeState AIRBRAKE(airbrake_sensors, 7, &lkfmm);
 
 // MMFS Stuff
 mmfs::MMFSConfig config = mmfs::MMFSConfig()
@@ -81,6 +81,10 @@ void loop() {
         gps.setBiasCorrectionMode(true);
     }
 
+    if (AIRBRAKE.stage == COAST){
+        AIRBRAKE.update_CdA_estimate();
+    }
+
     // // Test Deployment Code //
     // Serial.println(enc.getSteps());
     // if (millis() > 80000){
@@ -95,7 +99,7 @@ void loop() {
     // Flight Deployment Code //
     mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
     double tilt = acos(dcm.get(2,2));
-    actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, UPDATE_RATE);
+    actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), AIRBRAKE.getVelocity().z(), tilt, UPDATE_INTERVAL/1000);
     if (AIRBRAKE.stage == DEPLOY){
         AIRBRAKE.goToDegree(actuationAngle);
     } else {
