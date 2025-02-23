@@ -13,11 +13,14 @@ clc
 dataType = DataType.Mock;
 mockDataFile = 'mock_1.csv';
 openRocketDataFile = 'openrocket_2024_30k.csv';
-flightDataFile = 'TADPOL_April_NY_post_processed2.csv';
+flightDataFile = 'avionics_12_8_24_post.csv';
+
+filterType = FilterType.EKF;
 
 % Set sensor gaussian noise
 accelNoise = .1; % standard deviation w/ units m/s^2
-baroNoise = .5; % standard deviation w/ units m
+baro1Noise = .2; % standard deviation w/ units m
+baro2Noise = .5; % standard deviation w/ units m
 gpsNoise = 1; % standard deviation w/ units m
 g = 9.81; % m/s^2
 
@@ -26,16 +29,20 @@ g = 9.81; % m/s^2
 
 % Create mock rocket
 if dataType == DataType.Mock
-    rocketMotorAccel = 125; % m/s^2
-    rocketMotorBurnTime = 5; % seconds
+    rocketTotalImpulse = 32000; % [Ns]
+    rocketDryMass = 39; % kg
+    rocketWetMass = 56.25; % kg
+    rocketMotorBurnTime = 4.5; % seconds
     rocketDragCoef = .5;
-    rocketCrossSectionalArea = 0.1524*0.1524*pi; % 6in diameter in m^2 
-    rocket = rocket(rocketMotorAccel, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
+    rocketCrossSectionalArea = 0.0762*0.0762*pi; % 6in diameter in m^2 
+    rocket = rocket(rocketTotalImpulse, rocketWetMass, rocketDryMass, rocketMotorBurnTime, rocketDragCoef, rocketCrossSectionalArea);
+    tilt = 0;
+    yaw = 0;
     
     % Generate Mock Data
     mockDataFolder = 'MockData';
     fileName = [mockDataFolder '/' mockDataFile];
-    loopFrequency = 50; % in Hz
+    loopFrequency = 25; % in Hz
     DataGenerator(fileName, loopFrequency, rocket)
     data = readtable(fileName);
 end
@@ -80,7 +87,9 @@ if dataType == DataType.Flight
     data.a_x = zeros(size(data.t)); data.a_y = zeros(size(data.t)); data.a_z = zeros(size(data.t));
     data.r_meas_x = dataraw.GPSPosX;
     data.r_meas_y = dataraw.GPSPosY;
-    data.r_meas_z = dataraw.BarAltitude;
+    data.r_meas1_z = dataraw.GPSPosZ;
+    data.r_meas2_z = dataraw.BarAltitude;
+    data.r_meas3_z = dataraw.BarAltitude2;
     data.a_meas_x = dataraw.IMUAccelX;
     data.a_meas_y = dataraw.IMUAccelY;
     data.a_meas_z = dataraw.IMUAccelZ;
@@ -90,7 +99,9 @@ end
 if dataType ~= DataType.Flight
     data.r_meas_x = GaussianNoiseGenerator(data.r_x, gpsNoise);
     data.r_meas_y = GaussianNoiseGenerator(data.r_y, gpsNoise);
-    data.r_meas_z = GaussianNoiseGenerator(data.r_z, baroNoise);
+    data.r_meas1_z = GaussianNoiseGenerator(data.r_z, gpsNoise);
+    data.r_meas2_z = GaussianNoiseGenerator(data.r_z, baro1Noise);
+    data.r_meas3_z = GaussianNoiseGenerator(data.r_z, baro2Noise);
     data.a_meas_x = GaussianNoiseGenerator(data.a_x, accelNoise);
     data.a_meas_y = GaussianNoiseGenerator(data.a_y, accelNoise);
     data.a_meas_z = GaussianNoiseGenerator(data.a_z + 2*g, accelNoise); % Accelerameters at rest read +g in z-axis (when we mock data, including openrocket) it outputs -g in z-axis at rest
@@ -102,14 +113,21 @@ end
 % Initalize the filter
 initial_control = [0; 0; 0];
 initial_state = [0; 0; 0; 0; 0; 0];
-P = 500 * [1 0 0 1 0 0;
-           0 1 0 0 1 0;
-           0 0 1 0 0 1;
-           1 0 0 1 0 0;
-           0 1 0 0 1 0;
-           0 0 1 0 0 1];
+P = 500 * [1 0 0 0 0 0;
+           0 1 0 0 0 0;
+           0 0 1 0 0 0;
+           0 0 0 1 0 0;
+           0 0 0 0 1 0;
+           0 0 0 0 0 1];
 initial_dt = data.t(2) - data.t(1);
-kf = LinearKalmanFilter(initial_state, P, initial_control, initial_dt);
+
+if(filterType == FilterType.LKF)
+    kf = LinearKalmanFilterMoreMeasurements(initial_state, P, initial_control, initial_dt);
+elseif (filterType == FilterType.LKFMM)
+    kf = LinearKalmanFilterMoreMeasurements(initial_state, P, initial_control, initial_dt);
+elseif (filterType == FilterType.EKF)
+    kf = ExtendedKalmanFilter(initial_state, P, initial_dt, rocketWetMass, rocketWetMass, rocketMotorBurnTime);
+end
 
 r_output_x = [kf.X(1)];
 r_output_y = [kf.X(2)];
@@ -117,111 +135,34 @@ r_output_z = [kf.X(3)];
 v_output_x = [kf.X(4)];
 v_output_y = [kf.X(5)];
 v_output_z = [kf.X(6)];
+P_output = [P];
 
 % Run filter
+stage = 1;
 for i = 2:length(data.t)
     dt = data.t(i) - data.t(i - 1);
-    measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas_z(i)];
     control = [data.a_meas_x(i); data.a_meas_y(i); data.a_meas_z(i) - g]; % Accelerameters at rest read +g in z-axis but are at rest
-    kf = kf.iterate(dt, measurement, control);
+    if (stage == 1) && (data.a_meas_z(i) < 0)
+        stage = 2;
+    end
+    if (filterType == FilterType.EKF)
+        measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas1_z(i); data.r_meas2_z(i); data.r_meas3_z(i); data.a_meas_x(i); data.a_meas_y(i); data.a_meas_z(i)-g];
+        kf = kf.iterate(dt, measurement, control, stage, 0, 0);
+    else
+        measurement = [data.r_meas_x(i); data.r_meas_y(i); data.r_meas1_z(i); data.r_meas2_z(i); data.r_meas3_z(i)];
+        kf = kf.iterate(dt, measurement, control);
+    end
     r_output_x = [r_output_x; kf.X(1)];
     r_output_y = [r_output_y; kf.X(2)];
     r_output_z = [r_output_z; kf.X(3)];
     v_output_x = [v_output_x; kf.X(4)];
     v_output_y = [v_output_y; kf.X(5)];
     v_output_z = [v_output_z; kf.X(6)];
+    P_output = cat(3, P_output, kf.P);
 end
 
-output = table(r_output_x, r_output_y, r_output_z, v_output_x, v_output_y, v_output_z);
+X_output = table(r_output_x, r_output_y, r_output_z, v_output_x, v_output_y, v_output_z);
 
 %% Section 3: Analyize Output
 
-% Z position vs time (Actual, Measured, Output)
-figure;
-plot(data.t, data.r_z, 'r-', 'DisplayName', 'Actual Z Position');
-hold on;
-plot(data.t, data.r_meas_z, 'g.', 'DisplayName', 'Measured Z Position');
-plot(data.t, output.r_output_z, 'b', 'DisplayName', 'Output Z Position');
-xlabel('Time (s)', 'FontSize', 16);
-ylabel('Z Position (m)', 'FontSize', 16);
-title('Z Position vs Time', 'FontSize', 18);
-legend('show', 'FontSize', 14);
-grid on;
-hold off;
-
-% Plot x, y, z positions vs time
-figure;
-subplot(3,1,1);
-plot(data.t, data.r_x, 'r', 'DisplayName', 'Actual x');
-hold on;
-plot(data.t, data.r_meas_x, 'g.', 'DisplayName', 'Measured X Position');
-plot(data.t, output.r_output_x, 'b', 'DisplayName', 'Output x');
-xlabel('Time (s)');
-ylabel('x Position (m)');
-title('x Position vs Time');
-legend show;
-grid on;
-
-subplot(3,1,2);
-plot(data.t, data.r_y, 'r', 'DisplayName', 'Actual y');
-plot(data.t, data.r_meas_y, 'g.', 'DisplayName', 'Measured Y Position');
-plot(data.t, output.r_output_y, 'b', 'DisplayName', 'Output y');
-xlabel('Time (s)');
-ylabel('y Position (m)');
-title('y Position vs Time');
-legend show;
-grid on;
-
-subplot(3,1,3);
-plot(data.t, data.r_z, 'r', 'DisplayName', 'Actual z');
-plot(data.t, data.r_meas_z, 'g.', 'DisplayName', 'Measured Z Position');
-plot(data.t, output.r_output_z, 'b', 'DisplayName', 'Output z');
-xlabel('Time (s)');
-ylabel('z Position (m)');
-title('z Position vs Time');
-legend show;
-grid on;
-hold off;
-
-% Plot z velocity vs time
-figure;
-plot(data.t, data.v_z, 'r', 'DisplayName', 'Actual z Velocity');
-hold on;
-plot(data.t, output.v_output_z, 'b', 'DisplayName', 'Output z Velocity');
-xlabel('Time (s)', 'FontSize', 16);
-ylabel('z Velocity (m/s)', 'FontSize', 16);
-title('z Velocity vs Time', 'FontSize', 18);
-legend('show', 'FontSize', 14);
-grid on;
-hold off;
-
-% Plot x, y, z velocities vs time
-figure;
-subplot(3,1,1);
-plot(data.t, data.v_x, 'r', 'DisplayName', 'Actual x Velocity');
-hold on;
-plot(data.t, output.v_output_x, 'b', 'DisplayName', 'Output x Velocity');
-xlabel('Time (s)');
-ylabel('x Velocity (m/s)');
-title('x Velocity vs Time');
-legend show;
-grid on;
-
-subplot(3,1,2);
-plot(data.t, data.v_y, 'r', 'DisplayName', 'Actual y Velocity');
-plot(data.t, output.v_output_y, 'b', 'DisplayName', 'Output y Velocity');
-xlabel('Time (s)');
-ylabel('y Velocity (m/s)');
-title('y Velocity vs Time');
-legend show;
-grid on;
-
-subplot(3,1,3);
-plot(data.t, data.v_z, 'r', 'DisplayName', 'Actual z Velocity');
-plot(data.t, output.v_output_z, 'b', 'DisplayName', 'Output z Velocity');
-xlabel('Time (s)');
-ylabel('z Velocity (m/s)');
-title('z Velocity vs Time');
-legend show;
-grid on;
-hold off;
+plotFilterResults(dataType, data, X_output, P_output)

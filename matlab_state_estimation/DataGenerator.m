@@ -5,8 +5,6 @@ function DataGenerator(dataFileName,loopFrequency, rocket)
 % dataFileName - Name of the CSV file to be created
 % loopFrequency - The frequency in Hz that the data should be created at
 
-DENSITY = 1.225; % (kg/m^3)
-
 %% Basic simulation of rocket w/ drag and motor
 % Initialization Values
 i = 1; % iteration
@@ -26,22 +24,28 @@ r_z(1) = 0.1; % start position in z (m)
 t(1) = 0; % start time (s)
 
 % Run simple propagation
+rocketThrust = rocket.totalImpulse / rocket.burnTime;
 while r_z(i) > 0
+    density = getDensity(r_z(i));
     i = i + 1;
     t(i) = t(i-1) + dt;
     
     % Update accelerations (x and y remain 0)
     a_x(i) = 0;
     a_y(i) = 0;
-    if v_z(i-1) < 0
-        aoa = 1; % angle of attack flag to determine drag direction
-    else
-        aoa = -1;
-    end
+    aoa = -sign(v_z(i-1)); % angle of attack flag to determine drag direction
+
     if t(i) < rocket.burnTime
-        a_z(i) = rocket.motorAccel + aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) - 9.8;
+        m = rocket.wetMass - rocket.mdot * t(i);
     else
-        a_z(i) = aoa*.5*DENSITY*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1) - 9.8;
+        m = rocket.dryMass;
+    end
+
+    if t(i) < rocket.burnTime
+        motorAccel = rocketThrust / m;
+        a_z(i) = motorAccel + aoa*.5*density*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1)*v_z(i-1)/m - 9.8;
+    else
+        a_z(i) = aoa*.5*density*rocket.dragCoef*rocket.crossSectionalArea*v_z(i-1)*v_z(i-1)/m - 9.8;
     end
     
     % Update velocities using 1D kinematics in each direction

@@ -1,5 +1,5 @@
 
-classdef LinearKalmanFilter
+classdef LinearKalmanFilterMoreMeasurements
     properties
         F % State Transition Matrix
         G % Control Matrix
@@ -12,13 +12,12 @@ classdef LinearKalmanFilter
         Q % Process Noise Matrix
         c % Drag thing
 
-        meas_uncertainity = .5;
         process_noise = 1;
     end
 
     methods
         % Constructor
-        function obj = LinearKalmanFilter(X, P, U, dt)
+        function obj = LinearKalmanFilterMoreMeasurements(X, P, U, dt)
             if nargin ~= 3 && (~ismatrix(U) || ~ismatrix(X) || ~ismatrix(P))
                 error('Incorrect amount of arguments passed in or incorrect arg formats.');
             end
@@ -27,7 +26,11 @@ classdef LinearKalmanFilter
             obj.X = X;
             obj.P = P;
 
-            obj.R = eye(3) * obj.meas_uncertainity;
+            obj.R = [1.^2, 0, 0, 0, 0;
+                     0, 1.^2, 0, 0, 0;
+                     0, 0, 1.^2, 0, 0;
+                     0, 0, 0, .2.^2, 0;
+                     0, 0, 0, 0, .5.^2;];
             obj = obj.calculateInitialValues(dt);
         end
 
@@ -68,14 +71,16 @@ classdef LinearKalmanFilter
                         0, 0,       dt];
             obj.H =    [1, 0, 0, 0, 0, 0;
                         0, 1, 0, 0, 0, 0;
-                        0, 0, 1, 0, 0, 0;];
+                        0, 0, 1, 0, 0, 0;
+                        0, 0, 1, 0, 0, 0;
+                        0, 0, 1, 0, 0, 0];
             
-            obj.Q = [(dt^4)/4, 0, 0, 0, 0, 0;
-                     0, (dt^4)/4, 0, 0, 0, 0;
-                     0, 0, (dt^4)/4, 0, 0, 0;
-                     0, 0, dt^2, 0, 0, 0;
-                     0, 0, 0, 0, dt^2, 0;
-                     0, 0, 0, 0, 0, dt^2]*obj.process_noise*obj.process_noise;
+            obj.Q = [(dt^4)/4, 0, 0, (dt^3)/2, 0, 0;
+                     0, (dt^4)/4, 0, 0, (dt^3)/2, 0;
+                     0, 0, (dt^4)/4, 0, 0, (dt^3)/2;
+                     (dt^3)/2, 0, dt^2, 0, 0, 0;
+                     0, (dt^3)/2, 0, 0, dt^2, 0;
+                     0, 0, (dt^3)/2, 0, 0, dt^2]*obj.process_noise*obj.process_noise;
             obj = predictState(obj);
             obj = covarianceExtrapolate(obj);
         end
