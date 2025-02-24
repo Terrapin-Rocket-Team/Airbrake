@@ -9,36 +9,31 @@ class VN_100 : public mmfs::Sensor
 private:
     bfs::Vn100 vn;
 
-    struct PackedData
-    {
-        float ax;
-        float ay;
-        float az;
-        float ulrx;
-        float ulry;
-        float ulrz;
-        float angvx;
-        float angvy;
-        float angvz;
-        float magx;
-        float magy;
-        float magz;
-        float p;
-        float t;
-        float dt;
-        float dv_x;
-        float dv_y;
-        float dv_z;
-        float dth_x;
-        float dth_y;
-        float dth_z;
-    } __attribute__((packed));
-
 public:
     VN_100(SPIClass *spiBus, const uint8_t chipSelectPin, const char *name = "VN_100") : vn(spiBus, chipSelectPin)
     {
         setName(name);
-        setUpPackedData();
+        addColumn(mmfs::FLOAT, &accelerationVec.x(), "VN-AX (m/s/s)");
+        addColumn(mmfs::FLOAT, &accelerationVec.y(), "VN-AY (m/s/s)");
+        addColumn(mmfs::FLOAT, &accelerationVec.z(), "VN-AZ (m/s/s)");
+        addColumn(mmfs::FLOAT, &orientationEuler.x(), "VN-ULRX (deg)");
+        addColumn(mmfs::FLOAT, &orientationEuler.y(), "VN-ULRY (deg)");
+        addColumn(mmfs::FLOAT, &orientationEuler.z(), "VN-ULRZ (deg)");
+        addColumn(mmfs::FLOAT, &angularVelocity.x(), "VN-ANGVX (rad/s)");
+        addColumn(mmfs::FLOAT, &angularVelocity.y(), "VN-ANGVY (rad/s)");
+        addColumn(mmfs::FLOAT, &angularVelocity.z(), "VN-ANGVZ (rad/s)");
+        addColumn(mmfs::FLOAT, &magnetometer.x(), "VN-MAGX (uT)");
+        addColumn(mmfs::FLOAT, &magnetometer.y(), "VN-MAGY (uT)");
+        addColumn(mmfs::FLOAT, &magnetometer.z(), "VN-MAGZ (uT)");
+        addColumn(mmfs::FLOAT, &pressure, "VN-P (Pa)");
+        addColumn(mmfs::FLOAT, &temperature, "VN-T (C)");
+        addColumn(mmfs::FLOAT, &deltaTime, "VN-DT (s)");
+        addColumn(mmfs::FLOAT, &deltaVelocity.x(), "VN-DV-X (m/s/s)");
+        addColumn(mmfs::FLOAT, &deltaVelocity.y(), "VN-DV-Y (m/s/s)");
+        addColumn(mmfs::FLOAT, &deltaVelocity.z(), "VN-DV-Z (m/s/s)");
+        addColumn(mmfs::FLOAT, &deltaTheta.x(), "VN-DTH-X (deg/s)");
+        addColumn(mmfs::FLOAT, &deltaTheta.y(), "VN-DTH-Y (deg/s)");
+        addColumn(mmfs::FLOAT, &deltaTheta.z(), "VN-DTH-Z (deg/s)");
     };
     virtual ~VN_100(){};
     virtual void calibrate();
@@ -55,11 +50,6 @@ public:
     virtual double getDeltaTime() const;
     virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; } // TODO
     virtual const char *getTypeString() const override { return "VN_100"; } // TODO
-    
-    virtual const int getNumPackedDataPoints() const override;
-    virtual const mmfs::PackedType *getPackedOrder() const override;
-    virtual const char **getPackedDataLabels() const override;
-    virtual void packData();
 
 protected:
     imu::Vector<3> accelerationVec = imu::Vector<3>(0, 0, 0); // in m/s^2
@@ -69,9 +59,9 @@ protected:
     imu::Vector<3> magnetometer = imu::Vector<3>(0, 0, 0); // in uT
     imu::Vector<3> deltaVelocity = imu::Vector<3>(0, 0, 0); // in deg/s
     imu::Vector<3> deltaTheta = imu::Vector<3>(0, 0, 0); // in m/s^2
-    double deltaTime = 0; // in s
-    double pressure = 0; // in Pa
-    double temperature = 0; // in deg C
+    float deltaTime = 0; // in s
+    float pressure = 0; // in Pa
+    float temperature = 0; // in deg C
 };
 
 imu::Vector<3> convertToEuler(const imu::Quaternion &orientation);

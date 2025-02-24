@@ -15,7 +15,7 @@ mockDataFile = 'mock_1.csv';
 openRocketDataFile = 'openrocket_2024_30k.csv';
 flightDataFile = 'avionics_12_8_24_post.csv';
 
-filterType = FilterType.EKF;
+filterType = FilterType.LKFMM;
 
 % Set sensor gaussian noise
 accelNoise = .1; % standard deviation w/ units m/s^2
