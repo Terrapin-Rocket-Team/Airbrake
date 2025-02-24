@@ -5,6 +5,7 @@
 #include <MMFS.h>
 #include "BR.h"
 #include "vn_100.h"
+#include "../Math/Vector.h"
 
 enum AirbrakeStages {
     PRELAUNCH,
@@ -56,6 +57,7 @@ public:
     // Helper Functions
     void determineStage() override;
     void updateMotor();
+    Vector<3> bodyFrame(Vector<3> vec); //converts from global fram to Z direction body frame.
 
     // Motor and encoder functions
     void goToStep(int step);
