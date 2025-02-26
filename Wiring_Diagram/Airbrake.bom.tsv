@@ -1,0 +1,23 @@
+Id	Description	Qty	Unit	Designators
+1	Cable, 2 wires	0	m	W11, W12, W13, W14, W5, W8, W9
+2	Cable, 3 wires	0	m	W7
+3	Cable, 4 wires	0	m	W2, W3
+4	Cable, 5 wires	0	m	W1, W10
+5	Cable, 6 wires	0	m	W4, W6
+6	Connector, 2 pins	8		Battery-1, Battery-2, Battery-3, Battery1, PowerSwitch1, Screw_switch1, Screw_switch2, Screw_switch3
+7	Connector, Compute Board, Male, 3 pins	1		LimitSwitch1
+8	Connector, Compute Board, Male, 4 pins	2		MotorEncoder1, SensorBoard1
+9	Connector, Compute Board, Male, 5 pins	1		BlueRaven1
+10	Connector, Compute Board, Male, 6 pins	1		MotorDriver1
+11	Connector, Controler, Screw, 2 pins	1		MotorController_OUT2
+12	Connector, Controler, Screw, 3 pins	1		MotorController_OUT3
+13	Connector, Controler, Screw, 6 pins	1		MotorController_IN
+14	Connector, Controler, pin, 5 pins	1		MotorController_OUT5
+15	Connector, Motor, Female, 3 pins	1		Motor3
+16	Connector, Motor, Female, 5 pins	1		Motor5
+17	Connector, Sensor, Clip, 3 pins	1		LimitSwitch
+18	Connector, Sensor, Male, 30 pins	1		VN-100_J5
+19	Connector, Sensor, Male, 4 pins	1		SensorBoard
+20	Connector, Sensor, Micro-USB / Screw, 7 pins	1		BlueRaven
+21	Connector, compute Board, Male, 6 pins	1		VN-100-1
+22	Connector, sensor, pin, 10 pins	1		MotorEncoder

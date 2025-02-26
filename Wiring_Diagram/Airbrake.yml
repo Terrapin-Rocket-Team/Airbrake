@@ -1,0 +1,327 @@
+connectors:
+  BlueRaven1:
+    type: Compute Board
+    subtype: Male
+    pincount: 5
+    pinlabels: [usb_5v, D-, D+, GND, GND]
+    image:
+      src: Pictures/BlueRaven1.png
+      height: 100
+
+
+  SensorBoard1:
+    type: Compute Board
+    subtype: Male
+    pincount: 4
+    pinlabels: [GND, SCL, SDA, +3.3V]
+    image:
+      src: Pictures/SensorBoard1.png
+      height: 100
+
+
+  MotorEncoder1:
+    type: Compute Board
+    subtype: Male
+    pincount: 4
+    pinlabels: [GND, Encoder_A, +5V, Encoder_B]
+    image:
+      src: Pictures/MotorEncoder1.png
+      height: 100
+
+
+  VN-100-1:
+    type: compute Board
+    subtype: Male
+    pincount: 6
+    pinlabels: [+5V, MOSI, MISO, SCK, SC, GND]
+    image:
+      src: Pictures/VN-100.png
+      height: 100
+
+
+  LimitSwitch1:
+    type: Compute Board
+    subtype: Male
+    pincount: 3
+    pinlabels: [GND, NC, NO]
+    image:
+      src: Pictures/LimitSwitch1.png
+      height: 100
+
+
+  MotorDriver1:
+    type: Compute Board
+    subtype: Male
+    pincount: 6
+    pinlabels: [GND, Motordriver_pin_2, Motordriver_pin_3, Motordriver_pin_4, Motordriver_pin_5, +5V]
+    image:
+      src: Pictures/MotorDriver1.png
+      height: 100
+
+
+  Battery1:
+    pincount: 2
+    pinlabels: [NET - (Battery1-Pin_1), GND]
+    image:
+      src: Pictures/Battery1.png
+      height: 100
+  
+
+  PowerSwitch1:
+    pincount: 2
+    pinlabels: [GND, +V]
+
+
+  BlueRaven:
+    type: Sensor
+    subtype: Micro-USB / Screw
+    pincount: 7
+    pinlabels: [+V, GND, APO, MAIN, 3RD, 4TH, Micro-USB]
+    image:
+      src: Pictures/BlueRaven.png
+      height: 100
+
+
+  SensorBoard:
+    type: Sensor
+    subtype: Male
+    pincount: 4
+    pinlabels: [GND, SCL, SDA, 3V3]
+    image:
+      src: Pictures/SensorBoard.png
+      height: 80
+
+
+  MotorController_IN:
+    type: Controler
+    subtype: Screw
+    pincount: 6
+    pinlabels: [5V, 0-5V, GND, DIR, BRAKE, STOP]
+    image:
+      src: Pictures/MotorControlerIn.png
+      height: 160  # Scale the image size slightly down
+
+
+  MotorController_OUT3:
+    type: Controler
+    subtype: Screw
+    pincount: 3
+    pinlabels: [MA, BA, MC]
+    image:
+      src: Pictures/MotorControlerOut.png
+      height: 110  # Scale the image size slightly down
+    
+
+  MotorController_OUT2:
+    type: Controler
+    subtype: Screw
+    pincount: 2
+    pinlabels: [VCC, GND]
+    image:
+      src: Pictures/MotorControlerOut.png
+      height: 110
+
+  
+
+  MotorController_OUT5:
+    type: Controler
+    subtype: pin
+    pincount: 5
+    pinlabels: [GND, Hc, Hb, Ha, 5V]
+    image:
+      src: Pictures/MotorController_Out5.png
+      height: 70
+
+
+  VN-100_J5:
+    type: Sensor
+    subtype: Male
+    pincount: 30
+    pinlabels: [GND, GND, GND, GND, TX2, RX2, TARE/RESTORE, NC, SYNC_OUT, WIN, ENABLE, TX1, RX1, RESV, SYNC_IN_2, SPI_SCK, SPI_MISO, REPRGM, NRST, SYNC_IN, SPI_CS, GPS_PPS, VBAT, RESV, RESV, GND, GPS_RF, GND]
+    image:
+      src: Pictures/Vectornav-100-c.png
+      height: 135
+
+
+  LimitSwitch:
+    type: Sensor
+    subtype: Clip
+    pincount: 3
+    pinlabels: [GND, NC, NO]
+
+
+  Motor3:
+    type: Motor
+    subtype: Female
+    pincount: 3
+    pinlabels: [...,...,...]
+    image:
+      src: Pictures/Motor_connector.png
+      height: 100
+
+
+  Motor5:
+    type: Motor
+    subtype: Female
+    pincount: 5
+    pinlabels: [...,...,...,...,...]
+    image:
+      src: Pictures/Motor_connector.png
+      height: 100
+
+
+  MotorEncoder:
+    type: sensor
+    subtype: pin
+    pincount: 10
+    pinlabels: [GND, GND, I, I, A, A, +5V, +5V, B, B]
+    image:
+      src: Pictures/Motor_encoder.png
+      height: 100
+
+
+  Battery-1:
+    pincount: 2
+    pinlabels: [+V, GND]
+  
+
+  Battery-2:
+    pincount: 2
+    pinlabels: [+V, GND]
+
+
+  Battery-3:
+    pincount: 2
+    pinlabels: [+V, GND]
+
+
+  Screw_switch1:
+    pincount: 2
+    pinlabels: [+, -]
+
+
+  Screw_switch2:
+    pincount: 2
+    pinlabels: [+, -]
+
+
+  Screw_switch3:
+    pincount: 2
+    pinlabels: [+, -]
+
+
+cables:
+  W1:
+    colors: [RD, WH, GY, GN, BU]
+    wirecount: 5
+  W2:
+    colors: [BK, YE, LB, RD]
+    wirecount: 4
+  W3:
+    colors: [OG, YE, GN, VT]
+    wirecount: 4
+    image:
+      src: Pictures/Encoder_wire.png
+      height: 100
+  W4:
+    colors: [RD, LB, GN, YE, WH, BK]
+    wirecount: 6
+  W5:
+    colors: [BK,RD]
+    wirecount: 2
+  W6:
+    colors: [YE, YE, LB, WH, YE, BK]
+    wirecount: 6
+  W7:
+    colors: [WH, YE, LB]
+    wirecount: 3
+    image:
+      src: Pictures/Motor_wire3.png
+      height: 100
+  W8:
+    colors: [RD, BK]
+    wirecount: 2
+  W9:
+    colors: [RD, BK]
+    wirecount: 2
+  W10:
+    colors: [BK,LB,YE,OG,RD]
+    wirecount: 5
+    image:
+      src: Pictures/Motor_wire5.png
+      height: 100
+  W11:
+    colors: [RD,BK]
+    wirecount: 2
+  W12:
+    colors: [BK,RD]
+    wirecount: 2
+  W13:
+    colors: [RD,BK]
+    wirecount: 2
+  W14:
+    colors: [RD,BK]
+    wirecount: 2
+
+
+connections:
+ -
+   - BlueRaven1: [1,2,3,4]
+   - W1: [1,2,4,5]
+ -
+   - W1: [3]
+   - BlueRaven: [7]
+ -
+   - SensorBoard1: [1,2,3,4]
+   - W2: [1,2,3,4]
+   - SensorBoard: [1,2,3,4]
+ -
+   - MotorEncoder1: [1,2,3,4]
+   - W3: [1,2,3,4]
+   - MotorEncoder: [1,5,7,9]
+ -
+   - VN-100-1: [1,2,3,4,5,6]
+   - W4: [1,2,3,4,5,6]
+   - VN-100_J5: [10, 17, 19, 16, 23, 18]
+ -
+   - LimitSwitch1: [1,2]
+   - W5: [1,2]
+   - LimitSwitch: [1,2]
+ -
+   - MotorDriver1: [1,2,3,4,5,6]
+   - W6: [1,2,3,4,5,6]
+ -
+   - W6: [2,3,4,5,6]
+   - MotorController_IN: [2,5,6,4,3]
+ -
+   - MotorController_OUT3: [1,2,3]
+   - W7: [1,2,3]
+   - Motor3: [1,2,3]
+ -
+   - Battery-1: [1,2] 
+   - W8: [1,2]
+   - Battery1: [1,2]
+ -
+   - Battery-2: [1,2]
+   - W9: [1,2]
+   - Screw_switch1: [1,2]
+ -
+   - MotorController_OUT5: [1,2,3,4,5]
+   - W10: [1,2,3,4,5]
+   - Motor5: [1,2,3,4,5]
+ - 
+   - Screw_switch1: [1,2]
+   - W11: [1,2]
+   - MotorController_OUT2: [1,2]
+ - 
+   - PowerSwitch1: [1,2]
+   - W12: [1,2]
+   - Screw_switch2: [2,1]
+ - 
+   - Battery-3: [1,2]
+   - W13: [1,2]
+   - Screw_switch3: [1,2]
+ -
+   - Screw_switch3: [1,2]
+   - W14: [1,2]
+   - BlueRaven: [1,2]
