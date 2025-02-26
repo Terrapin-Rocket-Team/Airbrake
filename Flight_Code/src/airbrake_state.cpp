@@ -322,20 +322,18 @@ double AirbrakeState::get_density(double h){
 }
 
 //change from global frame to body frame.
-Vector AirbrakeState:: bodyFrame(Vector<3> vec) {
-    
-    Quaternion orientation = getOrientation();
-    Quaternion globalquat = (0, vec.x, vec.y, vec.z);
-    Quaternian o_conj = orientation.conjugate();
-    Quaternian b_quat = orientation * globalquat * o_conj;
-    return Vector(b_quat.x, b_quat.y, b_quat.z);
+mmfs::Vector<3> AirbrakeState::bodyFrame(mmfs::Vector<3> vec) {
+    mmfs::Quaternion globalquat = mmfs::Quaternion(0, vec);
+    mmfs::Quaternion o_conj = orientation.conjugate();
+    mmfs::Quaternion b_quat = orientation * globalquat * o_conj;
+    return mmfs::Vector<3>(b_quat.x(), b_quat.y(), b_quat.z());
 }
 
 // estimate CdAs
 void AirbrakeState::update_CdA_estimate() {
     CdA_number_of_measurements++;
-    Vector bodyV = bodyFrame(velocity);
-    Vector bodyA = bodyFrame(acceleration);
+    mmfs::Vector<3> bodyV = bodyFrame(velocity);
+    mmfs::Vector<3> bodyA = bodyFrame(acceleration);
     double CdA_rocket_this_time_step =  (2*empty_mass*abs(bodyA.z()))/(density*bodyV.z()*bodyV.z()); // TODO This is wrong, needs to be body frame accel and velo
     CdA_rocket = (  CdA_rocket*(CdA_number_of_measurements-1) +  CdA_rocket_this_time_step    )/CdA_number_of_measurements ;
 }
