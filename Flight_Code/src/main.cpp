@@ -6,6 +6,8 @@
 #include "e5.h"
 #include "BR.h"
 
+// Testing
+#define TEST_WITH_SD_DATA
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -17,12 +19,20 @@ const int enc_chan_b = 37;
 // Sensors
 E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
 VN_100 vn(&SPI, 10); // Vector Nav
-mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
-mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
 mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
 BR blueRaven;
-mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc, &blueRaven};
+
+#ifdef TEST_WITH_SD_DATA
+    const char* dataPath = "40_FlightData.csv";
+    mmfs::MockBarometer mockDPS310(dataPath, "DPS310-Pres (hPa)", "DPS310-Temp (C)");
+    mmfs::MockBarometer mockMS5611(dataPath, "MS5611-Pres (hPa)", "MS5611-Temp (C)");
+    mmfs::Sensor* airbrake_sensors[7] = {&mockDPS310, &mockMS5611, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
+#else
+    mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
+    mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
+    mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
+#endif
 
 // Initialize Airbrake State
 AirbrakeKF lkfmm;
@@ -122,16 +132,17 @@ void loop() {
     // }
 
     // Flight Deployment Code //
+
     if (loop) {
         mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
         double tilt = acos(dcm.get(2,2));
         double velocity = AIRBRAKE.getVelocity().magnitude();
-        AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
-        // if (AIRBRAKE.stage == DEPLOY){
-        //     AIRBRAKE.goToDegree(AIRBRAKE.actuationAngle);
-        // } else {
-        //     AIRBRAKE.goToDegree(0);
-        // }
+        int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
+        if (AIRBRAKE.stage == DEPLOY){
+            AIRBRAKE.goToDegree(actuationAngle);
+        } else {
+            AIRBRAKE.goToDegree(0);
+        }
     }
     
 
