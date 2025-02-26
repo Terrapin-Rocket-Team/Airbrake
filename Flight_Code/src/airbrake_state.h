@@ -56,7 +56,7 @@ public:
     // Helper Functions
     void determineStage() override;
     void updateMotor();
-    mmfs::Vector<3> bodyFrame(mmfs::Vector<3> vec); //converts from global fram to Z direction body frame.
+    mmfs::Vector<3> globalToBodyFrame(mmfs::Vector<3> vec); //converts from global fram to Z direction body frame.
 
     // Motor and encoder functions
     void goToStep(int step);
