@@ -160,6 +160,10 @@ void AirbrakeState::updateMotor() {
     }
     else if(step_diff < -stepGranularity) {
         // Close the flaps
+        if (limitSwitchState == HIGH){
+            digitalWrite(stop_pin, HIGH);
+            analogWrite(speed_pin, 0);
+        }
         if(currentDirection == LOW) {
             // Start closing the flaps
             analogWrite(speed_pin, 128);

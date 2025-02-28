@@ -25,7 +25,7 @@ const int speed_pin = 2; // set to 255 for full speed, set to 0 for no speed
 // Limit Switch Pin
 const int LIMIT_SWITCH_PIN = 6;
 
-const int stepGranularity = 7500;
+const int stepGranularity = 5000;
 
 class AirbrakeState: public mmfs::State{
 

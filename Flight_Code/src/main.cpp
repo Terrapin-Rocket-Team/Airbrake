@@ -7,7 +7,7 @@
 #include "BR.h"
 
 // Testing
-#define TEST_WITH_SD_DATA
+//#define TEST_WITH_SD_DATA
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -36,7 +36,7 @@ BR blueRaven;
 
 // Initialize Airbrake State
 AirbrakeKF lkfmm;
-AirbrakeState AIRBRAKE(airbrake_sensors, 7, &lkfmm);
+AirbrakeState AIRBRAKE(airbrake_sensors, 7, nullptr);
 
 // MMFS Stuff
 mmfs::MMFSConfig config = mmfs::MMFSConfig()
