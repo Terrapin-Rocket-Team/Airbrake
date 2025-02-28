@@ -10,6 +10,16 @@ AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::Linea
 
 };
 
+bool AirbrakeState::init(bool useBiasCorrection){
+    State::init(useBiasCorrection);
+
+    //sets up the circular buffer for encoder stalling.
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+    for (int i = 0; i < encoderSame; i++){
+        encoderHistory[i] = 0;
+    }
+}
+
 void AirbrakeState::determineStage(){
     int timeSinceLaunch = currentTime - timeOfLaunch;
     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
@@ -126,6 +136,30 @@ bool AirbrakeState:: motorStallCondition() {
     return stall;
 }
 
+
+//returns if the motor is stalling. Does not affect the motor control.
+bool AirbrakeState:: motorStopCondition() {
+    bool stall = false;
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+    if(digitalRead(LIMIT_SWITCH_PIN) == HIGH){
+        stall = true;
+    }
+
+    int currentEncoderValue = enc->getSteps();
+    for (int i = 0; i < encoderSame; i++) {
+        if (encoderHistory[i] != currentEncoderValue || stall) {
+            stall = true;
+            break;
+        }
+    }
+
+    // Update history buffer
+    encoderHistory[historyIndex] = currentEncoderValue;
+    historyIndex = (historyIndex + 1) % encoderSame; // Circular buffer
+
+    return stall;
+}
+
 void AirbrakeState::updateMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
 
@@ -159,11 +193,6 @@ void AirbrakeState::updateMotor() {
         }
     }
     else if(step_diff < -stepGranularity) {
-        // Close the flaps
-        if (limitSwitchState == HIGH){
-            digitalWrite(stop_pin, HIGH);
-            analogWrite(speed_pin, 0);
-        }
         if(currentDirection == LOW) {
             // Start closing the flaps
             analogWrite(speed_pin, 128);
@@ -193,46 +222,24 @@ void AirbrakeState::updateMotor() {
 
 void AirbrakeState::zeroMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-    int encoderSame = 8; // amount of encoder values that have to be in a row at once to zero the motor
-    int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values
-    int historyIndex = 0;
-
-    // Initialize history with the current encoder value
-    int currentEncoderValue = enc->getSteps();
-    for (int i = 0; i < encoderSame; i++) {
-        encoderHistory[i] = currentEncoderValue;
-    }
 
     unsigned long startTime = millis();
+    bool motorStopped =false;
 
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
-    while(limitSwitchState == LOW){
+    while(motorStopped){
         enc->update();
-
-        int currentEncoderValue = enc->getSteps();
-        Serial.print("Current Encoder Steps: ");
-        Serial.println(currentEncoderValue);
     
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000) {
-            bool encoderStopped = true;
-            for (int i = 0; i < encoderSame; i++) {
-                if (encoderHistory[i] != currentEncoderValue) {
-                    encoderStopped = false;
-                    break;
-                }
-            }
-
-            if (encoderStopped) {
-                break; // Exit if the encoder has not changed for encoderSame consecutive readings
-            }
+            motorStopped = motorStopCondition();
         }
-
-        // Update history buffer
-        encoderHistory[historyIndex] = currentEncoderValue;
-        historyIndex = (historyIndex + 1) % encoderSame; // Circular buffer
-
-        limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
+        if (motorStopped) {
+            break; // Exit if the encoder has read repetitive numbers or the limit switch is hit
+        }
+        if (digitalRead(LIMIT_SWITCH_PIN) == HIGH){
+            break;
+        }
         analogWrite(speed_pin, 128);
         digitalWrite(stop_pin, LOW);
         digitalWrite(dir_pin, HIGH);

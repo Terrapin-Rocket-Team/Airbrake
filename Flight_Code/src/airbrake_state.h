@@ -33,6 +33,8 @@ public:
     // Construtor
     AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter);
 
+    virtual bool init(bool useBiasCorrection = false) override;
+
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
