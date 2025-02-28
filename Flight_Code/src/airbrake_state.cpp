@@ -165,8 +165,8 @@ void AirbrakeState::updateMotor() {
 
 void AirbrakeState::zeroMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-    int encoderSame = 3; // amount of encoder values that have to be in a row at once to zero the motor
-    int encoderHistory[encoderSame]; // Circular buffer to store the last 10 values
+    int encoderSame = 8; // amount of encoder values that have to be in a row at once to zero the motor
+    int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values
     int historyIndex = 0;
 
     // Initialize history with the current encoder value
@@ -208,7 +208,7 @@ void AirbrakeState::zeroMotor() {
         analogWrite(speed_pin, 128);
         digitalWrite(stop_pin, LOW);
         digitalWrite(dir_pin, HIGH);
-        delay(10);
+        delay(5);
     }
     analogWrite(speed_pin, 0);
     digitalWrite(stop_pin, HIGH);
