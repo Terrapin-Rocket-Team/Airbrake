@@ -193,23 +193,46 @@ void AirbrakeState::updateMotor() {
 
 void AirbrakeState::zeroMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+    int encoderSame = 3; // amount of encoder values that have to be in a row at once to zero the motor
+    int encoderHistory[encoderSame]; // Circular buffer to store the last 10 values
+    int historyIndex = 0;
+
+    // Initialize history with the current encoder value
+    int currentEncoderValue = enc->getSteps();
+    for (int i = 0; i < encoderSame; i++) {
+        encoderHistory[i] = currentEncoderValue;
+    }
 
     unsigned long startTime = millis();
 
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
-    while(1){
+    while(limitSwitchState == LOW){
         enc->update();
-        Serial.print("Encoder Steps: ");
-        Serial.println(enc->getSteps());
+
+        int currentEncoderValue = enc->getSteps();
+        Serial.print("Current Encoder Steps: ");
+        Serial.println(currentEncoderValue);
+    
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000) {
-            if(motorStallCondition()){
-                break; // Exit if the encoder has read repetitive numbers
+            bool encoderStopped = true;
+            for (int i = 0; i < encoderSame; i++) {
+                if (encoderHistory[i] != currentEncoderValue) {
+                    encoderStopped = false;
+                    break;
+                }
+            }
+
+            if (encoderStopped) {
+                break; // Exit if the encoder has not changed for encoderSame consecutive readings
             }
         }
-        if (digitalRead(LIMIT_SWITCH_PIN) == LOW){
-            break; // Exit if the limit switch is hit
-        }
+
+        // Update history buffer
+        encoderHistory[historyIndex] = currentEncoderValue;
+        historyIndex = (historyIndex + 1) % encoderSame; // Circular buffer
+
+        limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
         analogWrite(speed_pin, 128);
         digitalWrite(stop_pin, LOW);
         digitalWrite(dir_pin, HIGH);
@@ -218,7 +241,6 @@ void AirbrakeState::zeroMotor() {
     analogWrite(speed_pin, 0);
     digitalWrite(stop_pin, HIGH);
     digitalWrite(dir_pin, LOW);
-    enc->update();
     enc->setInitialSteps(enc->getSteps());
 }
 
