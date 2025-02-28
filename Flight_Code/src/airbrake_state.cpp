@@ -176,6 +176,7 @@ void AirbrakeState::zeroMotor() {
     analogWrite(speed_pin, 0);
     digitalWrite(stop_pin, HIGH);
     digitalWrite(dir_pin, LOW);
+    enc->update();
     enc->setInitialSteps(enc->getSteps());
 }
 
