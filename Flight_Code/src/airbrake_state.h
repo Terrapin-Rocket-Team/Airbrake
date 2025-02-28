@@ -22,7 +22,10 @@ const int stop_pin = 4; //set to low to STOP the motor, high to let the motor mo
 const int dir_pin = 5; // set low to open the airbrake, high to close the airbrake
 const int speed_pin = 2; // set to 255 for full speed, set to 0 for no speed
 
-const int stepGranularity = 7500;
+// Limit Switch Pin
+const int LIMIT_SWITCH_PIN = 6;
+
+const int stepGranularity = 5000;
 
 class AirbrakeState: public mmfs::State{
 
@@ -63,6 +66,8 @@ public:
     void goToDegree(int degree);
     int desiredStep = 0;
     int dir_change_time = 0;
+    void zeroMotor();
+    bool limitSwitchState;
 
     // Airbrake functions from last year
     int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);

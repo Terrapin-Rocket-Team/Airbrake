@@ -131,6 +131,10 @@ void AirbrakeState::updateMotor() {
     }
     else if(step_diff < -stepGranularity) {
         // Close the flaps
+        if (limitSwitchState == HIGH){
+            digitalWrite(stop_pin, HIGH);
+            analogWrite(speed_pin, 0);
+        }
         if(currentDirection == LOW) {
             // Start closing the flaps
             analogWrite(speed_pin, 128);
@@ -156,6 +160,23 @@ void AirbrakeState::updateMotor() {
         digitalWrite(stop_pin, HIGH);
         analogWrite(speed_pin, 0);
     }
+}
+
+
+void AirbrakeState::zeroMotor() {
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+
+    // Move motor up slowly until the limit switch is clicked
+    while(limitSwitchState == LOW){
+        limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
+        analogWrite(speed_pin, 64);
+        digitalWrite(stop_pin, LOW);
+        digitalWrite(dir_pin, HIGH);
+    }
+    analogWrite(speed_pin, 0);
+    digitalWrite(stop_pin, HIGH);
+    digitalWrite(dir_pin, LOW);
+    enc->setInitialSteps(enc->getSteps());
 }
 
 // Kalman filter functions
