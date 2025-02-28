@@ -33,6 +33,8 @@ public:
     // Construtor
     AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter);
 
+    virtual bool init(bool useBiasCorrection = false) override;
+
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
@@ -60,6 +62,13 @@ public:
     void determineStage() override;
     void updateMotor();
     mmfs::Vector<3> globalToBodyFrame(mmfs::Vector<3> vec); //converts from global fram to Z direction body frame.
+
+    //motor Stall
+    bool motorStopCondition();
+    static const int encoderSame = 8; // match the array below
+    int historyIndex = 0;
+    int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
+
 
     // Motor and encoder functions
     void goToStep(int step);
