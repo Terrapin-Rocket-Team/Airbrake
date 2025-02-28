@@ -24,7 +24,7 @@ mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
 BR blueRaven;
 
 #ifdef TEST_WITH_SD_DATA
-    const char* dataPath = "40_FlightData.csv";
+    const char* dataPath = "Jan_Airbrake_FlightData.csv";
     mmfs::MockBarometer mockDPS310(dataPath, "DPS310-Pres (hPa)", "DPS310-Temp (C)");
     mmfs::MockBarometer mockMS5611(dataPath, "MS5611-Pres (hPa)", "MS5611-Temp (C)");
     mmfs::Sensor* airbrake_sensors[7] = {&mockDPS310, &mockMS5611, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
@@ -69,17 +69,19 @@ void setup() {
     // MMFS Stuff
     sys.init();
 
-    baro1.setBiasCorrectionMode(true);
-    baro2.setBiasCorrectionMode(true);
-    gps.setBiasCorrectionMode(true);
-
+    #ifdef TEST_WITH_SD_DATA
+    #else
+        baro1.setBiasCorrectionMode(true);
+        baro2.setBiasCorrectionMode(true);
+        gps.setBiasCorrectionMode(true);
+    #endif
+    
 
     // Limit Switch
     pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
     if (enc.isInitialized()){
         AIRBRAKE.zeroMotor();
     }
-    Serial.println(enc.getSteps());
     delay(5000);
 }
 
@@ -90,13 +92,19 @@ void loop() {
 
     // // Turn off bias correction during flight
     if (AIRBRAKE.stage == BOOST) {
-        baro1.setBiasCorrectionMode(false);
-        baro2.setBiasCorrectionMode(false);
-        gps.setBiasCorrectionMode(false);
+        #ifdef TEST_WITH_SD_DATA
+        #else
+            baro1.setBiasCorrectionMode(false);
+            baro2.setBiasCorrectionMode(false);
+            gps.setBiasCorrectionMode(false);
+        #endif
     } else if (AIRBRAKE.stage == PRELAUNCH) {
-        baro1.setBiasCorrectionMode(true);
-        baro2.setBiasCorrectionMode(true);
-        gps.setBiasCorrectionMode(true);
+        #ifdef TEST_WITH_SD_DATA
+        #else
+            baro1.setBiasCorrectionMode(true);
+            baro2.setBiasCorrectionMode(true);
+            gps.setBiasCorrectionMode(true);
+        #endif
     }
 
     if (AIRBRAKE.stage == COAST){
@@ -104,16 +112,17 @@ void loop() {
     }
 
     // // Test Deployment Code //
-    if (millis() > 50000){
-        Serial.print("Going to 0. Currently at: ");
-        Serial.println(enc.getSteps());
-        AIRBRAKE.goToDegree(0);  
-        mmfs::getLogger().setRecordMode(mmfs::GROUND);
-    } else if (millis() > 30000){
+    // if (millis() > 80000){
+    //     Serial.print("Going to 0. Currently at: ");
+    //     Serial.println(enc.getSteps());
+    //     //AIRBRAKE.goToDegree(0);  
+    //     mmfs::getLogger().setRecordMode(mmfs::GROUND);
+    if (millis() > 30000){
         Serial.print("Going to 40. Currently at: ");
         Serial.println(enc.getSteps());
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-        AIRBRAKE.goToDegree(40);
+        //AIRBRAKE.goToDegree(70);
+        AIRBRAKE.goToStep(-750000);
     }
 
     // Flight Deployment Code //

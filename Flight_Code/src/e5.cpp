@@ -17,11 +17,5 @@ void E5::read()
     // currentRelativeSteps = myEnc.read();
 
     currentRelativeSteps = myEnc.read() - initialSteps;
-    Serial.print("myEnc.read():");
-    Serial.println(myEnc.read());
-    Serial.print("Initial Steps:");
-    Serial.println(initialSteps);
-    Serial.print("Currently Relative Steps:");
-    Serial.println(currentRelativeSteps);
 }
 
