@@ -11,13 +11,13 @@ AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::Linea
 };
 
 bool AirbrakeState::init(bool useBiasCorrection){
-    State::init(useBiasCorrection);
+    bool initialize = State::init(useBiasCorrection);
 
     //sets up the circular buffer for encoder stalling.
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
     for (int i = 0; i < encoderSame; i++){
         encoderHistory[i] = 0;
     }
+    return initialize;
 }
 
 void AirbrakeState::determineStage(){

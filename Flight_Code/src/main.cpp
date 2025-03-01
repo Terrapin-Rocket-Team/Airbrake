@@ -69,12 +69,12 @@ void setup() {
     // MMFS Stuff
     sys.init();
 
-    // #ifdef TEST_WITH_SD_DATA
-    // #else
-    //     baro1.setBiasCorrectionMode(true);
-    //     baro2.setBiasCorrectionMode(true);
-    //     gps.setBiasCorrectionMode(true);
-    // #endif
+    #ifdef TEST_WITH_SD_DATA
+    #else
+        baro1.setBiasCorrectionMode(true);
+        baro2.setBiasCorrectionMode(true);
+        gps.setBiasCorrectionMode(true);
+    #endif
     
 
     // Limit Switch
