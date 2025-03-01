@@ -86,7 +86,10 @@ void setup() {
 }
 
 void loop() {
+    Serial.println("Here 2");
+    delay(1000);
     sys.update();
+    Serial.println("Here 3");
     AIRBRAKE.updateMotor();
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
