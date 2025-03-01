@@ -138,12 +138,9 @@ bool AirbrakeState:: motorStallCondition() {
 
 
 //returns if the motor is stalling. Does not affect the motor control.
-bool AirbrakeState:: motorStopCondition() {
+bool AirbrakeState:: motorStallCondition() {
     bool stall = false;
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-    if(digitalRead(LIMIT_SWITCH_PIN) == HIGH){
-        stall = true;
-    }
 
     int currentEncoderValue = enc->getSteps();
     for (int i = 0; i < encoderSame; i++) {
@@ -193,6 +190,13 @@ void AirbrakeState::updateMotor() {
         }
     }
     else if(step_diff < -stepGranularity) {
+        // Close the flaps
+
+        if (limitSwitchState == HIGH){
+            // Stop closing the flaps if the limit switch is activated
+            digitalWrite(stop_pin, HIGH);
+            analogWrite(speed_pin, 0);
+        }
         if(currentDirection == LOW) {
             // Start closing the flaps
             analogWrite(speed_pin, 128);
@@ -232,13 +236,12 @@ void AirbrakeState::zeroMotor() {
     
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000) {
-            motorStopped = motorStopCondition();
-        }
-        if (motorStopped) {
-            break; // Exit if the encoder has read repetitive numbers or the limit switch is hit
+            if(motorStallCondition()){
+                break; // Exit if the encoder has read repetitive numbers
+            }
         }
         if (digitalRead(LIMIT_SWITCH_PIN) == HIGH){
-            break;
+            break; // Exit if the limit switch is hit
         }
         analogWrite(speed_pin, 128);
         digitalWrite(stop_pin, LOW);

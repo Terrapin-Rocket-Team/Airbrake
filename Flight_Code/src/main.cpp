@@ -69,12 +69,12 @@ void setup() {
     // MMFS Stuff
     sys.init();
 
-    #ifdef TEST_WITH_SD_DATA
-    #else
-        baro1.setBiasCorrectionMode(true);
-        baro2.setBiasCorrectionMode(true);
-        gps.setBiasCorrectionMode(true);
-    #endif
+    // #ifdef TEST_WITH_SD_DATA
+    // #else
+    //     baro1.setBiasCorrectionMode(true);
+    //     baro2.setBiasCorrectionMode(true);
+    //     gps.setBiasCorrectionMode(true);
+    // #endif
     
 
     // Limit Switch
@@ -134,7 +134,7 @@ void loop() {
     //     Serial.println(enc.getSteps());
     //     //AIRBRAKE.goToDegree(0);  
     //     mmfs::getLogger().setRecordMode(mmfs::GROUND);
-    if (millis() > 30000){
+    if (millis() > 20000){
         Serial.print("Going to 40. Currently at: ");
         Serial.println(enc.getSteps());
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
