@@ -69,20 +69,20 @@ void setup() {
     // MMFS Stuff
     sys.init();
 
-    #ifdef TEST_WITH_SD_DATA
-    #else
-        baro1.setBiasCorrectionMode(true);
-        baro2.setBiasCorrectionMode(true);
-        gps.setBiasCorrectionMode(true);
-    #endif
+    // #ifdef TEST_WITH_SD_DATA
+    // #else
+    //     baro1.setBiasCorrectionMode(true);
+    //     baro2.setBiasCorrectionMode(true);
+    //     gps.setBiasCorrectionMode(true);
+    // #endif
     
 
     // Limit Switch
-    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
-    if (enc.isInitialized()){
-        AIRBRAKE.zeroMotor();
-    }
-    delay(5000);
+    // pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    // if (enc.isInitialized()){
+    //     AIRBRAKE.zeroMotor();
+    // }
+    // delay(5000);
 }
 
 void loop() {
@@ -91,21 +91,21 @@ void loop() {
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
     // // Turn off bias correction during flight
-    if (AIRBRAKE.stage == BOOST) {
-        #ifdef TEST_WITH_SD_DATA
-        #else
-            baro1.setBiasCorrectionMode(false);
-            baro2.setBiasCorrectionMode(false);
-            gps.setBiasCorrectionMode(false);
-        #endif
-    } else if (AIRBRAKE.stage == PRELAUNCH) {
-        #ifdef TEST_WITH_SD_DATA
-        #else
-            baro1.setBiasCorrectionMode(true);
-            baro2.setBiasCorrectionMode(true);
-            gps.setBiasCorrectionMode(true);
-        #endif
-    }
+    // if (AIRBRAKE.stage == BOOST) {
+    //     #ifdef TEST_WITH_SD_DATA
+    //     #else
+    //         baro1.setBiasCorrectionMode(false);
+    //         baro2.setBiasCorrectionMode(false);
+    //         gps.setBiasCorrectionMode(false);
+    //     #endif
+    // } else if (AIRBRAKE.stage == PRELAUNCH) {
+    //     #ifdef TEST_WITH_SD_DATA
+    //     #else
+    //         baro1.setBiasCorrectionMode(true);
+    //         baro2.setBiasCorrectionMode(true);
+    //         gps.setBiasCorrectionMode(true);
+    //     #endif
+    // }
 
     if (AIRBRAKE.stage == COAST){
         AIRBRAKE.update_CdA_estimate();
@@ -117,7 +117,7 @@ void loop() {
     //     Serial.println(enc.getSteps());
     //     //AIRBRAKE.goToDegree(0);  
     //     mmfs::getLogger().setRecordMode(mmfs::GROUND);
-    if (millis() > 30000){
+    if (millis() > 20000){
         Serial.print("Going to 40. Currently at: ");
         Serial.println(enc.getSteps());
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);

@@ -64,8 +64,8 @@ public:
     mmfs::Vector<3> globalToBodyFrame(mmfs::Vector<3> vec); //converts from global fram to Z direction body frame.
 
     //motor Stall
-    bool motorStopCondition();
-    static const int encoderSame = 8; // match the array below
+    bool motorStallCondition();
+    static const int encoderSame = 8; // size of the circular buffer
     int historyIndex = 0;
     int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
 
