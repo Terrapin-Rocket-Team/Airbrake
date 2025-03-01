@@ -69,12 +69,12 @@ void setup() {
     // MMFS Stuff
     sys.init();
 
-    // #ifdef TEST_WITH_SD_DATA
-    // #else
-    //     baro1.setBiasCorrectionMode(true);
-    //     baro2.setBiasCorrectionMode(true);
-    //     gps.setBiasCorrectionMode(true);
-    // #endif
+    #ifdef TEST_WITH_SD_DATA
+    #else
+        baro1.setBiasCorrectionMode(true);
+        baro2.setBiasCorrectionMode(true);
+        gps.setBiasCorrectionMode(true);
+    #endif
     
 
     // Limit Switch
@@ -86,29 +86,26 @@ void setup() {
 }
 
 void loop() {
-    Serial.println("Here 2");
-    delay(1000);
     sys.update();
-    Serial.println("Here 3");
     AIRBRAKE.updateMotor();
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
     // // Turn off bias correction during flight
-    // if (AIRBRAKE.stage == BOOST) {
-    //     #ifdef TEST_WITH_SD_DATA
-    //     #else
-    //         baro1.setBiasCorrectionMode(false);
-    //         baro2.setBiasCorrectionMode(false);
-    //         gps.setBiasCorrectionMode(false);
-    //     #endif
-    // } else if (AIRBRAKE.stage == PRELAUNCH) {
-    //     #ifdef TEST_WITH_SD_DATA
-    //     #else
-    //         baro1.setBiasCorrectionMode(true);
-    //         baro2.setBiasCorrectionMode(true);
-    //         gps.setBiasCorrectionMode(true);
-    //     #endif
-    // }
+    if (AIRBRAKE.stage == BOOST) {
+        #ifdef TEST_WITH_SD_DATA
+        #else
+            baro1.setBiasCorrectionMode(false);
+            baro2.setBiasCorrectionMode(false);
+            gps.setBiasCorrectionMode(false);
+        #endif
+    } else if (AIRBRAKE.stage == PRELAUNCH) {
+        #ifdef TEST_WITH_SD_DATA
+        #else
+            baro1.setBiasCorrectionMode(true);
+            baro2.setBiasCorrectionMode(true);
+            gps.setBiasCorrectionMode(true);
+        #endif
+    }
 
     if (AIRBRAKE.stage == COAST){
         AIRBRAKE.update_CdA_estimate();

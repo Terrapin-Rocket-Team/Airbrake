@@ -10,13 +10,13 @@ AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::Linea
 };
 
 bool AirbrakeState::init(bool useBiasCorrection){
-    State::init(useBiasCorrection);
+    bool initialize = State::init(useBiasCorrection);
 
     //sets up the circular buffer for encoder stalling.
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
     for (int i = 0; i < encoderSame; i++){
         encoderHistory[i] = 0;
     }
+    return initialize;
 }
 
 void AirbrakeState::determineStage(){
@@ -103,10 +103,13 @@ void AirbrakeState::goToStep(int step) {
 }
 
 void AirbrakeState::goToDegree(int degree) {
-    // Check to make sure degree is within [-90, 90]
-    if(degree > 90 || degree < -90) {
-        errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 90 (open).");
-        return;
+    // Check to make sure degree is within [0, 70]
+    if(degree > 70) {
+        errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle greater than 70 passed. Setting degree to 70");
+        degree = 70;
+    } else if(degree < 0){
+        errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle less than 0 passed. Setting degree to 0");
+        degree = 0;
     }
     desiredStep = -degree * 10537; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open
 }
@@ -312,7 +315,7 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
     int i = 0;
     // initial flap guesses
     double low = 0; 
-    double high = 75;
+    double high = 70;
             
     while (i < max_guesses) {
  
