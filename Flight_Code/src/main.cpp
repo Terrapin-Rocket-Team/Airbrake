@@ -22,7 +22,7 @@ mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
 mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
 BR blueRaven;
-mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
+mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc, &blueRaven};
 
 // Initialize Airbrake State
 AirbrakeKF lkfmm;
@@ -71,7 +71,18 @@ void setup() {
 }
 
 int actuationAngle;
+
+void FreeMem()
+{
+    void *heapTop = malloc(2000);
+    int stack = 0;
+    long dif = ((long)heapTop) - ((long) &stack);
+    Serial.print(dif);
+    Serial.print("\n");
+    free(heapTop);
+}
 void loop() {
+    //FreeMem();
     bool loop = sys.update();
     AIRBRAKE.updateMotor();
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
