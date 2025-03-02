@@ -14,7 +14,6 @@ bool BR::init() {
 
 void BR::update() {
     read();
-    packData();
 }
 
 void BR::resetSensorValues() {
@@ -35,18 +34,18 @@ void BR::read() {
             if (strncmp(buffer, "@ BLR_STAT", 10) == 0) {
                 if (parseMessage(buffer)) {
                     lastReadTime = millis();
-                    //Serial.println("Message parsed successfully");
+                    //mmfs::getLogger().recordLogData(mmfs::INFO_, "Message parsed successfully");
                 } else {
-                    logger.recordLogData(mmfs::INFO_, "Failed to parse message");
+                    mmfs::getLogger().recordLogData(mmfs::INFO_, "Failed to parse message");
                 }
             } else {
-                logger.recordLogData(mmfs::INFO_, "Received message does not start with @ BLR_STAT");
+                mmfs::getLogger().recordLogData(mmfs::INFO_, "Received message does not start with @ BLR_STAT");
             }
         } else {
-            logger.recordLogData(mmfs::INFO_, "No bytes read from blueRaven");
+            mmfs::getLogger().recordLogData(mmfs::INFO_, "No bytes read from blueRaven");
         }
     } else {
-        //Serial.println("No data available from blueRaven");
+        //mmfs::getLogger().recordLogData(mmfs::INFO_, "No data available from blueRaven");
     }
     
     if (!isConnected()) {
@@ -107,66 +106,4 @@ bool BR::parseMessage(const char* message) {
     }
     
     return success;
-}
-
-const int BR::getNumPackedDataPoints() const {
-    return 13;  // Updated to match all data points
-}
-
-const mmfs::PackedType* BR::getPackedOrder() const {
-    static const mmfs::PackedType result[13] = {
-        mmfs::FLOAT,  // altitude
-        mmfs::FLOAT,  // pressure
-        mmfs::FLOAT,  // temperature
-        mmfs::FLOAT,  // velocity
-        mmfs::FLOAT,  // angle
-        mmfs::FLOAT,  // accelX
-        mmfs::FLOAT,  // accelY
-        mmfs::FLOAT,  // accelZ
-        mmfs::FLOAT,  // gyroX
-        mmfs::FLOAT,  // gyroY
-        mmfs::FLOAT,  // gyroZ
-        mmfs::FLOAT,  // rollAngle
-        mmfs::FLOAT   // tiltAngle
-    };
-    return result;
-}
-
-const char** BR::getPackedDataLabels() const {
-    static const char* labels[13] = {
-        "BR-ALT (ft)",
-        "BR-PRES (Pa)",
-        "BR-TEMP (C)",
-        "BR-VEL (m/s)",
-        "BR-ANG (deg)",
-        "BR-ACCX (m/s^2)",
-        "BR-ACCY (m/s^2)",
-        "BR-ACCZ (m/s^2)",
-        "BR-GYROX (rad/s)",
-        "BR-GYROY (rad/s)",
-        "BR-GYROZ (rad/s)",
-        "BR-ROLL (deg)",
-        "BR-TILT (deg)"
-    };
-    return labels;
-}
-
-void BR::packData() {
-    if (!initialized) return;
-    PackedData data = {
-        altitude,
-        pressure,
-        temperature,
-        velocity,
-        angle,
-        accelX,
-        accelY,
-        accelZ,
-        gyroX,
-        gyroY,
-        gyroZ,
-        rollAngle,
-        tiltAngle
-    };
-    memcpy(packedData, &data, sizeof(PackedData));
 }

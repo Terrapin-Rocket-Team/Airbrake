@@ -10,7 +10,6 @@ classdef LinearKalmanFilterMoreMeasurements
         R % Measurement Uncertainty Matrix
         K % Kalman Gain
         Q % Process Noise Matrix
-        c % Drag thing
 
         process_noise = 1;
     end
@@ -107,12 +106,24 @@ classdef LinearKalmanFilterMoreMeasurements
             obj.Q = obj.G * obj.process_noise^2 * obj.G';
         
             % Kalman Filter Steps
-            obj = calculateKalmanGain(obj);
-            obj = updateState(obj, measurement);
-            obj = covarianceUpdate(obj);
-            obj = predictState(obj);
-            obj = covarianceExtrapolate(obj);
+            if (~isOutlier(obj, measurement, 200))
+                obj = calculateKalmanGain(obj);
+                obj = updateState(obj, measurement);
+                obj = covarianceUpdate(obj);
+                obj = predictState(obj);
+                obj = covarianceExtrapolate(obj);
+            end
         end
+
+       function output = isOutlier(obj, measurement, threshold)
+
+           gpsZResid = abs(measurement(3) - obj.X(3));
+           baro1Resid = abs(measurement(4) - obj.X(3));
+           baro2Resid = abs(measurement(5) - obj.X(3));
+
+            % Check for outlier
+            output = (gpsZResid > threshold) || (baro1Resid > threshold) || (baro2Resid > threshold);
+       end
     end
 end
 
