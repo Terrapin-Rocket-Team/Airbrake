@@ -54,7 +54,7 @@ public:
     double density = 1.225; // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     int CdA_number_of_measurements = 0;
     double CdA_rocket = .55; // Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
-    double single_flap_area = 0.00645; // TODO update this new flap area [m^2]
+    double single_flap_area = 0.00839;
 
     AirbrakeStages stage = PRELAUNCH;
 

@@ -228,19 +228,19 @@ void AirbrakeState::zeroMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
 
     unsigned long startTime = millis();
-    bool motorStopped =false;
 
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
-    while(motorStopped){
+    while(1){
         enc->update();
-    
+        Serial.print("Encoder Steps: ");
+        Serial.println(enc->getSteps());
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000) {
             if(motorStallCondition()){
                 break; // Exit if the encoder has read repetitive numbers
             }
         }
-        if (digitalRead(LIMIT_SWITCH_PIN) == HIGH){
+        if (digitalRead(LIMIT_SWITCH_PIN) == LOW){
             break; // Exit if the limit switch is hit
         }
         analogWrite(speed_pin, 128);
