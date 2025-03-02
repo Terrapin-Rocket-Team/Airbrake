@@ -40,7 +40,7 @@ public:
     // Flight configuation parameters
     double empty_mass = 40;      // in [kg]
     double target_apogee = 3100; // in [m]
-    double ground_altitude = 0; // ASL in [m]
+    double ground_altitude = 11.9; // ASL in [m]
     double sim_time_to_apogee = 60; // in [s]
 
     // Simulated parameters
@@ -54,7 +54,7 @@ public:
     double density = 1.225; // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     int CdA_number_of_measurements = 0;
     double CdA_rocket = .55; // Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
-    double single_flap_area = 0.00645; // TODO update this new flap area [m^2]
+    double single_flap_area = 0.00839;
 
     AirbrakeStages stage = PRELAUNCH;
 
@@ -76,7 +76,7 @@ public:
     int desiredStep = 0;
     int dir_change_time = 0;
     void zeroMotor();
-    bool limitSwitchState;
+    bool limitSwitchState; // True means it is clicked
 
     // Airbrake functions from last year
     int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);

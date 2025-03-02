@@ -111,7 +111,9 @@ void AirbrakeState::goToDegree(int degree) {
         errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle less than 0 passed. Setting degree to 0");
         degree = 0;
     }
-    desiredStep = -degree * 10537; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open
+    // Number for degree to desired step: https://docs.google.com/spreadsheets/d/1bsWIpDW322UWTvhwyznNfmbBDd-kcjSC/edit?gid=1716849137#gid=1716849137
+    //desiredStep = -degree * 10537; // <- old number (v1)
+    desiredStep = -degree * 9259; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open (v2)
 }
 
 
@@ -207,19 +209,19 @@ void AirbrakeState::zeroMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
 
     unsigned long startTime = millis();
-    bool motorStopped =false;
 
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
-    while(motorStopped){
+    while(1){
         enc->update();
-    
+        Serial.print("Encoder Steps: ");
+        Serial.println(enc->getSteps());
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000) {
             if(motorStallCondition()){
                 break; // Exit if the encoder has read repetitive numbers
             }
         }
-        if (digitalRead(LIMIT_SWITCH_PIN) == HIGH){
+        if (digitalRead(LIMIT_SWITCH_PIN) == LOW){
             break; // Exit if the limit switch is hit
         }
         analogWrite(speed_pin, 128);
@@ -268,7 +270,7 @@ void AirbrakeState::updateKF() {
     if (~isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
         filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
     }
-    
+
     // pos x, y, z, vel x, y, z
     position.x() = stateVars[0];
     position.y() = stateVars[1];
@@ -284,8 +286,6 @@ void AirbrakeState::updateKF() {
     }
 
     delete[] stateVars;
-    delete[] inputs;
-    delete[] measurements;
 }
 
 bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {

@@ -43,8 +43,8 @@ mmfs::Matrix AirbrakeKF::getR() {
         gpsMAX_std, 0, 0, 0, 0,
         0, gpsMAX_std, 0, 0, 0,
         0, 0, gpsMAX_std, 0, 0,
-        0, 0, dps310_std, 0, 0,
-        0, 0, ms5611_std, 0, 0
+        0, 0, 0, dps310_std, 0,
+        0, 0, 0, 0, ms5611_std
     };
     return mmfs::Matrix(5, 5, data);
 }
