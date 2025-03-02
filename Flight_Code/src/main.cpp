@@ -62,15 +62,26 @@ void setup() {
     baro1.setBiasCorrectionMode(true);
     baro2.setBiasCorrectionMode(true);
     gps.setBiasCorrectionMode(true);
+
+    // Limit Switch
+    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    if (enc.isInitialized()){
+        AIRBRAKE.zeroMotor();
+    }
 }
 
-static unsigned long lastUpdateTime = 0;
 int actuationAngle;
 void loop() {
+    bool loop = sys.update();
+    AIRBRAKE.updateMotor();
+    AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
-    sys.update();
-
-    // // Turn off bias correction during flight
+    if (loop) {
+        Serial.print("LKF Pos z: ");
+        Serial.println(AIRBRAKE.getPosition().z());
+        Serial.println(enc.getSteps());
+    }
+    // Turn off bias correction during flight
     if (AIRBRAKE.stage == BOOST) {
         baro1.setBiasCorrectionMode(false);
         baro2.setBiasCorrectionMode(false);
@@ -86,26 +97,28 @@ void loop() {
     }
 
     // // Test Deployment Code //
-    // Serial.println(enc.getSteps());
-    // if (millis() > 80000){
-    //     logger.setRecordMode(mmfs::GROUND);
-    //     AIRBRAKE.goToDegree(0);  
-    // } else if (millis() > 40000){
-    //     Serial.println("moving down");
-    //     logger.setRecordMode(mmfs::FLIGHT);
-    //     AIRBRAKE.goToDegree(40);
-    // }
+    if (millis() > 50000){
+        Serial.print("Going to 0. Currently at: ");
+        Serial.println(enc.getSteps());
+        mmfs::getLogger().setRecordMode(mmfs::GROUND);
+        AIRBRAKE.goToDegree(0);  
+    } else if (millis() > 30000){
+        Serial.print("Going to 40. Currently at: ");
+        Serial.println(enc.getSteps());
+        mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
+        AIRBRAKE.goToDegree(40);
+    }
 
     // Flight Deployment Code //
-    mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
-    double tilt = acos(dcm.get(2,2));
-    double velocity = AIRBRAKE.getVelocity().magnitude();
-    actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
-    if (AIRBRAKE.stage == DEPLOY){
-        AIRBRAKE.goToDegree(actuationAngle);
-    } else {
-        AIRBRAKE.goToDegree(0);
-    }
+    // mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
+    // double tilt = acos(dcm.get(2,2));
+    // double velocity = AIRBRAKE.getVelocity().magnitude();
+    // actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
+    // if (AIRBRAKE.stage == DEPLOY){
+    //     AIRBRAKE.goToDegree(actuationAngle);
+    // } else {
+    //     AIRBRAKE.goToDegree(0);
+    // }
 
 }
 

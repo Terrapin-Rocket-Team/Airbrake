@@ -93,12 +93,36 @@ void AirbrakeState::goToStep(int step) {
 }
 
 void AirbrakeState::goToDegree(int degree) {
-    // Check to make sure degree is within [-90, 90]
-    if(degree > 90 || degree < -90) {
-        errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 90 (open).");
-        return;
+    // Check to make sure degree is within [0, 70]
+    if(degree > 70) {
+        mmfs::getLogger().recordLogData(mmfs::ERROR_, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle greater than 70 passed. Setting degree to 70");
+        degree = 70;
+    } else if(degree < 0){
+        mmfs::getLogger().recordLogData(mmfs::ERROR_, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle less than 0 passed. Setting degree to 0");
+        degree = 0;
     }
-    desiredStep = -degree * 10537; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open
+    // Number for degree to desired step: https://docs.google.com/spreadsheets/d/1bsWIpDW322UWTvhwyznNfmbBDd-kcjSC/edit?gid=1716849137#gid=1716849137
+    //desiredStep = -degree * 10537; // <- old number (v1)
+    desiredStep = -degree * 9259; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open (v2)
+}
+
+bool AirbrakeState:: motorStallCondition() {
+    bool stall = false;
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+
+    int currentEncoderValue = enc->getSteps();
+    for (int i = 0; i < encoderSame; i++) {
+        if (encoderHistory[i] != currentEncoderValue || stall) {
+            stall = true;
+            break;
+        }
+    }
+
+    // Update history buffer
+    encoderHistory[historyIndex] = currentEncoderValue;
+    historyIndex = (historyIndex + 1) % encoderSame; // Circular buffer
+
+    return stall;
 }
 
 void AirbrakeState::updateMotor() {
@@ -107,6 +131,10 @@ void AirbrakeState::updateMotor() {
     // Set direction
     int step_diff = desiredStep - enc->getSteps();
 
+    // if(motorStallCondition()){ // TODO need something that will only stall if it has been trying for awhile
+    //     digitalWrite(stop_pin, HIGH);
+    //     analogWrite(speed_pin, 0);
+    // }
     if(step_diff > stepGranularity) {
         // Open the flaps
         if(currentDirection == HIGH) {
@@ -156,6 +184,36 @@ void AirbrakeState::updateMotor() {
         digitalWrite(stop_pin, HIGH);
         analogWrite(speed_pin, 0);
     }
+}
+
+void AirbrakeState::zeroMotor() {
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+
+    unsigned long startTime = millis();
+
+    // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
+    while(1){
+        enc->update();
+        Serial.print("Encoder Steps: ");
+        Serial.println(enc->getSteps());
+        // Check if at least 2 second has passed before checking for encoder stalling
+        if (millis() - startTime >= 2000) {
+            if(motorStallCondition()){
+                break; // Exit if the encoder has read repetitive numbers
+            }
+        }
+        if (digitalRead(LIMIT_SWITCH_PIN) == LOW){
+            break; // Exit if the limit switch is hit
+        }
+        analogWrite(speed_pin, 128);
+        digitalWrite(stop_pin, LOW);
+        digitalWrite(dir_pin, HIGH);
+        delay(5);
+    }
+    analogWrite(speed_pin, 0);
+    digitalWrite(stop_pin, HIGH);
+    digitalWrite(dir_pin, LOW);
+    enc->setInitialSteps(enc->getSteps());
 }
 
 // Kalman filter functions
@@ -209,8 +267,6 @@ void AirbrakeState::updateKF() {
     }
 
     delete[] stateVars;
-    delete[] inputs;
-    delete[] measurements;
 }
 
 bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {

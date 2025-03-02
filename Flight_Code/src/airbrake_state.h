@@ -22,6 +22,9 @@ const int stop_pin = 4; //set to low to STOP the motor, high to let the motor mo
 const int dir_pin = 5; // set low to open the airbrake, high to close the airbrake
 const int speed_pin = 2; // set to 255 for full speed, set to 0 for no speed
 
+// Limit Switch Pin
+const int LIMIT_SWITCH_PIN = 6;
+
 const int stepGranularity = 7500;
 
 class AirbrakeState: public mmfs::State{
@@ -58,11 +61,19 @@ public:
     void updateMotor();
     mmfs::Vector<3> globalToBodyFrame(mmfs::Vector<3> vec); //converts from global fram to Z direction body frame.
 
+    //motor Stall
+    bool motorStallCondition();
+    static const int encoderSame = 8; // size of the circular buffer
+    int historyIndex = 0;
+    int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
+
     // Motor and encoder functions
     void goToStep(int step);
     void goToDegree(int degree);
     int desiredStep = 0;
     int dir_change_time = 0;
+    void zeroMotor();
+    bool limitSwitchState; // True means it is clicked
 
     // Airbrake functions from last year
     int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);
