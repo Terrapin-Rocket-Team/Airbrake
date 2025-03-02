@@ -296,7 +296,7 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
     int i = 0;
     // initial flap guesses
     double low = 0; 
-    double high = 75;
+    double high = 70;
             
     while (i < max_guesses) {
  
