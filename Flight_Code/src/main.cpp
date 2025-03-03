@@ -9,8 +9,6 @@
 
 // Buzzer
 const int BUZZER_PIN = 23;
-int allowedPins[] = {BUZZER_PIN};
-BlinkBuzz bb(allowedPins, 1, true);
 
 // Encoder pins
 const int enc_chan_a = 36;
@@ -27,15 +25,16 @@ BR blueRaven;
 mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc, &blueRaven};
 
 // Initialize Airbrake State
-AirbrakeKF kf;
-AirbrakeState AIRBRAKE(airbrake_sensors, 7, nullptr, BUZZER_PIN);
+AirbrakeKF lkfmm;
+AirbrakeState AIRBRAKE(airbrake_sensors, 7, &lkfmm);
 
 // MMFS Stuff
-mmfs::Logger logger(120, 5);
-mmfs::ErrorHandler errorHandler;
-mmfs::PSRAM *psram;
-const int UPDATE_RATE = 10;
-const int UPDATE_INTERVAL = 1000.0 / UPDATE_RATE;
+mmfs::MMFSConfig config = mmfs::MMFSConfig()
+                        .withState(&AIRBRAKE)
+                        .withBuzzerPin(BUZZER_PIN)
+                        .withUpdateRate(25);
+
+mmfs::MMFSSystem sys(&config);
 
 void setup() {
     // Initialize Serial and SPI Buses
@@ -58,58 +57,42 @@ void setup() {
     analogWrite(speed_pin, 0);
 
     // MMFS Stuff
-    SENSOR_BIAS_CORRECTION_DATA_LENGTH = 2;
-    SENSOR_BIAS_CORRECTION_DATA_IGNORE = 1;
-    psram = new mmfs::PSRAM();
-    logger.init(&AIRBRAKE);
+    sys.init();
 
-    logger.recordLogData(mmfs::INFO_, "Entering Setup");
+    baro1.setBiasCorrectionMode(true);
+    baro2.setBiasCorrectionMode(true);
+    gps.setBiasCorrectionMode(true);
 
-    // Check the sd card
-    if (!(logger.isSdCardReady())){
-        logger.recordLogData(mmfs::INFO_, "SD Card Failed to Initialize");
-        bb.onoff(BUZZER_PIN, 200, 3);
-    } else{
-        bb.onoff(BUZZER_PIN, 1000, 1);
+    // Limit Switch
+    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    delay(5000);
+    if (enc.isInitialized()){
+        AIRBRAKE.zeroMotor();
     }
 
-    // Check the psram
-    if (!(logger.isPsramReady())){
-        logger.recordLogData(mmfs::INFO_, "PSRAM Failed to Initialize");
-        bb.onoff(BUZZER_PIN, 200, 3);
-    } else {
-        bb.onoff(BUZZER_PIN, 1000, 1);
-    } 
-    
-    // Initialize State (runs Begin/Init for each sensor)
-    if(!AIRBRAKE.init()){
-        logger.recordLogData(mmfs::INFO_, "State Failed to Completely Initialize");
-        bb.onoff(BUZZER_PIN, 200, 3);
-    } else{ 
-        bb.onoff(BUZZER_PIN, 1000, 1);
-        baro1.setBiasCorrectionMode(true);
-        baro2.setBiasCorrectionMode(true);
-        gps.setBiasCorrectionMode(true);
-    }
-
-    logger.writeCsvHeader();
-    logger.recordLogData(mmfs::INFO_, "Leaving Setup");
+    bb.onoff(BUZZER_PIN, 1000);
 }
 
-static unsigned long lastUpdateTime = 0;
+void FreeMem()
+{
+    void *heapTop = malloc(2000);
+    int stack = 0;
+    long dif = ((long)heapTop) - ((long) &stack);
+    Serial.print(dif);
+    Serial.print("\n");
+    free(heapTop);
+}
 void loop() {
+    //FreeMem();
+    bool loop = sys.update();
+    AIRBRAKE.updateMotor();
+    AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
-    bb.update();
-
-    if (millis() - lastUpdateTime < UPDATE_INTERVAL) {
-        return;
-    }
-    lastUpdateTime = millis();
-
-    // Update state and log data
-    AIRBRAKE.updateState();
-    logger.recordFlightData();
-
+    // if (loop) {
+    //     Serial.print("LKF Pos z: ");
+    //     Serial.println(AIRBRAKE.getPosition().z());
+    //     Serial.println(enc.getSteps());
+    // }
     // Turn off bias correction during flight
     if (AIRBRAKE.stage == BOOST) {
         baro1.setBiasCorrectionMode(false);
@@ -121,23 +104,36 @@ void loop() {
         gps.setBiasCorrectionMode(true);
     }
 
+    if (AIRBRAKE.stage == COAST){
+        AIRBRAKE.update_CdA_estimate();
+    }
+
     // Test Deployment Code //
-    // Serial.println(enc.getSteps());
-    // if (millis() > 80000){
-    //     logger.setRecordMode(mmfs::GROUND);
+    // if (millis() > 50000){
+    //     Serial.print("Going to 0. Currently at: ");
+    //     Serial.println(enc.getSteps());
+    //     mmfs::getLogger().setRecordMode(mmfs::GROUND);
     //     AIRBRAKE.goToDegree(0);  
-    // } else if (millis() > 40000){
-    //     Serial.println("moving down");
-    //     logger.setRecordMode(mmfs::FLIGHT);
+    // } else if (millis() > 3000){
+    //     Serial.print("Going to 40. Currently at: ");
+    //     Serial.println(enc.getSteps());
+    //     mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
     //     AIRBRAKE.goToDegree(40);
     // }
 
     // Flight Deployment Code //
-    if (AIRBRAKE.stage == DEPLOY){
-        AIRBRAKE.goToDegree(45);
-    } else {
-        AIRBRAKE.goToDegree(0);
+    if (loop) {
+        mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
+        double tilt = acos(dcm.get(2,2));
+        double velocity = AIRBRAKE.getVelocity().magnitude();
+        AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
+        // if (AIRBRAKE.stage == DEPLOY){
+        //     AIRBRAKE.goToDegree(AIRBRAKE.actuationAngle);
+        // } else {
+        //     AIRBRAKE.goToDegree(0);
+        // }
     }
+    
 
 }
 

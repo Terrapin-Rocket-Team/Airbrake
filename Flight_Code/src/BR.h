@@ -62,7 +62,19 @@ public:
         hub1(myusb), 
         blueRaven(myusb, 1) {
         setName(name);
-        setUpPackedData();
+        addColumn(mmfs::FLOAT, &altitude, "BR-ALT (ft)");
+        addColumn(mmfs::FLOAT, &pressure, "BR-PRES (Pa)");
+        addColumn(mmfs::FLOAT, &temperature, "BR-TEMP (C)");
+        addColumn(mmfs::FLOAT, &velocity, "BR-VEL (m/s)");
+        addColumn(mmfs::FLOAT, &angle, "BR-ANG (deg)");
+        addColumn(mmfs::FLOAT, &accelX, "BR-ACCX (m/s^2)");
+        addColumn(mmfs::FLOAT, &accelY, "BR-ACCY (m/s^2)");
+        addColumn(mmfs::FLOAT, &accelZ, "BR-ACCZ (m/s^2)");
+        addColumn(mmfs::FLOAT, &gyroX, "BR-GYROX (rad/s)");
+        addColumn(mmfs::FLOAT, &gyroY, "BR-GYROY (rad/s)");
+        addColumn(mmfs::FLOAT, &gyroZ, "BR-GYROZ (rad/s)");
+        addColumn(mmfs::FLOAT, &rollAngle, "BR-ROLL (deg)");
+        addColumn(mmfs::FLOAT, &tiltAngle, "BR-TILT (deg)");
     }
     
     virtual ~BR() {
@@ -97,12 +109,6 @@ public:
     // Sensor type information
     virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; }
     virtual const char* getTypeString() const override { return "BLUE_RAVEN"; }
-    
-    // Data packing functions
-    virtual const int getNumPackedDataPoints() const override;
-    virtual const mmfs::PackedType* getPackedOrder() const override;
-    virtual const char** getPackedDataLabels() const override;
-    virtual void packData() override;
 
     int getAvailableBytes()  { return blueRaven.available(); }
 
