@@ -15,7 +15,7 @@ public:
     double dps310_std = .2; // [m]
     double ms5611_std = .5; // [m]
     
-    double processNoise = 1; // [m]
+    double processNoise = .5; // [m]
 
     // Override getter methods to provide subteam-specific matrix implementations
     void initialize() override {};

@@ -36,10 +36,10 @@ public:
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
-    double empty_mass = 40;      // in [kg]
-    double target_apogee = 3100; // in [m]
-    double ground_altitude = 0; // ASL in [m]
-    double sim_time_to_apogee = 60; // in [s]
+    double empty_mass = 28.75;      // in [kg]
+    double target_apogee = 2525; // in [m]
+    double ground_altitude = 10; // ASL in [m]
+    double sim_time_to_apogee = 16.5; // in [s]
 
     // Simulated parameters
     int max_guesses = 10;        // # of guesses before converging on desired actuation
@@ -65,7 +65,7 @@ public:
     bool motorStallCondition();
     static const int encoderSame = 8; // size of the circular buffer
     int historyIndex = 0;
-    int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
+    int encoderHistory[encoderSame] = {0}; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
 
     // Motor and encoder functions
     void goToStep(int step);
@@ -76,7 +76,7 @@ public:
     bool limitSwitchState; // True means it is clicked
 
     // Airbrake functions from last year
-    int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);
+    void calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);
     double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height);
     double get_density(double h);
     void update_CdA_estimate();
