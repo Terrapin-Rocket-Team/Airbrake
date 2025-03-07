@@ -356,7 +356,7 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double CdA_flaps = 4*0.95*single_flap_area*sin(actuationAngle*3.141592/180);
 
     while (time_intergrating < sim_time_to_apogee){
-        k1x = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dx/empty_mass;
+        k1x = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dx/empty_mass; // TODO: 
         k1y = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dy/empty_mass - 9.81;
 
         s1x = dx + (time_step * k1x);

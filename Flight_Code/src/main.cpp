@@ -62,6 +62,7 @@ mmfs::MMFSConfig config = mmfs::MMFSConfig()
                         .withState(&AIRBRAKE)
                         .withBuzzerPin(BUZZER_PIN)
                         .withUpdateRate(10);
+                        .withUpdateRate(10);
 
 mmfs::MMFSSystem sys(&config);
 
@@ -84,6 +85,13 @@ void setup() {
     analogWrite(speed_pin, 0);
 
     // MMFS Stuff
+    #ifdef TEST_WITH_SD_DATA
+    while(!Serial.available()){delay(100);}
+    if (Serial.available()){
+        strcpy(dataPath, Serial.readStringUntil('\n').c_str());
+    }
+    #endif
+
     #ifdef TEST_WITH_SD_DATA
     while(!Serial.available()){delay(100);}
     if (Serial.available()){

@@ -27,12 +27,12 @@ void VN_100::update()
 void VN_100::read()
 {   
     if (vn.Read()) {
-        accelerationVec = imu::Vector<3>(vn.accel_x_mps2(), vn.accel_y_mps2(), vn.accel_z_mps2());
-        angularVelocity = imu::Vector<3>(vn.gyro_x_radps(), vn.gyro_y_radps(), vn.gyro_z_radps());
-        orientationEuler = imu::Vector<3>(vn.yaw_rad() * 180 / 3.14159, vn.pitch_rad() * 180 / 3.14159, vn.roll_rad() * 180 / 3.14159);
-        magnetometer = imu::Vector<3>(vn.mag_x_ut(), vn.mag_y_ut(), vn.mag_z_ut());
-        deltaVelocity = imu::Vector<3>(vn.delta_velocity_x(), vn.delta_velocity_y(), vn.delta_velocity_z());
-        deltaTheta = imu::Vector<3>(vn.delta_theta_x(), vn.delta_theta_y(), vn.delta_theta_z());
+        accelerationVec = mmfs::Vector<3>(vn.accel_x_mps2(), vn.accel_y_mps2(), vn.accel_z_mps2());
+        angularVelocity = mmfs::Vector<3>(vn.gyro_x_radps(), vn.gyro_y_radps(), vn.gyro_z_radps());
+        orientationEuler = mmfs::Vector<3>(vn.yaw_rad() * 180 / 3.14159, vn.pitch_rad() * 180 / 3.14159, vn.roll_rad() * 180 / 3.14159);
+        magnetometer = mmfs::Vector<3>(vn.mag_x_ut(), vn.mag_y_ut(), vn.mag_z_ut());
+        deltaVelocity = mmfs::Vector<3>(vn.delta_velocity_x(), vn.delta_velocity_y(), vn.delta_velocity_z());
+        deltaTheta = mmfs::Vector<3>(vn.delta_theta_x(), vn.delta_theta_y(), vn.delta_theta_z());
         deltaTime = vn.delta_time();
         
         // TODO quaterion orientation
@@ -46,32 +46,32 @@ void VN_100::calibrate()
     // TODO
 }
 
-imu::Quaternion VN_100::getOrientation() const
+mmfs::Quaternion VN_100::getOrientation() const
 {
     return orientation;
 }
 
-imu::Vector<3> VN_100::getAcceleration() const
+mmfs::Vector<3> VN_100::getAcceleration() const
 {
     return accelerationVec;
 }
 
-imu::Vector<3> VN_100::getOrientationEuler() const
+mmfs::Vector<3> VN_100::getOrientationEuler() const
 {
     return orientationEuler;
 }
 
-imu::Vector<3> VN_100::getMagnetometer() const
+mmfs::Vector<3> VN_100::getMagnetometer() const
 {
     return magnetometer;
 }
 
-imu::Vector<3> VN_100::getDeltaVelocity() const
+mmfs::Vector<3> VN_100::getDeltaVelocity() const
 {
     return deltaVelocity;
 }
 
-imu::Vector<3> VN_100::getDeltaTheta() const 
+mmfs::Vector<3> VN_100::getDeltaTheta() const 
 {
     return deltaTheta;
 }
@@ -81,10 +81,10 @@ double VN_100::getDeltaTime() const
     return deltaTime;
 }
 
-imu::Vector<3> convertToEuler(const imu::Quaternion &orientation)
+mmfs::Vector<3> convertToEuler(const mmfs::Quaternion &orientation)
 {
-    imu::Vector<3> euler = orientation.toEuler();
+    mmfs::Vector<3> euler = orientation.toEuler();
     // reverse the vector, since it returns in z, y, x
-    euler = imu::Vector<3>(euler.x(), euler.y(), euler.z());
+    euler = mmfs::Vector<3>(euler.x(), euler.y(), euler.z());
     return euler;
 }
