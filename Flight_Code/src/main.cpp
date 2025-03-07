@@ -7,7 +7,7 @@
 #include "BR.h"
 
 // Testing
-//#define TEST_WITH_SD_DATA
+#define TEST_WITH_SD_DATA
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -151,31 +151,34 @@ void loop() {
     }
 
     // // Test Deployment Code //
-    if (millis() > 50000){
-        Serial.print("Going to 0. Currently at: ");
-        Serial.println(enc.getSteps());
-        AIRBRAKE.goToDegree(0);  
-        mmfs::getLogger().setRecordMode(mmfs::GROUND);
-    }
-    if (millis() > 30000){
-        Serial.print("Going to 40. Currently at: ");
-        Serial.println(enc.getSteps());
-        mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-        AIRBRAKE.goToDegree(40);
-    }
-
-    // Flight Deployment Code //
     // if (loop){
-    //     mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
-    //     double tilt = acos(dcm.get(2,2));
-    //     double velocity = AIRBRAKE.getVelocity().magnitude();
-    //     int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
-    //     if (AIRBRAKE.stage == DEPLOY){
-    //         AIRBRAKE.goToDegree(actuationAngle);
-    //     } else {
-    //         AIRBRAKE.goToDegree(0);
+    //     if (millis() > 50000){
+    //         Serial.print("Going to 0. Currently at: ");
+    //         Serial.println(enc.getSteps());
+    //         AIRBRAKE.goToDegree(0);  
+    //         mmfs::getLogger().setRecordMode(mmfs::GROUND);
+    //     }
+    //     if (millis() > 30000){
+    //         Serial.print("Going to 40. Currently at: ");
+    //         Serial.println(enc.getSteps());
+    //         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
+    //         AIRBRAKE.goToDegree(40);
     //     }
     // }
+    
+
+    // Flight Deployment Code //
+    if (loop){
+        mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
+        double tilt = acos(dcm.get(2,2));
+        double velocity = AIRBRAKE.getVelocity().magnitude();
+        int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
+        if (AIRBRAKE.stage == DEPLOY){
+            AIRBRAKE.goToDegree(actuationAngle);
+        } else {
+            AIRBRAKE.goToDegree(0);
+        }
+    }
     
 }
 
