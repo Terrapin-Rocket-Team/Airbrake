@@ -7,7 +7,7 @@
 #include "BR.h"
 
 // Testing
-//#define TEST_WITH_SD_DATA
+#define TEST_WITH_SD_DATA
 
 // Buzzer
 const int BUZZER_PIN = 23;
