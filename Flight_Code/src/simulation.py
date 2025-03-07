@@ -38,7 +38,7 @@ if ser.is_open:
                     {pressure}, {temperature},
                     {pressure}, {temperature},
                     {a[x]}, {a[y]}, {a[z]}, {0}, {0}, {0}, {0}, {0}, {0},
-                    {lat}, {long}, {r[z]}, {10},
+                    {0}, {0}, {r[z]}, {10},
                     {a[x]}, {a[y]}, {a[z]}, {0}, {0}, {0}, {0}, {0}, {0},
                     """
                     break  # Exit the while loop to proceed with next line
