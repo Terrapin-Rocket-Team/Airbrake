@@ -10,6 +10,8 @@ w = [0,0,0] # angular velocity [rad/s]
 t = 0 # time [s]
 
 x = 0; y = 1; z = 2
+lat = 0
+long = 0
 
 updateRate = 25 # [Hz]
 timeStep = 1/updateRate # [s]
@@ -27,6 +29,7 @@ flapArea = 0.0839
 rocketArea = 0.0182
 
 def Propagate(flapAngle):
+    global t, a, v, r, x, y, z, lat, long, updateRate, timeStep, totalImpulse, burnTime, rocketThrust, dryMass, wetMass, m, CDr, CDf, flapArea, rocketArea
     t += timeStep
     density = getDensity(r[z])
 

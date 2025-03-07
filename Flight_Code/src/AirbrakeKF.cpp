@@ -38,12 +38,11 @@ mmfs::Matrix AirbrakeKF::getH() {
 }
 
 mmfs::Matrix AirbrakeKF::getR() {
-    double *data = new double[25]{
-        gpsMAX_std, 0, 0, 0, 0,
-        0, gpsMAX_std, 0, 0, 0,
-        0, 0, gpsMAX_std, 0, 0,
-        0, 0, dps310_std, 0, 0,
-        0, 0, ms5611_std, 0, 0
+    double *data = new double[16]{
+        gpsMAX_std, 0, 0, 0,
+        0, gpsMAX_std, 0, 0,
+        0, 0, dps310_std, 0,
+        0, 0, 0, ms5611_std,
     };
     return mmfs::Matrix(4, 4, data);
 }

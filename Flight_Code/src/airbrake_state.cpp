@@ -119,13 +119,13 @@ void AirbrakeState::goToDegree(int degree) {
 
 //returns if the motor is stalling. Does not affect the motor control.
 bool AirbrakeState:: motorStallCondition() {
-    bool stall = false;
+    bool stall = true;
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
 
     int currentEncoderValue = enc->getSteps();
     for (int i = 0; i < encoderSame; i++) {
-        if (encoderHistory[i] != currentEncoderValue || stall) {
-            stall = true;
+        if (encoderHistory[i] != currentEncoderValue) {
+            stall = false;
             break;
         }
     }
@@ -243,6 +243,7 @@ void AirbrakeState::updateKF() {
     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
     mmfs::Barometer *baro1 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 1));
     mmfs::Barometer *baro2 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 2));
+    Serial.println("here1");
 
     double *measurements = new double[filter->getMeasurementSize()];
     double *inputs = new double[filter->getInputSize()];
@@ -254,6 +255,7 @@ void AirbrakeState::updateKF() {
     measurements[2] = sensorOK(gps) ? gps->getDisplacement().z() : 0;
     measurements[3] = baro1->getAGLAltM();
     measurements[4] = baro2->getAGLAltM();
+    Serial.println("here2");
 
     // imu x y z
     inputs[0] = acceleration.x() = imu->getAccelerationGlobal().x();
@@ -266,10 +268,14 @@ void AirbrakeState::updateKF() {
     stateVars[3] = velocity.x();
     stateVars[4] = velocity.y();
     stateVars[5] = velocity.z();
+    Serial.println("here3");
 
-    if (~isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
-        filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
-    }
+    // if (!isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
+    //     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+    // }
+    filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+    Serial.println("here3.7");
+    delay(100);
 
     // pos x, y, z, vel x, y, z
     position.x() = stateVars[0];
@@ -278,14 +284,16 @@ void AirbrakeState::updateKF() {
     velocity.x() = stateVars[3];
     velocity.y() = stateVars[4];
     velocity.z() = stateVars[5];
+    Serial.println("here4");
 
     if (sensorOK(baro1))
     {
         baroVelocity = (baro1->getAGLAltM() - baroOldAltitude) / (currentTime - lastTime);
         baroOldAltitude = baro1->getAGLAltM();
     }
-
+    Serial.println("here5");
     delete[] stateVars;
+    Serial.println("here6");
 }
 
 bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {

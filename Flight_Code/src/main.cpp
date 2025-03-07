@@ -7,7 +7,7 @@
 #include "BR.h"
 
 // Testing
-#define TEST_WITH_SD_DATA
+#define TEST_WITH_SERIAL
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -21,7 +21,7 @@ E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
 VN_100 vn(&SPI, 10); // Vector Nav
 BR blueRaven;
 
-#ifdef TEST_WITH_SD_DATA
+#ifdef TEST_WITH_SERIAL
     char dataPath[2560];
     mmfs::MockBarometer mockDPS310(dataPath, "DPS310 - Pres (hPa)", "DPS310 - Temp (C)");
     mmfs::MockBarometer mockMS5611(dataPath, "MS5611 - Pres (hPa)", "MS5611 - Temp (C)");
@@ -62,7 +62,6 @@ mmfs::MMFSConfig config = mmfs::MMFSConfig()
                         .withState(&AIRBRAKE)
                         .withBuzzerPin(BUZZER_PIN)
                         .withUpdateRate(10);
-                        .withUpdateRate(10);
 
 mmfs::MMFSSystem sys(&config);
 
@@ -85,23 +84,17 @@ void setup() {
     analogWrite(speed_pin, 0);
 
     // MMFS Stuff
-    #ifdef TEST_WITH_SD_DATA
+    #ifdef TEST_WITH_SERIAL
     while(!Serial.available()){delay(100);}
     if (Serial.available()){
-        strcpy(dataPath, Serial.readStringUntil('\n').c_str());
-    }
-    #endif
-
-    #ifdef TEST_WITH_SD_DATA
-    while(!Serial.available()){delay(100);}
-    if (Serial.available()){
-        strcpy(dataPath, Serial.readStringUntil('\n').c_str());
+        Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
+        Serial.println(dataPath);
     }
     #endif
 
     sys.init();
 
-    #ifdef TEST_WITH_SD_DATA
+    #ifdef TEST_WITH_SERIAL
     #else
         baro1.setBiasCorrectionMode(true);
         baro2.setBiasCorrectionMode(true);
@@ -115,22 +108,25 @@ void setup() {
         AIRBRAKE.zeroMotor();
     }
     delay(5000);
+    Serial.println("[][],0");
 }
 
 void loop() {
+    #ifdef TEST_WITH_SERIAL
+        if (Serial.available()){
+            int i = Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
+        } else {
+            return;
+        }
+    #endif
+
     bool loop = sys.update();
     AIRBRAKE.updateMotor();
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
-    #ifdef TEST_WITH_SD_DATA
-        if (Serial.available()){
-            strcpy(dataPath, Serial.readStringUntil('\n').c_str());
-        }
-    #endif
-
     if(loop){
-        #ifdef TEST_WITH_SD_DATA
-            Serial.println("[][]");
+        #ifdef TEST_WITH_SERIAL
+            Serial.printf("[][],%d\n", AIRBRAKE.actuationAngle);
             Serial.print("SD Baro1: ");
             Serial.print(mockDPS310.getPressure());
         #endif
@@ -139,14 +135,14 @@ void loop() {
 
         // Turn off bias correction during flight
         if (AIRBRAKE.stage == BOOST) {
-            #ifdef TEST_WITH_SD_DATA
+            #ifdef TEST_WITH_SERIAL
             #else
                 baro1.setBiasCorrectionMode(false);
                 baro2.setBiasCorrectionMode(false);
                 gps.setBiasCorrectionMode(false);
             #endif
         } else if (AIRBRAKE.stage == PRELAUNCH) {
-            #ifdef TEST_WITH_SD_DATA
+            #ifdef TEST_WITH_SERIAL
             #else
                 baro1.setBiasCorrectionMode(true);
                 baro2.setBiasCorrectionMode(true);
