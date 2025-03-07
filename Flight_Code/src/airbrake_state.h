@@ -38,17 +38,10 @@ public:
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
-<<<<<<< HEAD
     double empty_mass = 40;      // in [kg]
     double target_apogee = 3100; // in [m]
     double ground_altitude = 11.9; // ASL in [m]
     double sim_time_to_apogee = 60; // in [s]
-=======
-    double empty_mass = 28.75;      // in [kg]
-    double target_apogee = 2525; // in [m]
-    double ground_altitude = 10; // ASL in [m]
-    double sim_time_to_apogee = 16.5; // in [s]
->>>>>>> 61c88491a228ef6136a2a653671b40a049a3ed09
 
     // Simulated parameters
     int max_guesses = 10;        // # of guesses before converging on desired actuation
@@ -60,7 +53,7 @@ public:
     double estimated_apogee = 0; // in [m]
     double density = 1.225; // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     int CdA_number_of_measurements = 0;
-    double CdA_rocket = .55; // Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
+    double CdA_rocket = .55; // TODO: AREA!!!!! Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
     double single_flap_area = 0.00839;
 
     AirbrakeStages stage = PRELAUNCH;
@@ -74,12 +67,8 @@ public:
     bool motorStallCondition();
     static const int encoderSame = 8; // size of the circular buffer
     int historyIndex = 0;
-<<<<<<< HEAD
     int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
 
-=======
-    int encoderHistory[encoderSame] = {0}; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
->>>>>>> 61c88491a228ef6136a2a653671b40a049a3ed09
 
     // Motor and encoder functions
     void goToStep(int step);
@@ -90,7 +79,7 @@ public:
     bool limitSwitchState; // True means it is clicked
 
     // Airbrake functions from last year
-    void calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);
+    int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);
     double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height);
     double get_density(double h);
     void update_CdA_estimate();
