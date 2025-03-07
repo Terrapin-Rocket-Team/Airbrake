@@ -198,9 +198,9 @@ void loop() {
         mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
         double tilt = acos(dcm.get(2,2));
         double velocity = AIRBRAKE.getVelocity().magnitude();
-        int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
+        AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
         if (AIRBRAKE.stage == DEPLOY){
-            AIRBRAKE.goToDegree(actuationAngle);
+            AIRBRAKE.goToDegree(AIRBRAKE.actuationAngle);
         } else {
             AIRBRAKE.goToDegree(0);
         }

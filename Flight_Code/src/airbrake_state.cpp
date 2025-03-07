@@ -136,27 +136,6 @@ bool AirbrakeState:: motorStallCondition() {
     return stall;
 }
 
-
-//returns if the motor is stalling. Does not affect the motor control.
-bool AirbrakeState:: motorStallCondition() {
-    bool stall = false;
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-
-    int currentEncoderValue = enc->getSteps();
-    for (int i = 0; i < encoderSame; i++) {
-        if (encoderHistory[i] != currentEncoderValue || stall) {
-            stall = true;
-            break;
-        }
-    }
-
-    // Update history buffer
-    encoderHistory[historyIndex] = currentEncoderValue;
-    historyIndex = (historyIndex + 1) % encoderSame; // Circular buffer
-
-    return stall;
-}
-
 void AirbrakeState::updateMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
 
