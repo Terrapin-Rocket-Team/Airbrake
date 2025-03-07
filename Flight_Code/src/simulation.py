@@ -32,6 +32,15 @@ if ser.is_open:
                     waitForResponse = False  # Got the response, can send the next line
                     flapAngle = float(response.split(",")[-1].strip())
                     Propagate(flapAngle)
+                    pressure = getPressure(r[z])
+                    temperature = getTemperature(r[z])
+                    line = """
+                    {pressure}, {temperature},
+                    {pressure}, {temperature},
+                    {a[x]}, {a[y]}, {a[z]}, {0}, {0}, {0}, {0}, {0}, {0},
+                    {lat}, {long}, {r[z]}, {10},
+                    {a[x]}, {a[y]}, {a[z]}, {0}, {0}, {0}, {0}, {0}, {0},
+                    """
                     break  # Exit the while loop to proceed with next line
             time.sleep(0.005)  # Slight delay to prevent CPU overload
 
