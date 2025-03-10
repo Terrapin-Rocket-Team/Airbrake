@@ -248,10 +248,30 @@ void AirbrakeState::updateKF() {
     stateVars[4] = velocity.y();
     stateVars[5] = velocity.z();
 
-    // if (!isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
-    //     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
-    // }
+    double *previousStateVars = new double[filter->getStateSize()];
+    std::copy(stateVars, stateVars + filter->getStateSize(), previousStateVars);
+
+// if (!isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
+//     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+// }
+
     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+
+    for (int i = 0; i < filter->getStateSize(); i++) {
+        if (stateVars[i] != stateVars[i]) { // NaN check
+            stateVars[i] = previousStateVars[i] + (previousStateVars[i] - stateVars[i]) * (currentTime - lastTime);
+        }
+    }
+
+    delete[] previousStateVars;
+
+    for (int i : stateVars)//check for NaN values in stateVars
+    {
+        if stateVars[i] != stateVars[i]//will not be equal to itself if NaN
+        {
+            stateVars[i] = 0;
+        }
+    }
     
     // pos x, y, z, vel x, y, z
     position.x() = stateVars[0];
