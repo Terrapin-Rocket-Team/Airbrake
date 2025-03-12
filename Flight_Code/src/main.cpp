@@ -127,11 +127,11 @@ void loop() {
         double tilt = acos(dcm.get(2,2));
         double velocity = AIRBRAKE.getVelocity().magnitude();
         AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
-        // if (AIRBRAKE.stage == DEPLOY){
-        //     AIRBRAKE.goToDegree(AIRBRAKE.actuationAngle);
-        // } else {
-        //     AIRBRAKE.goToDegree(0);
-        // }
+        if (AIRBRAKE.stage == DEPLOY){
+            AIRBRAKE.goToDegree(AIRBRAKE.actuationAngle);
+        } else {
+            AIRBRAKE.goToDegree(0);
+        }
     }
     
 

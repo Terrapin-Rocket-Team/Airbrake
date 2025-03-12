@@ -249,27 +249,18 @@ void AirbrakeState::updateKF() {
     stateVars[5] = velocity.z();
 
     double *previousStateVars = new double[filter->getStateSize()];
-    std::copy(stateVars, stateVars + filter->getStateSize(), previousStateVars);
-
-// if (!isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
-//     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
-// }
+    // Deep copy of stateVars to previousStateVars
+    for (int i = 0; i < filter->getStateSize(); i++) {
+        previousStateVars[i] = stateVars[i];
+    }
 
     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
 
-    for (int i = 0; i < filter->getStateSize(); i++) {
-        if (stateVars[i] != stateVars[i]) { // NaN check
-            stateVars[i] = previousStateVars[i] + (previousStateVars[i] - stateVars[i]) * (currentTime - lastTime);
-        }
-    }
-
-    delete[] previousStateVars;
-
-    for (int i : stateVars)//check for NaN values in stateVars
+    for (int i = 0; i < sizeof(stateVars); i++)//check for NaN values in stateVars
     {
-        if stateVars[i] != stateVars[i]//will not be equal to itself if NaN
+        if (stateVars[i] != stateVars[i])//will not be equal to itself if NaN
         {
-            stateVars[i] = 0;
+            stateVars[i] = previousStateVars[i];
         }
     }
     
@@ -288,6 +279,7 @@ void AirbrakeState::updateKF() {
     }
 
     delete[] stateVars;
+    delete[] previousStateVars;
 }
 
 bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {
