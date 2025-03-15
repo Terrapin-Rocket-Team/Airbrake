@@ -111,14 +111,16 @@ void AirbrakeState::goToDegree(int degree) {
         errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle less than 0 passed. Setting degree to 0");
         degree = 0;
     }
-    // Number for degree to desired step: https://docs.google.com/spreadsheets/d/1bsWIpDW322UWTvhwyznNfmbBDd-kcjSC/edit?gid=1716849137#gid=1716849137
-    //desiredStep = -degree * 10537; // <- old number (v1)
-    desiredStep = -degree * 9259; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open (v2)
+    desiredStep = degree * degreeToStepConvertionFactor; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open (v2)
+}
+
+int AirbrakeState::stepToDegree(int step) {
+    return step*(1/degreeToStepConvertionFactor);
 }
 
 
 //returns if the motor is stalling. Does not affect the motor control.
-bool AirbrakeState:: motorStallCondition() {
+bool AirbrakeState::motorStallCondition() {
     bool stall = true;
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
 
@@ -213,8 +215,8 @@ void AirbrakeState::zeroMotor() {
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
     while(1){
         enc->update();
-        Serial.print("Encoder Steps: ");
-        Serial.println(enc->getSteps());
+        // Serial.print("Encoder Steps: ");
+        // Serial.println(enc->getSteps());
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000) {
             if(motorStallCondition()){
@@ -236,89 +238,94 @@ void AirbrakeState::zeroMotor() {
 }
 
 // Kalman filter functions
-void AirbrakeState::updateKF() {
-    // Based on linear kalman filter more measurements:
-    // https://github.com/Terrapin-Rocket-Team/Airbrake/blob/main/matlab_state_estimation/LinearKalmanFilterMoreMeasurements.m
-    mmfs::GPS *gps = reinterpret_cast<mmfs::GPS *>(getSensor(mmfs::GPS_));
-    mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
-    mmfs::Barometer *baro1 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 1));
-    mmfs::Barometer *baro2 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 2));
-    Serial.println("here1");
+// void AirbrakeState::updateKF() {
+//     // Based on linear kalman filter more measurements:
+//     // https://github.com/Terrapin-Rocket-Team/Airbrake/blob/main/matlab_state_estimation/LinearKalmanFilterMoreMeasurements.m
+//     mmfs::GPS *gps = reinterpret_cast<mmfs::GPS *>(getSensor(mmfs::GPS_));
+//     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
+//     mmfs::Barometer *baro1 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 1));
+//     mmfs::Barometer *baro2 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 2));
+//     Serial.println("here1");
 
-    double *measurements = new double[filter->getMeasurementSize()];
-    double *inputs = new double[filter->getInputSize()];
-    double *stateVars = new double[filter->getStateSize()];
+//     double *measurements = new double[filter->getMeasurementSize()];
+//     double *inputs = new double[filter->getInputSize()];
+//     double *stateVars = new double[filter->getStateSize()];
 
-    // Measurements 3 gps, 2 baro
-    measurements[0] = sensorOK(gps) ? gps->getDisplacement().x() : 0;
-    measurements[1] = sensorOK(gps) ? gps->getDisplacement().y() : 0;
-    measurements[2] = sensorOK(gps) ? gps->getDisplacement().z() : 0;
-    measurements[3] = baro1->getAGLAltM();
-    measurements[4] = baro2->getAGLAltM();
-    Serial.println("here2");
+//     // Measurements 3 gps, 2 baro
+//     measurements[0] = sensorOK(gps) ? gps->getDisplacement().x() : 0;
+//     measurements[1] = sensorOK(gps) ? gps->getDisplacement().y() : 0;
+//     measurements[2] = sensorOK(gps) ? gps->getDisplacement().z() : 0;
+//     measurements[3] = baro1->getAGLAltM();
+//     measurements[4] = baro2->getAGLAltM();
+//     Serial.println("here2");
 
-    // imu x y z
-    inputs[0] = acceleration.x() = imu->getAccelerationGlobal().x();
-    inputs[1] = acceleration.y() = imu->getAccelerationGlobal().y();
-    inputs[2] = acceleration.z() = imu->getAccelerationGlobal().z() - 9.81;
+//     // imu x y z
+//     inputs[0] = acceleration.x() = imu->getAccelerationGlobal().x();
+//     inputs[1] = acceleration.y() = imu->getAccelerationGlobal().y();
+//     inputs[2] = acceleration.z() = imu->getAccelerationGlobal().z() - 9.81;
 
-    stateVars[0] = position.x();
-    stateVars[1] = position.y();
-    stateVars[2] = position.z();
-    stateVars[3] = velocity.x();
-    stateVars[4] = velocity.y();
-    stateVars[5] = velocity.z();
-    Serial.println("here3");
+//     stateVars[0] = position.x();
+//     stateVars[1] = position.y();
+//     stateVars[2] = position.z();
+//     stateVars[3] = velocity.x();
+//     stateVars[4] = velocity.y();
+//     stateVars[5] = velocity.z();
+//     Serial.println("here3");
 
-    // if (!isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
-    //     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
-    // }
-    filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
-    Serial.println("here3.7");
-    delay(100);
+//     // if (!isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
+//     //     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+//     // }
+//     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+//     Serial.println("here3.8");
+//     delay(100);
+//     Serial.println(position.x());
+//     Serial.println(stateVars[0]);
+//     Serial.println("here3.9");
+//     delay(100);
 
-    // pos x, y, z, vel x, y, z
-    position.x() = stateVars[0];
-    position.y() = stateVars[1];
-    position.z() = stateVars[2];
-    velocity.x() = stateVars[3];
-    velocity.y() = stateVars[4];
-    velocity.z() = stateVars[5];
-    Serial.println("here4");
+//     // pos x, y, z, vel x, y, z
+//     position.x() = stateVars[0];
+//     Serial.println("here3.10");
+//     position.y() = stateVars[1];
+//     position.z() = stateVars[2];
+//     velocity.x() = stateVars[3];
+//     velocity.y() = stateVars[4];
+//     velocity.z() = stateVars[5];
+//     Serial.println("here4");
 
-    if (sensorOK(baro1))
-    {
-        baroVelocity = (baro1->getAGLAltM() - baroOldAltitude) / (currentTime - lastTime);
-        baroOldAltitude = baro1->getAGLAltM();
-    }
-    Serial.println("here5");
-    delete[] stateVars;
-    Serial.println("here6");
-}
+//     if (sensorOK(baro1))
+//     {
+//         baroVelocity = (baro1->getAGLAltM() - baroOldAltitude) / (currentTime - lastTime);
+//         baroOldAltitude = baro1->getAGLAltM();
+//     }
+//     Serial.println("here5");
+//     delete[] stateVars;
+//     Serial.println("here6");
+// }
 
-bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {
-    // Check for valid input sizes
-    if (stateSize < 3 || measSize < 5) {
-        // Invalid input sizes
-        return false;
-    }
+// bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {
+//     // Check for valid input sizes
+//     if (stateSize < 3 || measSize < 5) {
+//         // Invalid input sizes
+//         return false;
+//     }
 
-    // Calculate residuals for GPS Z, Barometer 1, and Barometer 2
-    double gpsZResid = std::abs(measurements[2] - stateVars[2]);  // GPS Z Residual (3rd element of measurements)
-    double baro1Resid = std::abs(measurements[3] - stateVars[2]); // Barometer 1 Residual (4th element of measurements)
-    double baro2Resid = std::abs(measurements[4] - stateVars[2]); // Barometer 2 Residual (5th element of measurements)
+//     // Calculate residuals for GPS Z, Barometer 1, and Barometer 2
+//     double gpsZResid = std::abs(measurements[2] - stateVars[2]);  // GPS Z Residual (3rd element of measurements)
+//     double baro1Resid = std::abs(measurements[3] - stateVars[2]); // Barometer 1 Residual (4th element of measurements)
+//     double baro2Resid = std::abs(measurements[4] - stateVars[2]); // Barometer 2 Residual (5th element of measurements)
 
-    // Check if any of the residuals are above the threshold
-    if (gpsZResid > threshold || baro1Resid > threshold || baro2Resid > threshold) {
-        return true;  // Outlier detected
-    }
+//     // Check if any of the residuals are above the threshold
+//     if (gpsZResid > threshold || baro1Resid > threshold || baro2Resid > threshold) {
+//         return true;  // Outlier detected
+//     }
 
-    return false;  // No outlier
-}
+//     return false;  // No outlier
+// }
 
 // Airbrake Functions from last year
 // // Calculate Actuation Angle
-int AirbrakeState::calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time) { 
+int AirbrakeState::calculateActuationAngle(double altitude, double velocity, double tilt) { 
 
     int i = 0;
     // initial flap guesses
@@ -326,8 +333,8 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
     double high = 70;
             
     while (i < max_guesses) {
- 
-        estimated_apogee = predict_apogee(loop_time, tilt, velocity, altitude); 
+
+        estimated_apogee = predict_apogee(1, tilt, velocity, altitude); 
         double apogee_difference = estimated_apogee - target_apogee;
         
         if (abs(apogee_difference) < threshold) {
@@ -344,13 +351,13 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
     
     // sets angles in degrees
     actuationAngle = angle_resolution*round(actuationAngle/angle_resolution);
+    return actuationAngle;
 }
 
 // Calculate apogee
 double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height) {
     // Uses RK2 (two-stage Runge-Kutta or midpoint method) for integration
-
-    double time_intergrating = 0.0;
+    double time_integrating = 0.0;
     double x = 0.0;
     double dx = sin(tilt)*cur_velocity;
     double y = cur_height;
@@ -363,7 +370,7 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double k2y = 0.0;
     double CdA_flaps = 4*0.95*single_flap_area*sin(actuationAngle*3.141592/180);
 
-    while (time_intergrating < sim_time_to_apogee){
+    while (time_integrating < sim_time_to_apogee){
         k1x = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dx/empty_mass; // TODO: 
         k1y = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dy/empty_mass - 9.81;
 
@@ -377,7 +384,7 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
         dy += time_step*(k1y+k2y)/2;
         x += time_step*dx;
         y += time_step*dy;
-        time_intergrating += time_step;
+        time_integrating += time_step;
 
         if (dy <= 0){
         return y;
@@ -401,6 +408,7 @@ double AirbrakeState::get_density(double h){
 
   
     density = p0*M/R/T0*pow((1-L*h/T0),((9.8*M/R/L)-1));
+    return density;
 }
 
 //change from global frame to body frame.

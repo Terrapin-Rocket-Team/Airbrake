@@ -38,8 +38,8 @@ public:
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
-    double empty_mass = 40;      // in [kg]
-    double target_apogee = 3100; // in [m]
+    double empty_mass = 39;      // in [kg]
+    double target_apogee = 6000; // in [m]
     double ground_altitude = 11.9; // ASL in [m]
     double sim_time_to_apogee = 60; // in [s]
 
@@ -53,7 +53,7 @@ public:
     double estimated_apogee = 0; // in [m]
     double density = 1.225; // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     int CdA_number_of_measurements = 0;
-    double CdA_rocket = .55; // TODO: AREA!!!!! Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
+    double CdA_rocket = .55*0.01885; // CDr*Area (6.1in): Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
     double single_flap_area = 0.00839;
 
     AirbrakeStages stage = PRELAUNCH;
@@ -69,17 +69,19 @@ public:
     int historyIndex = 0;
     int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
 
-
     // Motor and encoder functions
     void goToStep(int step);
     void goToDegree(int degree);
+    int stepToDegree(int step);
+    // Number for degree to desired step: https://docs.google.com/spreadsheets/d/1bsWIpDW322UWTvhwyznNfmbBDd-kcjSC/edit?gid=1716849137#gid=1716849137
+    int degreeToStepConvertionFactor = -9259; // // Negative because negative steps is open and degree defined to 0 at closed and 90 at open (v2), v1 old number: 10537
     int desiredStep = 0;
     int dir_change_time = 0;
     void zeroMotor();
     bool limitSwitchState; // True means it is clicked
 
     // Airbrake functions from last year
-    int calculateActuationAngle(double altitude, double velocity, double tilt, double loop_time);
+    int calculateActuationAngle(double altitude, double velocity, double tilt);
     double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height);
     double get_density(double h);
     void update_CdA_estimate();
@@ -90,8 +92,8 @@ private:
     double timeOfLaunch; // in seconds
 
 protected:
-    void updateKF() override;
-    bool isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold);
+    // void updateKF() override;
+    // bool isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold);
     
 };
 

@@ -3,7 +3,7 @@ import serial
 import time
 from colorama import Fore
 
-serialPort = 'COM3'  # Use the correct port for the Arduino
+serialPort = '/dev/cu.usbmodem160468301'  # Use the correct port for the Arduino
 baudRate = 115200  # Match the baud rate to the Arduino's
 # dataFile = '/Users/michaelmallamaci/Downloads/Jan_Airbrake_FlightData.csv'
 
@@ -32,8 +32,8 @@ if ser.is_open:
                 waitForResponse = False  # Got the response, can send the next line
                 flapAngle = float(response.split(",")[-1].strip())
                 Propagate(flapAngle)
-                line = (f"{getPressure(r[z])},{getTemperature(r[z])},"
-                f"{getPressure(r[z])},{getTemperature(r[z])},"
+                line = (f"{getPressure(r[z])/100},{getTemperature(r[z])},"
+                f"{getPressure(r[z])/100},{getTemperature(r[z])},"
                 f"{a[x]},{a[y]},{a[z]},{0},{0},{0},{0},{0},{0},"
                 f"{lat},{long},{r[z]},{10},"
                 f"{a[x]},{a[y]},{a[z]},{0},{0},{0},{0},{0},{0}")

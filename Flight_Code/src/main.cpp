@@ -24,7 +24,7 @@ BR blueRaven;
 #ifdef TEST_WITH_SERIAL
     char dataPath[2560];
     mmfs::MockBarometer mockDPS310(dataPath, "DPS310 - Pres (hPa)", "DPS310 - Temp (C)");
-    mmfs::MockBarometer mockMS5611(dataPath, "MS5611 - Pres (hPa)", "MS5611 - Temp (C)");
+    //mmfs::MockBarometer mockMS5611(dataPath, "MS5611 - Pres (hPa)", "MS5611 - Temp (C)");
 
     String accColNames[3] = { 
         String("BMI088andLIS3MDL - AccX"), 
@@ -44,18 +44,18 @@ BR blueRaven;
     mmfs::MockIMU mockBMI088andLIS3MDL(dataPath, accColNames, gyroColNames, magColNames);
 
     mmfs::MockGPS mockMAX_M10S(dataPath, "MAX-M10S - Lat", "MAX-M10S - Lon", "MAX-M10S - Alt (m)", "_", "MAX-M10S - Fix Quality");
-    mmfs::Sensor* airbrake_sensors[7] = {&mockDPS310, &mockMS5611, &mockBMI088andLIS3MDL, &mockMAX_M10S, &enc, &vn, &blueRaven};
+    mmfs::Sensor* airbrake_sensors[6] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMAX_M10S, &enc, &vn, &blueRaven};
 #else
     mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
-    mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
+    //mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
     mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
     mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
-    mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
+    mmfs::Sensor* airbrake_sensors[6] = {&baro1, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
 #endif
 
 // Initialize Airbrake State
 AirbrakeKF lkfmm;
-AirbrakeState AIRBRAKE(airbrake_sensors, 7, &lkfmm);
+AirbrakeState AIRBRAKE(airbrake_sensors, 6, &lkfmm);
 
 // MMFS Stuff
 mmfs::MMFSConfig config = mmfs::MMFSConfig()
@@ -89,6 +89,7 @@ void setup() {
     if (Serial.available()){
         Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
         Serial.println(dataPath);
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "This is a simulation run.");
     }
     #endif
 
@@ -107,16 +108,15 @@ void setup() {
     if (enc.isInitialized()){
         AIRBRAKE.zeroMotor();
     }
-    delay(5000);
+    //delay(5000);
     Serial.println("[][],0");
 }
 
 void loop() {
     #ifdef TEST_WITH_SERIAL
         if (Serial.available()){
-            int i = Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
-        } else {
-            return;
+            Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
+            Serial.println(dataPath);
         }
     #endif
 
@@ -125,14 +125,6 @@ void loop() {
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
     if(loop){
-        #ifdef TEST_WITH_SERIAL
-            Serial.printf("[][],%d\n", AIRBRAKE.actuationAngle);
-            Serial.print("SD Baro1: ");
-            Serial.print(mockDPS310.getPressure());
-        #endif
-        Serial.print("LKFMM Pos z: ");
-        Serial.println(AIRBRAKE.getPosition().z());
-
         // Turn off bias correction during flight
         if (AIRBRAKE.stage == BOOST) {
             #ifdef TEST_WITH_SERIAL
@@ -172,17 +164,28 @@ void loop() {
     
 
     // Flight Deployment Code //
+    
     if (loop){
         mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
         double tilt = acos(dcm.get(2,2));
         double velocity = AIRBRAKE.getVelocity().magnitude();
-        int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
+        int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt);
         if (AIRBRAKE.stage == DEPLOY){
             AIRBRAKE.goToDegree(actuationAngle);
         } else {
             AIRBRAKE.goToDegree(0);
         }
     }
-    
+
+    #ifdef TEST_WITH_SERIAL
+        if (loop){
+            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep));
+            //Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
+            // Serial.print("SD Baro1: ");
+            // Serial.print(mockDPS310.getPressure());
+            // Serial.print("LKFMM Pos z: ");
+            // Serial.println(AIRBRAKE.getPosition().z());
+        }       
+    #endif
 }
 
