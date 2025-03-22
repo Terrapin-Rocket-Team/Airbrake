@@ -21,22 +21,6 @@ USBSerial_BigBuffer blueRaven;
     unsigned long lastReadTime = 0;
     static const unsigned long CONNECTION_TIMEOUT = 5000; // 5 seconds timeout
     
-    struct PackedData {
-        float altitude;    // in feet
-        float pressure;    // in Pa
-        float temperature; // in C
-        float velocity;    // in m/s
-        float angle;      // in degrees
-        float accelX;     // in m/s^2
-        float accelY;     // in m/s^2
-        float accelZ;     // in m/s^2
-        float gyroX;      // in rad/s
-        float gyroY;      // in rad/s
-        float gyroZ;      // in rad/s
-        float rollAngle;  // in degrees
-        float tiltAngle;  // in degrees
-    } __attribute__((packed));
-    
     bool parseMessage(const char* message);
     bool isConnected() const { return (millis() - lastReadTime) < CONNECTION_TIMEOUT; }
     void resetSensorValues();
