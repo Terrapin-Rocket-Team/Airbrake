@@ -39,17 +39,18 @@ public:
 
     // Flight configuation parameters
     double empty_mass = 39;      // in [kg]
-    double target_apogee = 7500; // in [m]
+    double target_apogee = 7750; // in [m]
     double ground_altitude = 11.9; // ASL in [m]
     double sim_time_to_apogee = 60; // in [s]
 
     // Simulated parameters
-    int max_guesses = 10;        // # of guesses before converging on desired actuation
+    int max_guesses = 10;        // number of guesses before converging on desired actuation
     int threshold = 10;          // threshold for difference between predicted and desired apogee, [m]
     double angle_resolution = 5; // used in rounding desired angle to nearest increment
 
     // Airbrake Variables
-    double actuationAngle = 0;            // desired actuation angle, (degrees)
+    double actuationAngle = 0; // desired actuation angle, (degrees)
+    double actualAngle = 0; // actual actuation angle, (degrees)
     double estimated_apogee = 0; // in [m]
     double density = 1.225; // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     int CdA_number_of_measurements = 0;

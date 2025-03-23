@@ -13,7 +13,7 @@ x = 0; y = 1; z = 2
 lat = 0
 long = 0
 
-updateRate = 20 # [Hz]
+updateRate = 10 # [Hz]
 timeStep = 1/updateRate # [s]
 totalImpulse = 32000 # [Ns]
 burnTime = 4.5 # [s]

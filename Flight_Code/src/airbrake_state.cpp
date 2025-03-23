@@ -5,6 +5,7 @@
 AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter): mmfs::State(sensors, numSensors, kfilter) {
     insertColumn(1, mmfs::INT, &stage, "Stage");
     addColumn(mmfs::DOUBLE, &actuationAngle, "Actuation Angle (deg)");
+    addColumn(mmfs::DOUBLE, &actualAngle, "Acutal Angle (deg)");
     addColumn(mmfs::DOUBLE_HP, &CdA_rocket, "CdA");
     addColumn(mmfs::DOUBLE, &estimated_apogee, "Est Apo (m)");
     addColumn(mmfs::DOUBLE, &machNumber, "Mach Number");
@@ -50,7 +51,7 @@ void AirbrakeState::determineStage(){
         stage = DEPLOY;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Entering Deploy Stage.");
     }
-    else if(stage == DEPLOY && baroVelocity <= 0 && (currentTime - timeOfLastStage) > 5){
+    else if(stage == DEPLOY && velocity.z() <= 0 && (currentTime - timeOfLastStage) > 5){
         bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         char logData[100];
@@ -139,6 +140,8 @@ bool AirbrakeState::motorStallCondition() {
 void AirbrakeState::updateMotor() {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
 
+    actualAngle = stepToDegree(enc->getSteps());
+
     // Set direction
     int step_diff = desiredStep - enc->getSteps();
 
@@ -147,9 +150,15 @@ void AirbrakeState::updateMotor() {
     //     analogWrite(speed_pin, 0);
     // }
     if(step_diff > stepGranularity) {
-        // Open the flaps
+        // Close the flaps
+        if (limitSwitchState == HIGH){
+            // Stop closing the flaps if the limit switch is activated
+            digitalWrite(stop_pin, HIGH);
+            analogWrite(speed_pin, 0);
+            return;
+        }
         if(currentDirection == HIGH) {
-            // Start opening the flaps
+            // Start closing the flaps
             analogWrite(speed_pin, 128);
             digitalWrite(stop_pin, LOW);
             digitalWrite(dir_pin, HIGH);
@@ -169,15 +178,9 @@ void AirbrakeState::updateMotor() {
         }
     }
     else if(step_diff < -stepGranularity) {
-        // Close the flaps
-
-        if (limitSwitchState == HIGH){
-            // Stop closing the flaps if the limit switch is activated
-            digitalWrite(stop_pin, HIGH);
-            analogWrite(speed_pin, 0);
-        }
+        // Open the flaps
         if(currentDirection == LOW) {
-            // Start closing the flaps
+            // Start opening the flaps
             analogWrite(speed_pin, 128);
             digitalWrite(stop_pin, LOW);
             digitalWrite(dir_pin, LOW);
@@ -332,7 +335,7 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
             
     while (i < max_guesses) {
 
-        estimated_apogee = predict_apogee(.1, tilt, velocity, altitude); 
+        estimated_apogee = predict_apogee(.5, tilt, velocity, altitude); 
         double apogee_difference = estimated_apogee - target_apogee;
         
         if (abs(apogee_difference) < threshold) {
@@ -343,13 +346,13 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
             high = actuationAngle;
         }
         
-        actuationAngle = (high + low) / 2;
+        actuationAngle = (high + low) / 2.0;
         i++;
     }
     
     // sets angles in degrees
     actuationAngle = angle_resolution*round(actuationAngle/angle_resolution);
-    return actuationAngle;
+    return static_cast<int>(actuationAngle);
 }
 
 // Calculate apogee
@@ -367,9 +370,9 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double k2x = 0.0;
     double k2y = 0.0;
 
-    int flapAngle = stepToDegree(desiredStep); // TODO used for testing
-    // auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-    // int flapAngle = stepToDegree(enc.getSteps()); // Used for encoder in the loop testing
+    // int flapAngle = stepToDegree(desiredStep); // TODO used for testing
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+    int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
     double CdA_flaps = 4*0.95*single_flap_area*sin(flapAngle*3.141592/180);
 
     while (time_integrating < sim_time_to_apogee){
