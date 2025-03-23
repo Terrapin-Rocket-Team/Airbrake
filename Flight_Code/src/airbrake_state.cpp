@@ -5,8 +5,9 @@
 AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter): mmfs::State(sensors, numSensors, kfilter) {
     insertColumn(1, mmfs::INT, &stage, "Stage");
     addColumn(mmfs::DOUBLE, &actuationAngle, "Actuation Angle (deg)");
-    addColumn(mmfs::DOUBLE, &CdA_rocket, "CdA");
+    addColumn(mmfs::DOUBLE_HP, &CdA_rocket, "CdA");
     addColumn(mmfs::DOUBLE, &estimated_apogee, "Est Apo (m)");
+    addColumn(mmfs::DOUBLE, &machNumber, "Mach Number");
 };
 
 bool AirbrakeState::init(bool useBiasCorrection){
@@ -20,18 +21,15 @@ bool AirbrakeState::init(bool useBiasCorrection){
 }
 
 void AirbrakeState::determineStage(){
-    int timeSinceLaunch = currentTime - timeOfLaunch;
-    mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));
     
-    if(stage == PRELAUNCH && imu->getAccelerationGlobal().z() > 40){
+    if(stage == PRELAUNCH && acceleration.z() > 40){
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
         bb.aonoff(mmfs::BUZZER, 200);
         stage = BOOST;
         timeOfLaunch = currentTime;
         timeOfLastStage = currentTime;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Launch detected.");
-        mmfs::getLogger().recordLogData(mmfs::INFO_, "Printing static data.");
         for (int i = 0; i < maxNumSensors; i++)
         {
             if (sensorOK(sensors[i]))
@@ -40,17 +38,17 @@ void AirbrakeState::determineStage(){
             }
         }
     }
-    else if(stage == BOOST && imu->getAccelerationGlobal().z() < 0){
+    else if(stage == BOOST && acceleration.z() < 0){
         bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = COAST;
-        mmfs::getLogger().recordLogData(mmfs::INFO_, "Boost detected.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Coasting detected.");
     }
-    else if(stage == COAST && (currentTime - timeOfLastStage) > 1){ 
+    else if(stage == COAST && machNumber < .8){ 
         bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = DEPLOY;
-        mmfs::getLogger().recordLogData(mmfs::INFO_, "Coasting detected.");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Entering Deploy Stage.");
     }
     else if(stage == DEPLOY && baroVelocity <= 0 && (currentTime - timeOfLastStage) > 5){
         bb.aonoff(mmfs::BUZZER, 200, 2);
@@ -80,13 +78,12 @@ void AirbrakeState::determineStage(){
         bb.aonoff(mmfs::BUZZER, 200, 2);
         stage = PRELAUNCH;
     }
-    else if((stage == PRELAUNCH || stage == BOOST) && baro->getAGLAltFt() > 250){
+    else if((stage == PRELAUNCH || stage == BOOST) && (baro->getAGLAltM() > 1500) && (millis() > 60000)){
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
         bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = COAST;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Launch detected. Using Backup Condition.");
-        mmfs::getLogger().recordLogData(mmfs::INFO_, "Printing static data.");
         for (int i = 0; i < maxNumSensors; i++)
         {
             if (sensorOK(sensors[i]))
@@ -115,7 +112,7 @@ void AirbrakeState::goToDegree(int degree) {
 }
 
 int AirbrakeState::stepToDegree(int step) {
-    return step*(1/degreeToStepConvertionFactor);
+    return step/degreeToStepConvertionFactor;
 }
 
 
@@ -331,10 +328,11 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
     // initial flap guesses
     double low = 0; 
     double high = 70;
+    actuationAngle = (low + high) / 2; // initalize to the midpoint for the binary search
             
     while (i < max_guesses) {
 
-        estimated_apogee = predict_apogee(1, tilt, velocity, altitude); 
+        estimated_apogee = predict_apogee(.1, tilt, velocity, altitude); 
         double apogee_difference = estimated_apogee - target_apogee;
         
         if (abs(apogee_difference) < threshold) {
@@ -368,7 +366,11 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double s1y = 0.0;
     double k2x = 0.0;
     double k2y = 0.0;
-    double CdA_flaps = 4*0.95*single_flap_area*sin(actuationAngle*3.141592/180);
+
+    int flapAngle = stepToDegree(desiredStep); // TODO used for testing
+    // auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
+    // int flapAngle = stepToDegree(enc.getSteps()); // Used for encoder in the loop testing
+    double CdA_flaps = 4*0.95*single_flap_area*sin(flapAngle*3.141592/180);
 
     while (time_integrating < sim_time_to_apogee){
         k1x = -0.5*get_density(y+ground_altitude)*(CdA_rocket+CdA_flaps)*sqrt(dx*dx+dy*dy)*dx/empty_mass; // TODO: 
@@ -407,7 +409,7 @@ double AirbrakeState::get_density(double h){
     double T0=288.15; //ground temperature (K) //
 
   
-    density = p0*M/R/T0*pow((1-L*h/T0),((9.8*M/R/L)-1));
+    density = p0*M/(R*T0)*pow((1-L*h/T0),((9.8*M/(R*L))-1));
     return density;
 }
 
@@ -422,8 +424,8 @@ mmfs::Vector<3> AirbrakeState::globalToBodyFrame(mmfs::Vector<3> vec) {
 // estimate CdAs
 void AirbrakeState::update_CdA_estimate() {
     CdA_number_of_measurements++;
-    mmfs::Vector<3> bodyVelo = globalToBodyFrame(velocity);
-    mmfs::Vector<3> bodyAccel = globalToBodyFrame(acceleration);
+    mmfs::Vector<3> bodyVelo = velocity.magnitude();
+    mmfs::Vector<3> bodyAccel = globalToBodyFrame(acceleration); // TODO change this to VN100 z direction
     double CdA_rocket_this_time_step =  (2*empty_mass*abs(bodyAccel.z()))/(get_density(position.z())*bodyVelo.z()*bodyVelo.z());
-    CdA_rocket = (CdA_rocket*(CdA_number_of_measurements-1) + CdA_rocket_this_time_step)/CdA_number_of_measurements ;
+    CdA_rocket = (CdA_rocket*(CdA_number_of_measurements-1) + CdA_rocket_this_time_step)/CdA_number_of_measurements;
 }

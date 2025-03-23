@@ -12,6 +12,11 @@ ser = serial.Serial(serialPort, baudRate)
 time.sleep(2)  # Wait for the connection to establish
 flapAngle = 0
 
+if ser.is_open:
+    line = "Sim Start"
+    ser.write(line.encode() + b'\n')
+    print(f"{Fore.CYAN}" + 'S-' + line + Fore.RESET)
+
 line = "DPS310 - Pres (hPa),DPS310 - Temp (C),\
 MS5611 - Pres (hPa),MS5611 - Temp (C),\
 BMI088andLIS3MDL - AccX,BMI088andLIS3MDL - AccY,BMI088andLIS3MDL - AccZ,BMI088andLIS3MDL - GyroX,BMI088andLIS3MDL - GyroY,BMI088andLIS3MDL - GyroZ,BMI088andLIS3MDL - MagX,BMI088andLIS3MDL - MagY,BMI088andLIS3MDL - MagZ,\

@@ -39,7 +39,7 @@ public:
 
     // Flight configuation parameters
     double empty_mass = 39;      // in [kg]
-    double target_apogee = 6000; // in [m]
+    double target_apogee = 7500; // in [m]
     double ground_altitude = 11.9; // ASL in [m]
     double sim_time_to_apogee = 60; // in [s]
 
@@ -54,7 +54,9 @@ public:
     double density = 1.225; // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     int CdA_number_of_measurements = 0;
     double CdA_rocket = .55*0.01885; // CDr*Area (6.1in): Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
+    //double CdA_rocket = .6*0.01885; // see if our thing is robust TODO change back
     double single_flap_area = 0.00839;
+    double machNumber = 0;
 
     AirbrakeStages stage = PRELAUNCH;
 

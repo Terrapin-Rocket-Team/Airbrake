@@ -55,13 +55,13 @@ BR blueRaven;
 
 // Initialize Airbrake State
 AirbrakeKF lkfmm;
-AirbrakeState AIRBRAKE(airbrake_sensors, 6, &lkfmm);
+AirbrakeState AIRBRAKE(airbrake_sensors, sizeof(airbrake_sensors)/4, &lkfmm);
 
 // MMFS Stuff
 mmfs::MMFSConfig config = mmfs::MMFSConfig()
                         .withState(&AIRBRAKE)
                         .withBuzzerPin(BUZZER_PIN)
-                        .withUpdateRate(10);
+                        .withUpdateRate(20);
 
 mmfs::MMFSSystem sys(&config);
 
@@ -85,7 +85,26 @@ void setup() {
 
     // MMFS Stuff
     #ifdef TEST_WITH_SERIAL
-    while(!Serial.available()){delay(100);}
+    char startBuffer[100];  // Buffer for incoming data
+    String receivedCommand = "";
+    // Wait until "Sim Start," is received
+    while (true) {
+        if (Serial.available()) {
+            // Read incoming data into buffer
+            Serial.readBytesUntil('\n', startBuffer, sizeof(startBuffer));
+            
+            // Convert char array to String
+            receivedCommand = String(startBuffer);
+            receivedCommand.trim();  // Remove any extra whitespace/newlines
+
+            // Check if received command matches "Sim Start,"
+            if (receivedCommand == "Sim Start") {
+                Serial.println("Sim Start Received");
+                break;  // Exit loop and proceed
+            }
+        }
+        delay(100);  // Prevent excessive CPU usage
+    }
     if (Serial.available()){
         Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
         Serial.println(dataPath);
@@ -93,22 +112,24 @@ void setup() {
     }
     #endif
 
-    sys.init();
-
     #ifdef TEST_WITH_SERIAL
+        mockDPS310.setBiasCorrectionMode(true);
+        //mockMS5611.setBiasCorrectionMode(true);
+        mockMAX_M10S.setBiasCorrectionMode(true);
     #else
         baro1.setBiasCorrectionMode(true);
-        baro2.setBiasCorrectionMode(true);
+        //baro2.setBiasCorrectionMode(true);
         gps.setBiasCorrectionMode(true);
     #endif
-    
+
+    sys.init();
 
     // Limit Switch
     pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
     if (enc.isInitialized()){
         AIRBRAKE.zeroMotor();
     }
-    //delay(5000);
+    delay(1000);
     Serial.println("[][],0");
 }
 
@@ -128,6 +149,9 @@ void loop() {
         // Turn off bias correction during flight
         if (AIRBRAKE.stage == BOOST) {
             #ifdef TEST_WITH_SERIAL
+                mockDPS310.setBiasCorrectionMode(false);
+                //mockMS5611.setBiasCorrectionMode(false);
+                mockMAX_M10S.setBiasCorrectionMode(false);
             #else
                 baro1.setBiasCorrectionMode(false);
                 baro2.setBiasCorrectionMode(false);
@@ -135,6 +159,9 @@ void loop() {
             #endif
         } else if (AIRBRAKE.stage == PRELAUNCH) {
             #ifdef TEST_WITH_SERIAL
+                mockDPS310.setBiasCorrectionMode(true);
+                //mockMS5611.setBiasCorrectionMode(true);
+                mockMAX_M10S.setBiasCorrectionMode(true);
             #else
                 baro1.setBiasCorrectionMode(true);
                 baro2.setBiasCorrectionMode(true);
@@ -142,7 +169,7 @@ void loop() {
             #endif
         }
         if (AIRBRAKE.stage == COAST){
-            AIRBRAKE.update_CdA_estimate();
+            //AIRBRAKE.update_CdA_estimate();
         }
     }
 
@@ -166,11 +193,13 @@ void loop() {
     // Flight Deployment Code //
     
     if (loop){
-        mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
-        double tilt = acos(dcm.get(2,2));
-        double velocity = AIRBRAKE.getVelocity().magnitude();
-        int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt);
+        mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
+        AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4*286*(baro->getTemp()+273.15)); // M = V/sqrt(gamma*R*T)
         if (AIRBRAKE.stage == DEPLOY){
+            mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
+            double tilt = acos(dcm.get(2,2));
+            double velocity = AIRBRAKE.getVelocity().magnitude();
+            int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt);
             AIRBRAKE.goToDegree(actuationAngle);
         } else {
             AIRBRAKE.goToDegree(0);
@@ -181,10 +210,6 @@ void loop() {
         if (loop){
             Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep));
             //Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
-            // Serial.print("SD Baro1: ");
-            // Serial.print(mockDPS310.getPressure());
-            // Serial.print("LKFMM Pos z: ");
-            // Serial.println(AIRBRAKE.getPosition().z());
         }       
     #endif
 }
