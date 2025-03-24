@@ -29,7 +29,7 @@ CDf = .95
 flapArea = 0.00839
 rocketArea = 0.01885
 
-tilt_angle = np.deg2rad(1)  # Launch tilt angle (entered in degrees)
+tilt_angle = np.deg2rad(5)  # Launch tilt angle (entered in degrees)
 
 main_deployment = 304.8 # [m] (1000 ft)
 main_area = 11.9845 # [m^2] (30.5 ft)
@@ -40,6 +40,12 @@ drogue_Cd = 1.16 # [~]
 main_settling_time = 2.0  # seconds for the parachute to settle
 main_deployed = False
 settling_timer = 0.0
+
+# Errors
+accel_error = .1 # [m/s^2]
+gyro_error = .2 # [rad/s]
+mag_error = 50E-6 # [T]
+baro_error = .2 # [m]
 
 def Propagate(flapAngle):
     # flapAngle in degrees
@@ -204,7 +210,7 @@ def threeDSingleAxisRotation(angle: float, axis: int) -> np.ndarray:
         raise ValueError("Invalid axis. Axis must be 0, 1, or 2.")
 
 def interial2Body(vector, angle):
-    vector_interial = np.ndarray(vector)
+    vector_interial = np.array(vector)
     vector_body = threeDSingleAxisRotation(angle, 2) @ vector_interial
 
     return vector_body.tolist()
