@@ -237,91 +237,6 @@ void AirbrakeState::zeroMotor() {
     enc->setInitialSteps(enc->getSteps());
 }
 
-// Kalman filter functions
-// void AirbrakeState::updateKF() {
-//     // Based on linear kalman filter more measurements:
-//     // https://github.com/Terrapin-Rocket-Team/Airbrake/blob/main/matlab_state_estimation/LinearKalmanFilterMoreMeasurements.m
-//     mmfs::GPS *gps = reinterpret_cast<mmfs::GPS *>(getSensor(mmfs::GPS_));
-//     mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor(mmfs::IMU_));
-//     mmfs::Barometer *baro1 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 1));
-//     mmfs::Barometer *baro2 = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_, 2));
-//     Serial.println("here1");
-
-//     double *measurements = new double[filter->getMeasurementSize()];
-//     double *inputs = new double[filter->getInputSize()];
-//     double *stateVars = new double[filter->getStateSize()];
-
-//     // Measurements 3 gps, 2 baro
-//     measurements[0] = sensorOK(gps) ? gps->getDisplacement().x() : 0;
-//     measurements[1] = sensorOK(gps) ? gps->getDisplacement().y() : 0;
-//     measurements[2] = sensorOK(gps) ? gps->getDisplacement().z() : 0;
-//     measurements[3] = baro1->getAGLAltM();
-//     measurements[4] = baro2->getAGLAltM();
-//     Serial.println("here2");
-
-//     // imu x y z
-//     inputs[0] = acceleration.x() = imu->getAccelerationGlobal().x();
-//     inputs[1] = acceleration.y() = imu->getAccelerationGlobal().y();
-//     inputs[2] = acceleration.z() = imu->getAccelerationGlobal().z() - 9.81;
-
-//     stateVars[0] = position.x();
-//     stateVars[1] = position.y();
-//     stateVars[2] = position.z();
-//     stateVars[3] = velocity.x();
-//     stateVars[4] = velocity.y();
-//     stateVars[5] = velocity.z();
-//     Serial.println("here3");
-
-//     // if (!isOutlier(filter->getStateSize(), stateVars, filter->getMeasurementSize(), measurements, 200)){
-//     //     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
-//     // }
-//     filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
-//     Serial.println("here3.8");
-//     delay(100);
-//     Serial.println(position.x());
-//     Serial.println(stateVars[0]);
-//     Serial.println("here3.9");
-//     delay(100);
-
-//     // pos x, y, z, vel x, y, z
-//     position.x() = stateVars[0];
-//     Serial.println("here3.10");
-//     position.y() = stateVars[1];
-//     position.z() = stateVars[2];
-//     velocity.x() = stateVars[3];
-//     velocity.y() = stateVars[4];
-//     velocity.z() = stateVars[5];
-//     Serial.println("here4");
-
-//     if (sensorOK(baro1))
-//     {
-//         baroVelocity = (baro1->getAGLAltM() - baroOldAltitude) / (currentTime - lastTime);
-//         baroOldAltitude = baro1->getAGLAltM();
-//     }
-//     Serial.println("here5");
-//     delete[] stateVars;
-//     Serial.println("here6");
-// }
-
-// bool AirbrakeState::isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold) {
-//     // Check for valid input sizes
-//     if (stateSize < 3 || measSize < 5) {
-//         // Invalid input sizes
-//         return false;
-//     }
-
-//     // Calculate residuals for GPS Z, Barometer 1, and Barometer 2
-//     double gpsZResid = std::abs(measurements[2] - stateVars[2]);  // GPS Z Residual (3rd element of measurements)
-//     double baro1Resid = std::abs(measurements[3] - stateVars[2]); // Barometer 1 Residual (4th element of measurements)
-//     double baro2Resid = std::abs(measurements[4] - stateVars[2]); // Barometer 2 Residual (5th element of measurements)
-
-//     // Check if any of the residuals are above the threshold
-//     if (gpsZResid > threshold || baro1Resid > threshold || baro2Resid > threshold) {
-//         return true;  // Outlier detected
-//     }
-
-//     return false;  // No outlier
-// }
 
 // Airbrake Functions from last year
 // // Calculate Actuation Angle
@@ -370,7 +285,7 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double k2x = 0.0;
     double k2y = 0.0;
 
-    // int flapAngle = stepToDegree(desiredStep); // TODO used for testing
+    // int flapAngle = stepToDegree(desiredStep); // Used for only software testing
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
     int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
     double CdA_flaps = 4*0.95*single_flap_area*sin(flapAngle*3.141592/180);

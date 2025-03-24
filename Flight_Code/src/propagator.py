@@ -15,13 +15,13 @@ long = 0
 
 updateRate = 10 # [Hz]
 timeStep = 1/updateRate # [s]
-totalImpulse = 32000 # [Ns]
-burnTime = 4.5 # [s]
+totalImpulse = 33664 # [Ns]
+burnTime = 4.83 # [s]
 rocketThrust = totalImpulse/burnTime # [N]
 launchTime = 10 # time of launch [s] (necessary for the barometer to settle)
 
-dryMass = 39; # [kg]
-wetMass = 56.25; # [kg]
+dryMass = 38.16; # [kg]
+wetMass = 55.3; # [kg]
 m = wetMass
 
 CDr = .55
@@ -29,7 +29,7 @@ CDf = .95
 flapArea = 0.00839
 rocketArea = 0.01885
 
-tilt_angle = np.deg2rad(0)  # Launch tilt angle in radians
+tilt_angle = np.deg2rad(1)  # Launch tilt angle (entered in degrees)
 
 main_deployment = 304.8 # [m] (1000 ft)
 main_area = 11.9845 # [m^2] (30.5 ft)
@@ -175,6 +175,39 @@ def getLatLong(r):
     long = np.degrees(long)
 
     return lat, long
+
+def threeDSingleAxisRotation(angle: float, axis: int) -> np.ndarray:
+    """
+    Returns the rotation matrix for a given angle and axis of rotation.
+
+    Parameters:
+    angle (float): The angle of rotation in radians.
+    axis (int): The axis of rotation (1 for x-axis, 2 for y-axis, 3 for z-axis).
+
+    Returns:
+    np.ndarray: The 3x3 rotation matrix.
+    """
+    
+    if axis == 1:
+        return np.array([[1, 0, 0], 
+                         [0, np.cos(angle), np.sin(angle)], 
+                         [0, -np.sin(angle), np.cos(angle)]])
+    elif axis == 2:
+        return np.array([[np.cos(angle), 0, -np.sin(angle)], 
+                         [0, 1, 0], 
+                         [np.sin(angle), 0, np.cos(angle)]])
+    elif axis == 3:
+        return np.array([[np.cos(angle), np.sin(angle), 0], 
+                         [-np.sin(angle), np.cos(angle), 0], 
+                         [0, 0, 1]])
+    else:
+        raise ValueError("Invalid axis. Axis must be 0, 1, or 2.")
+
+def interial2Body(vector, angle):
+    vector_interial = np.ndarray(vector)
+    vector_body = threeDSingleAxisRotation(angle, 2) @ vector_interial
+
+    return vector_body.tolist()
 
 
 

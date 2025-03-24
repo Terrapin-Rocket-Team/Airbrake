@@ -37,11 +37,12 @@ if ser.is_open:
                 waitForResponse = False  # Got the response, can send the next line
                 flapAngle = float(response.split(",")[-1].strip())
                 Propagate(flapAngle)
+                a_body = interial2Body(a)
                 line = (f"{getPressure(r[z])/100},{getTemperature(r[z])},"
                 f"{getPressure(r[z])/100},{getTemperature(r[z])},"
-                f"{a[x]},{a[y]},{a[z]},{0},{0},{0},{0},{0},{0},"
+                f"{a_body[x]},{a_body[y]},{a_body[z]},{0},{0},{0},{0},{0},{0},"
                 f"{lat},{long},{r[z]},{10},"
-                f"{a[x]},{a[y]},{a[z]},{0},{0},{0},{0},{0},{0}")
+                f"{a_body[x]},{a_body[y]},{a_body[z]},{0},{0},{0},{0},{0},{0}")
         time.sleep(0.005)  # Slight delay to prevent CPU overload
 
 ser.close()

@@ -38,10 +38,10 @@ public:
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
-    double empty_mass = 39;      // in [kg]
-    double target_apogee = 7750; // in [m]
+    double empty_mass = 38.16;      // in [kg]
+    double target_apogee = 8382; // in [m] (27500 ft)
     double ground_altitude = 11.9; // ASL in [m]
-    double sim_time_to_apogee = 60; // in [s]
+    double sim_time_to_apogee = 40; // in [s]
 
     // Simulated parameters
     int max_guesses = 10;        // number of guesses before converging on desired actuation

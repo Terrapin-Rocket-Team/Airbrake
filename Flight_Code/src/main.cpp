@@ -6,6 +6,14 @@
 #include "e5.h"
 #include "BR.h"
 
+// TODO: Long List
+// 1. Make the kalman filter be able to handle no GPS. We won't get any
+// 2. Fix the CdA calculations. Use the vector nav z direction
+// 3. Add the blue raven as a working recording sensor
+// 4. Add the vector nav and blue raven in the hardware in the loop testing
+// 5. Figure out why the altitude estimation is undershooting it
+// 6. Add tilt to the HITL and test
+
 // Testing
 #define TEST_WITH_SERIAL
 
@@ -208,7 +216,7 @@ void loop() {
 
     #ifdef TEST_WITH_SERIAL
         if (loop){
-            //Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep));
+            //Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
             Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
             Serial.println(enc.getSteps());
         }       
