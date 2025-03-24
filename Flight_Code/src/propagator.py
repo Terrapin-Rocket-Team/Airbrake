@@ -1,119 +1,94 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-a = [0,0,-9.8] # inertial acceleration [m/s^2]
-v = [0,0,0] # inertial velocity [m/s]
-r = [0,0,0] # inertial position [m]
-# o = [0,0,0,1]
-w = [0,0,0] # angular velocity [rad/s]
+a = np.array([0, 0, -9.8])  # inertial acceleration [m/s^2]
+v = np.array([0, 0, 0])  # inertial velocity [m/s]
+r = np.array([0, 0, 0])  # inertial position [m]
+w = np.array([0, 0, 0])  # angular velocity [rad/s]
 
-t = 0 # time [s]
+t = 0  # time [s]
+lat, long = 0, 0
 
-x = 0; y = 1; z = 2
-lat = 0
-long = 0
+updateRate = 10  # [Hz]
+timeStep = 1 / updateRate  # [s]
+totalImpulse = 33664  # [Ns]
+burnTime = 4.83  # [s]
+rocketThrust = totalImpulse / burnTime  # [N]
+launchTime = 10  # time of launch [s]
 
-updateRate = 10 # [Hz]
-timeStep = 1/updateRate # [s]
-totalImpulse = 33664 # [Ns]
-burnTime = 4.83 # [s]
-rocketThrust = totalImpulse/burnTime # [N]
-launchTime = 10 # time of launch [s] (necessary for the barometer to settle)
-
-dryMass = 38.16; # [kg]
-wetMass = 55.3; # [kg]
+dryMass = 38.16  # [kg]
+wetMass = 55.3  # [kg]
 m = wetMass
 
-CDr = .55
-CDf = .95
+CDr = 0.55
+CDf = 0.95
 flapArea = 0.00839
 rocketArea = 0.01885
+tilt_angle = np.deg2rad(0)  # Launch tilt angle (entered in degrees)
 
-tilt_angle = np.deg2rad(5)  # Launch tilt angle (entered in degrees)
+main_deployment = 304.8  # [m]
+main_area = 11.9845  # [m^2]
+main_Cd = 2.92
+drogue_area = 0.29186  # [m^2]
+drogue_Cd = 1.16
 
-main_deployment = 304.8 # [m] (1000 ft)
-main_area = 11.9845 # [m^2] (30.5 ft)
-main_Cd = 2.92 # [~]
-drogue_area = 0.29186 # [m^2] (24 in)
-drogue_Cd = 1.16 # [~]
-
-main_settling_time = 2.0  # seconds for the parachute to settle
+main_settling_time = 2.0  # seconds
 main_deployed = False
 settling_timer = 0.0
 
 # Errors
-accel_error = .1 # [m/s^2]
-gyro_error = .2 # [rad/s]
-mag_error = 50E-6 # [T]
-baro_error = .2 # [m]
+accel_error = 0.1  # [m/s^2]
+gyro_error = 0.2  # [rad/s]
+mag_error = 50E-6  # [T]
+baro_error = 0.2  # [m]
 
 def Propagate(flapAngle):
-    # flapAngle in degrees
-    flapAngle = np.deg2rad(flapAngle)
-
     global t, a, v, r, m, main_deployed, settling_timer, lat, long
     t += timeStep
 
     if t < launchTime:
-        r[x] = 0;r[y] = 0;r[z] = 0
-        v[x] = 0;v[y] = 0;v[z] = 0
-        a[x] = 0;a[y] = 0;a[z] = -9.8
+        r[:] = 0
+        v[:] = 0
+        a[:] = [0, 0, -9.8]
         return
 
-    density = getDensity(r[z])
+    density = getDensity(r[2])
 
-    #update Mass
     if t < burnTime + launchTime:
-        m -= (wetMass - dryMass)/burnTime*timeStep
+        m -= (wetMass - dryMass) / burnTime * timeStep
     else:
         m = dryMass
 
-    # Compute aerodynamic drag force
-    speed = np.sqrt(v[x]**2 + v[z]**2)
-    drag_force = 0.5 * density * (4*CDf*flapArea*np.sin(flapAngle) + CDr*rocketArea) * speed**2
+    speed = np.linalg.norm(v[[0, 2]])
+    drag_force = 0.5 * density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + CDr * rocketArea) * speed ** 2
     drag_accel = drag_force / m
-    
-    #update Acceleration
-    if t < burnTime + launchTime: # Motor Acceleration (Boost Phase)
+
+    if t < burnTime + launchTime:
         thrust_accel = rocketThrust / m
-        a[x] = thrust_accel * np.sin(tilt_angle) - drag_accel * np.sin(tilt_angle)
-        a[z] = thrust_accel * np.cos(tilt_angle) - drag_accel * np.cos(tilt_angle) - 9.8
-    elif v[z] < 0 and r[z] < main_deployment: # Main deployment
-        a[x] = 0
+        a[0] = thrust_accel * np.sin(tilt_angle) - drag_accel * np.sin(tilt_angle)
+        a[2] = thrust_accel * np.cos(tilt_angle) - drag_accel * np.cos(tilt_angle) - 9.8
+    elif v[2] < 0 and r[2] < main_deployment:
+        a[0] = 0
         if not main_deployed:
             main_deployed = True
             settling_timer = main_settling_time
-
         if settling_timer > 0:
-            a[z] = -0.5 / m * density * (main_Cd * main_area) * np.sqrt(v[z] ** 2) * v[z] * 0.5  # Reduced force during settling
+            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] * 0.5
             settling_timer -= timeStep
         else:
-            a[z] = -0.5 / m * density * (main_Cd * main_area) * np.sqrt(v[z] ** 2) * v[z] - 9.8
-    elif v[z] < 0: # Drogue Deployment
-        a[z] = -0.5/m*density*(drogue_Cd*drogue_area)*np.sqrt(v[z]*v[z])*v[z] - 9.8
-        a[x] = 0
-    else: # Coast Phase
-        a[x] = -drag_accel * np.sin(tilt_angle)
-        a[z] = -drag_accel * np.cos(tilt_angle) - 9.8
+            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] - 9.8
+    elif v[2] < 0:
+        a[2] = -0.5 / m * density * (drogue_Cd * drogue_area) * abs(v[2]) * v[2] - 9.8
+        a[0] = 0
+    else:
+        a[0] = -drag_accel * np.sin(tilt_angle)
+        a[2] = -drag_accel * np.cos(tilt_angle) - 9.8
 
-    #update Velocity
-    v[x] = v[x] + timeStep*a[x]
-    v[y] = v[y] + timeStep*a[y]
-    v[z] = v[z] + timeStep*a[z]
-
-    #update Position
-    r[x] = r[x] + timeStep*v[x] + .5*a[x]*timeStep**2
-    r[y] = r[y] + timeStep*v[y] + .5*a[y]*timeStep**2
-    r[z] = r[z] + timeStep*v[z] + .5*a[z]*timeStep**2
+    v += timeStep * a
+    r += timeStep * v + 0.5 * a * timeStep ** 2
     lat, long = getLatLong(r)
-
-    #update orientation
-    # o[w] = sqrt(v[x]^2 + v[y]^2 + v[z]^2)
-    # o[x] = v[x]/o[w]
-    # o[y] = v[y]/o[w]
-    # o[z] = v[z]/o[w]
-
-    return 
+    
+    return
 
 
 def getDensity(h):
@@ -168,18 +143,9 @@ def getLatLong(r):
     :param r: Inertial position vector [x, y, z] (meters)
     :return: (latitude, longitude) in degrees
     """
-    R_EARTH = 6378137  # Earth's radius in meters (WGS-84)
-
-    # Compute latitude
-    lat = np.arcsin(r[z] / np.sqrt(r[x]**2 + r[y]**2 + r[z]**2))
-
-    # Compute longitude
-    long = np.arctan2(r[y], r[x])
-
-    # Convert to degrees
-    lat = np.degrees(lat)
-    long = np.degrees(long)
-
+    R_EARTH = 6378137 # [m]
+    lat = np.degrees(np.arcsin(r[2] / np.linalg.norm(r)))
+    long = np.degrees(np.arctan2(r[1], r[0]))
     return lat, long
 
 def threeDSingleAxisRotation(angle: float, axis: int) -> np.ndarray:
@@ -215,6 +181,22 @@ def interial2Body(vector, angle):
 
     return vector_body.tolist()
 
+def gaussian_noise_generator(data, sigma):
+    """
+    Adds Gaussian noise to input data.
+
+    Parameters:
+    - data: The original data (can be a NumPy array or list).
+    - sigma: The standard deviation of the Gaussian noise.
+
+    Returns:
+    - noisy_data: Data with added Gaussian noise.
+    """
+    data = np.array(data)  # Ensure input is a NumPy array
+    noise = sigma * np.random.randn(*data.shape)  # Generate Gaussian noise
+    noisy_data = data + noise  # Add noise to data
+
+    return noisy_data
 
 
 ### Test the propagater ###
@@ -222,52 +204,60 @@ def interial2Body(vector, angle):
 def simulate_flight(flap_angle):
     """Runs the simulation until the rocket returns to the ground."""
     global t, r, v, a, m
+
+    # Initialize state variables using NumPy arrays
     t = 0
-    r = [0, 0, 0]
-    v = [0, 0, 0]
-    a = [0, 0, -9.8]
-    m = wetMass
+    r = np.array([0.0, 0.0, 0.0])  # Position (x, y, z)
+    v = np.array([0.0, 0.0, 0.0])  # Velocity (x, y, z)
+    a = np.array([0.0, 0.0, -9.8])  # Acceleration (x, y, z)
+    m = wetMass  # Initial mass
 
-    time_data = []
-    altitude_data = []
-    x_data = []
+    # Data storage
+    time_data, altitude_data, x_data = [], [], []
 
-    while r[z] >= 0:
+    # Simulate flight
+    while r[2] >= 0:
         Propagate(flap_angle)
         time_data.append(t)
-        altitude_data.append(r[z])
-        x_data.append(r[x])
+        altitude_data.append(r[2])
+        x_data.append(r[0])
 
-    return time_data, altitude_data, x_data
+    return np.array(time_data), np.array(altitude_data), np.array(x_data)
+
+import numpy as np
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # Run simulation for a chosen flap angle
-    time_data, altitude_data, x_data = simulate_flight(flap_angle=0)
-    print(max(altitude_data))
+    flap_angle = 0
+    time_data, altitude_data, x_data = simulate_flight(flap_angle)
 
-    import matplotlib.pyplot as plt
+    # Print maximum altitude reached
+    max_altitude = np.max(altitude_data)
+    print(f"Maximum Altitude: {max_altitude:.2f} m")
 
     # Create a figure with two subplots
     fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
     # Plot altitude vs. time
-    axes[0].plot(time_data, altitude_data, label='Altitude (m)')
-    axes[0].set_xlabel('Time (s)')
-    axes[0].set_ylabel('Altitude (m)')
-    axes[0].set_title('Rocket Altitude Over Time')
+    axes[0].plot(time_data, altitude_data, label="Altitude (m)", color="b")
+    axes[0].set_xlabel("Time (s)")
+    axes[0].set_ylabel("Altitude (m)")
+    axes[0].set_title("Rocket Altitude Over Time")
     axes[0].legend()
-    axes[0].grid()
+    axes[0].grid(True, linestyle="--", alpha=0.7)
 
     # Plot flight path (altitude vs. x position)
-    axes[1].plot(x_data, altitude_data, label='Trajectory')
-    axes[1].set_xlabel('X Position (m)')
-    axes[1].set_ylabel('Altitude (m)')
-    axes[1].set_title('Rocket Flight Path')
+    axes[1].plot(x_data, altitude_data, label="Trajectory", color="r")
+    axes[1].set_xlabel("X Position (m)")
+    axes[1].set_ylabel("Altitude (m)")
+    axes[1].set_title("Rocket Flight Path")
     axes[1].legend()
-    axes[1].grid()
+    axes[1].grid(True, linestyle="--", alpha=0.7)
 
     # Adjust layout and show the plots
     plt.tight_layout()
     plt.show()
+
 
 

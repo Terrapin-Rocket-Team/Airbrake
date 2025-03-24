@@ -216,8 +216,8 @@ void loop() {
 
     #ifdef TEST_WITH_SERIAL
         if (loop){
-            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
-            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
+            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
+            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
         }       
     #endif
 }
