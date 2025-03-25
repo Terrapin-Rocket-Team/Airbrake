@@ -203,11 +203,13 @@ void loop() {
     if (loop){
         mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
         AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4*286*(baro->getTemp()+273.15)); // M = V/sqrt(gamma*R*T)
+        mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
+        double tilt = acos(dcm.get(2,2)); // [rad]
+        AIRBRAKE.tilt = 90 - (tilt * (180.0 / M_PI)); // [deg]
+        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
         if (AIRBRAKE.stage == DEPLOY){
-            mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
-            double tilt = acos(dcm.get(2,2));
             double velocity = AIRBRAKE.getVelocity().magnitude();
-            int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt);
+            int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, M_PI/2 - tilt);
             AIRBRAKE.goToDegree(actuationAngle);
         } else {
             AIRBRAKE.goToDegree(0);
@@ -216,8 +218,8 @@ void loop() {
 
     #ifdef TEST_WITH_SERIAL
         if (loop){
-            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
-            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
+            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
+            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
         }       
     #endif
 }

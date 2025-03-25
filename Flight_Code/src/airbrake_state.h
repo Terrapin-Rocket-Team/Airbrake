@@ -58,6 +58,7 @@ public:
     //double CdA_rocket = .6*0.01885; // see if our thing is robust TODO change back
     double single_flap_area = 0.00839;
     double machNumber = 0;
+    double tilt = 0; // [deg]
 
     AirbrakeStages stage = PRELAUNCH;
 

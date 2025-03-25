@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-a = np.array([0, 0, -9.8])  # inertial acceleration [m/s^2]
-v = np.array([0, 0, 0])  # inertial velocity [m/s]
-r = np.array([0, 0, 0])  # inertial position [m]
-w = np.array([0, 0, 0])  # angular velocity [rad/s]
+a = np.array([0.0, 0.0, -9.8])  # inertial acceleration [m/s^2]
+v = np.array([0.0, 0.0, 0.0])  # inertial velocity [m/s]
+r = np.array([0.0, 0.0, 0.0])  # inertial position [m]
+w = np.array([0.0, 0.0, 0.0])  # angular velocity [rad/s]
 
 t = 0  # time [s]
 lat, long = 0, 0
@@ -24,7 +24,7 @@ CDr = 0.55
 CDf = 0.95
 flapArea = 0.00839
 rocketArea = 0.01885
-tilt_angle = np.deg2rad(0)  # Launch tilt angle (entered in degrees)
+tilt_angle = np.deg2rad(1)  # Launch tilt angle (entered in degrees)
 
 main_deployment = 304.8  # [m]
 main_area = 11.9845  # [m^2]
@@ -38,8 +38,8 @@ settling_timer = 0.0
 
 # Errors
 accel_error = 0.1  # [m/s^2]
-gyro_error = 0.2  # [rad/s]
-mag_error = 50E-6  # [T]
+gyro_error = 0.02  # [rad/s]
+mag_error = 50  # [micro T]
 baro_error = 0.2  # [m]
 
 def Propagate(flapAngle):
@@ -47,9 +47,9 @@ def Propagate(flapAngle):
     t += timeStep
 
     if t < launchTime:
-        r[:] = 0
-        v[:] = 0
-        a[:] = [0, 0, -9.8]
+        r[:] = 0.0
+        v[:] = 0.0
+        a[:] = [0.0, 0.0, -9.8]
         return
 
     density = getDensity(r[2])
