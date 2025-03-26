@@ -216,8 +216,8 @@ void AirbrakeState::zeroMotor() {
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
     while(1){
         enc->update();
-        // Serial.print("Encoder Steps: ");
-        // Serial.println(enc->getSteps());
+        Serial.print("Encoder Steps: ");
+        Serial.println(enc->getSteps());
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000) {
             if(motorStallCondition()){
@@ -286,9 +286,9 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double k2x = 0.0;
     double k2y = 0.0;
 
-    int flapAngle = stepToDegree(desiredStep); // Used for only software testing
+    // int flapAngle = stepToDegree(desiredStep); // Used for only software testing
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS*>(getSensor(mmfs::ENCODER_));
-    // int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
+    int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
     double CdA_flaps = 4*0.95*single_flap_area*sin(flapAngle*3.141592/180);
 
     while (time_integrating < sim_time_to_apogee){
