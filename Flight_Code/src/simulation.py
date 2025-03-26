@@ -15,7 +15,7 @@ flapAngle = 0
 
 if ser.is_open:
     line = "Sim Start"
-    ser.write(line.encode() + b'\n')
+    ser.write(b"telem/" + line.encode() + b'\n')
     print(f"{Fore.CYAN}" + 'S-' + line + Fore.RESET)
 
 line = "DPS310 - Pres (hPa),DPS310 - Temp (C),\
@@ -29,7 +29,7 @@ if ser.is_open:
     while True:  # Keep checking until a correct response is received
         if not waitForResponse:
             print(f"{Fore.CYAN}" + 'S-' + line + Fore.RESET)
-            ser.write(line.encode() + b'\n')
+            ser.write(b"telem/" + line.encode() + b'\n')
             waitForResponse = True  # Now wait for the response
         if ser.in_waiting > 0:
             response = ser.readline().decode().strip()
