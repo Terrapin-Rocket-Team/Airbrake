@@ -7,6 +7,10 @@
 #include "BR.h"
 #include "Events/Event.h"
 #include "RetrieveData/SerialHandler.h"
+#include <Math/Vector.h>
+#include <Math/Quaternion.h>
+#include <Radio/ESP32BluetoothRadio.h>
+
 
 // TODO: Long List
 // 1. Make the kalman filter be able to handle no GPS. We won't get any
@@ -18,6 +22,13 @@
 
 // Testing
 #define TEST_WITH_SERIAL
+
+// Bluetooth Module
+APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
+uint8_t encoding[] = {7, 4, 4};
+ESP32BluetoothRadio btTransmitter(Serial1, "AIRBRAKE", true);
+APRSTelem bt_aprs(aprsConfig);
+Message bt_msg;
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -161,7 +172,15 @@ void setup()
     }
     delay(1000);
     Serial.println("[][],0");
+
+    if (btTransmitter.begin()) {
+        getLogger().recordLogData(INFO_, "Initialized Bluetooth");
+    } else {
+        getLogger().recordLogData(ERROR_, "Initialized Bluetooth Failed");
+    }
 }
+
+int btLast = millis();
 
 void loop()
 {
@@ -240,10 +259,30 @@ void loop()
             double velocity = AIRBRAKE.getVelocity().magnitude();
             int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, M_PI / 2 - tilt);
             AIRBRAKE.goToDegree(actuationAngle);
+
         }
         else
         {
             AIRBRAKE.goToDegree(0);
+        }
+
+        if (millis() - btLast > 1000)
+        {
+            btLast = millis();
+            bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
+            bt_aprs.spd = AIRBRAKE.getVelocity().z();
+            bt_aprs.hdg = AIRBRAKE.getHeading();
+            Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
+            bt_aprs.orient[0] = euler.x();
+            bt_aprs.orient[1] = euler.y();
+            bt_aprs.orient[2] = euler.z();
+            bt_aprs.stateFlags.setEncoding(encoding, 3);
+
+            uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.estimated_apogee};
+            aprs.stateFlags.pack(arr);
+            bt_msg.encode(&bt_aprs);
+            
+            btTransmitter.send(bt_aprs);
         }
     }
 
