@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "airbrake_state.h"
+#include "vn_100.h"
 
 AirbrakeState::AirbrakeState(mmfs::Sensor** sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter): mmfs::State(sensors, numSensors, kfilter) {
     insertColumn(1, mmfs::INT, &stage, "Stage");
@@ -341,10 +342,16 @@ mmfs::Vector<3> AirbrakeState::globalToBodyFrame(mmfs::Vector<3> vec) {
 }
 
 // estimate CdAs
-void AirbrakeState::update_CdA_estimate() {
+void AirbrakeState::update_CdA_estimate(double bodyAccelZ) {
     CdA_number_of_measurements++;
-    mmfs::Vector<3> bodyVelo = velocity.magnitude();
-    mmfs::Vector<3> bodyAccel = globalToBodyFrame(acceleration); // TODO change this to VN100 z direction
-    double CdA_rocket_this_time_step =  (2*empty_mass*abs(bodyAccel.z()))/(get_density(position.z())*bodyVelo.z()*bodyVelo.z());
+    double bodyVelo = velocity.magnitude();
+    #ifdef TEST_WITH_SERIAL
+        bodyAccelZ = acceleration.magnitude();
+    #endif
+    double CdA_rocket_this_time_step =  (2*empty_mass*abs(bodyAccelZ))/(get_density(position.z())*bodyVelo*bodyVelo);
     CdA_rocket = (CdA_rocket*(CdA_number_of_measurements-1) + CdA_rocket_this_time_step)/CdA_number_of_measurements;
+
+    if (CdA_rocket > 1.3*predicted_CdA_rocket || CdA_rocket < .7*predicted_CdA_rocket){
+        CdA_rocket = predicted_CdA_rocket;
+    }
 }

@@ -54,8 +54,8 @@ public:
     double estimated_apogee = 0; // in [m]
     double density = 1.225; // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     int CdA_number_of_measurements = 0;
-    double CdA_rocket = .55*0.01885; // CDr*Area (6.1in): Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
-    //double CdA_rocket = .6*0.01885; // see if our thing is robust TODO change back
+    double predicted_CdA_rocket = .55*0.01885; // CDr*Area (6.1in): Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
+    double CdA_rocket = predicted_CdA_rocket;
     double single_flap_area = 0.00839;
     double machNumber = 0;
     double tilt = 0; // [deg]
@@ -88,7 +88,7 @@ public:
     int calculateActuationAngle(double altitude, double velocity, double tilt);
     double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height);
     double get_density(double h);
-    void update_CdA_estimate();
+    void update_CdA_estimate(double bodyAccelZ);
 
     double timeOfLastStage; // in seconds
 

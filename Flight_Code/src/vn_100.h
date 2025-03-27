@@ -34,6 +34,7 @@ public:
         addColumn(mmfs::DOUBLE, deltaTheta.xp, "VN-DTH-X (deg/s)");
         addColumn(mmfs::DOUBLE, deltaTheta.yp, "VN-DTH-Y (deg/s)");
         addColumn(mmfs::DOUBLE, deltaTheta.zp, "VN-DTH-Z (deg/s)");
+        addColumn(mmfs::DOUBLE, &tilt, "Tilt (deg)");
     };
     virtual ~VN_100(){};
     virtual void calibrate();
@@ -48,6 +49,7 @@ public:
     virtual mmfs::Vector<3> getDeltaVelocity() const;
     virtual mmfs::Vector<3> getDeltaTheta() const;
     virtual double getDeltaTime() const;
+    virtual double getTilt() const;
     virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; } // TODO
     virtual const char *getTypeString() const override { return "VN_100"; } // TODO
 
@@ -62,6 +64,7 @@ protected:
     float deltaTime = 0; // in s
     float pressure = 0; // in Pa
     float temperature = 0; // in deg C
+    float tilt; // in deg
 };
 
 mmfs::Vector<3> convertToEuler(const mmfs::Quaternion &orientation);

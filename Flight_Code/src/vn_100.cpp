@@ -34,6 +34,7 @@ void VN_100::read()
         deltaVelocity = mmfs::Vector<3>(vn.delta_velocity_x(), vn.delta_velocity_y(), vn.delta_velocity_z());
         deltaTheta = mmfs::Vector<3>(vn.delta_theta_x(), vn.delta_theta_y(), vn.delta_theta_z());
         deltaTime = vn.delta_time();
+        tilt = acos(cos(vn.pitch_rad()*cos(vn.roll_rad()))) * 180 / 3.14159;
         
         // TODO quaterion orientation
         pressure = vn.pres_pa();
@@ -79,6 +80,11 @@ mmfs::Vector<3> VN_100::getDeltaTheta() const
 double VN_100::getDeltaTime() const
 {
     return deltaTime;
+}
+
+double VN_100::getTilt() const
+{
+    return tilt;
 }
 
 mmfs::Vector<3> convertToEuler(const mmfs::Quaternion &orientation)

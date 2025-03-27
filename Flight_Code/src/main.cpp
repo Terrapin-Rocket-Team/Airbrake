@@ -14,11 +14,9 @@
 
 // TODO: Long List
 // 1. Make the kalman filter be able to handle no GPS. We won't get any
-// 2. Fix the CdA calculations. Use the vector nav z direction
 // 3. Add the blue raven as a working recording sensor
 // 4. Add the vector nav and blue raven in the hardware in the loop testing
 // 5. Figure out why the altitude estimation is undershooting it
-// 6. Add tilt to the HITL and test
 
 // Testing
 // #define TEST_WITH_SERIAL
@@ -172,7 +170,9 @@ void setup()
         AIRBRAKE.zeroMotor();
     }
     delay(1000);
-    Serial.println("[][],0");
+    #ifdef TEST_WITH_SERIAL
+        Serial.println("[][],0");
+    #endif
 
     if (btTransmitter.begin()) {
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Initialized Bluetooth");
@@ -219,7 +219,7 @@ void loop()
         }
         if (AIRBRAKE.stage == COAST)
         {
-            // AIRBRAKE.update_CdA_estimate();
+            AIRBRAKE.update_CdA_estimate(vn.getAcceleration().z());
         }
     }
 
@@ -247,12 +247,16 @@ void loop()
         AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
         mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
         double tilt = acos(dcm.get(2, 2));            // [rad]
-        AIRBRAKE.tilt = 90 - (tilt * (180.0 / M_PI)); // [deg]
-        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+        tilt = M_PI/2 - tilt; // 90 deg off for some reason TODO figure out
+        AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
+        // Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+        // Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
+        // Serial.printf("VN Tilt: %f \n", vn.getTilt());
+        // Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
         if (AIRBRAKE.stage == DEPLOY)
         {
             double velocity = AIRBRAKE.getVelocity().magnitude();
-            int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, M_PI / 2 - tilt);
+            int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt);
             AIRBRAKE.goToDegree(actuationAngle);
 
         }
@@ -271,23 +275,23 @@ void loop()
     // Bluetooth Stuff //
     if (loop)
     {
-        if (millis() - btLast > 1000)
-        {
-            btLast = millis();
-            bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
-            bt_aprs.spd = AIRBRAKE.getVelocity().z();
-            bt_aprs.hdg = AIRBRAKE.getHeading();
-            mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
-            bt_aprs.orient[0] = euler.x();
-            bt_aprs.orient[1] = euler.y();
-            bt_aprs.orient[2] = euler.z();
-            bt_aprs.stateFlags.setEncoding(encoding, 3);
+    //     if (millis() - btLast > 1000)
+    //     {
+    //         btLast = millis();
+    //         bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
+    //         bt_aprs.spd = AIRBRAKE.getVelocity().z();
+    //         bt_aprs.hdg = AIRBRAKE.getHeading();
+    //         mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
+    //         bt_aprs.orient[0] = euler.x();
+    //         bt_aprs.orient[1] = euler.y();
+    //         bt_aprs.orient[2] = euler.z();
+    //         bt_aprs.stateFlags.setEncoding(encoding, 3);
 
-            uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.estimated_apogee};
-            aprs.stateFlags.pack(arr);
-            bt_msg.encode(&bt_aprs);
+    //         uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.estimated_apogee};
+    //         aprs.stateFlags.pack(arr);
+    //         bt_msg.encode(&bt_aprs);
             
-            btTransmitter.send(bt_aprs);
-        }
+    //         btTransmitter.send(bt_aprs);
+    //     }
     }
 }
