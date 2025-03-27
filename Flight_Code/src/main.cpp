@@ -21,12 +21,13 @@
 // 6. Add tilt to the HITL and test
 
 // Testing
-#define TEST_WITH_SERIAL
+// #define TEST_WITH_SERIAL
 
 // Bluetooth Module
 APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
 uint8_t encoding[] = {7, 4, 4};
-ESP32BluetoothRadio btTransmitter(Serial1, "AIRBRAKE", true);
+APRSTelem aprs(aprsConfig);
+mmfs::ESP32BluetoothRadio btTransmitter(Serial1, "AIRBRAKE", true);
 APRSTelem bt_aprs(aprsConfig);
 Message bt_msg;
 
@@ -46,10 +47,10 @@ BR blueRaven;
 
 char dataPath[2560];
 bool firstLineReceived = false;
-void onSerialEvent(const mmfs::Event &e)
+void onSerialEvent(const mmfs::Event *e)
 {
     using namespace mmfs;
-    if (e.ID == "SERIAL_LINE"_i)
+    if (e->ID == "SERIAL_LINE"_i)
     {
         if (strncmp("telem/", getSerialHandler().getLastLine(), 6) == 0)
         {
@@ -117,50 +118,50 @@ void setup()
     analogWrite(speed_pin, 0);
 
     // MMFS Stuff
-#ifdef TEST_WITH_SERIAL
-    char startBuffer[100]; // Buffer for incoming data
-    String receivedCommand = "";
-    // Wait until "Sim Start," is received
-    while (true)
-    {
+    #ifdef TEST_WITH_SERIAL
+        char startBuffer[100]; // Buffer for incoming data
+        String receivedCommand = "";
+        // Wait until "Sim Start," is received
+        while (true)
+        {
+            if (Serial.available())
+            {
+                // Read incoming data into buffer
+                Serial.readBytesUntil('\n', startBuffer, sizeof(startBuffer));
+
+                // Convert char array to String
+                receivedCommand = String(startBuffer);
+                receivedCommand.trim(); // Remove any extra whitespace/newlines
+
+                // Check if received command matches "Sim Start,"
+                if (receivedCommand == "telem/Sim Start")
+                {
+                    Serial.println("Sim Start Received");
+                    break; // Exit loop and proceed
+                }
+            }
+            delay(100); // Prevent excessive CPU usage
+        }
         if (Serial.available())
         {
-            // Read incoming data into buffer
-            Serial.readBytesUntil('\n', startBuffer, sizeof(startBuffer));
-
-            // Convert char array to String
-            receivedCommand = String(startBuffer);
-            receivedCommand.trim(); // Remove any extra whitespace/newlines
-
-            // Check if received command matches "Sim Start,"
-            if (receivedCommand == "telem/Sim Start")
-            {
-                Serial.println("Sim Start Received");
-                break; // Exit loop and proceed
-            }
+            char title[2560];
+            int i = Serial.readBytesUntil('\n', title, sizeof(title));
+            title[i] = '\0';
+            strcpy(dataPath, title+6);
+            Serial.println(dataPath);
+            mmfs::getLogger().recordLogData(mmfs::INFO_, "This is a simulation run.");
         }
-        delay(100); // Prevent excessive CPU usage
-    }
-    if (Serial.available())
-    {
-        char title[2560];
-        int i = Serial.readBytesUntil('\n', title, sizeof(title));
-        title[i] = '\0';
-        strcpy(dataPath, title+6);
-        Serial.println(dataPath);
-        mmfs::getLogger().recordLogData(mmfs::INFO_, "This is a simulation run.");
-    }
-#endif
+    #endif
 
-#ifdef TEST_WITH_SERIAL
-    mockDPS310.setBiasCorrectionMode(true);
-    // mockMS5611.setBiasCorrectionMode(true);
-    mockMAX_M10S.setBiasCorrectionMode(true);
-#else
-    baro1.setBiasCorrectionMode(true);
-    // baro2.setBiasCorrectionMode(true);
-    gps.setBiasCorrectionMode(true);
-#endif
+    #ifdef TEST_WITH_SERIAL
+        mockDPS310.setBiasCorrectionMode(true);
+        // mockMS5611.setBiasCorrectionMode(true);
+        mockMAX_M10S.setBiasCorrectionMode(true);
+    #else
+        baro1.setBiasCorrectionMode(true);
+        // baro2.setBiasCorrectionMode(true);
+        gps.setBiasCorrectionMode(true);
+    #endif
 
     sys.init();
 
@@ -174,9 +175,9 @@ void setup()
     Serial.println("[][],0");
 
     if (btTransmitter.begin()) {
-        getLogger().recordLogData(INFO_, "Initialized Bluetooth");
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Initialized Bluetooth");
     } else {
-        getLogger().recordLogData(ERROR_, "Initialized Bluetooth Failed");
+       mmfs::getLogger().recordLogData(mmfs::ERROR_, "Initialized Bluetooth Failed");
     }
 }
 
@@ -184,12 +185,6 @@ int btLast = millis();
 
 void loop()
 {
-#ifdef TEST_WITH_SERIAL
-    if (!firstLineReceived)
-    {
-        return;
-    }
-#endif
 
     bool loop = sys.update();
     AIRBRAKE.updateMotor();
@@ -200,27 +195,27 @@ void loop()
         // Turn off bias correction during flight
         if (AIRBRAKE.stage == BOOST)
         {
-#ifdef TEST_WITH_SERIAL
-            mockDPS310.setBiasCorrectionMode(false);
-            // mockMS5611.setBiasCorrectionMode(false);
-            mockMAX_M10S.setBiasCorrectionMode(false);
-#else
-            baro1.setBiasCorrectionMode(false);
-            baro2.setBiasCorrectionMode(false);
-            gps.setBiasCorrectionMode(false);
-#endif
+            #ifdef TEST_WITH_SERIAL
+                mockDPS310.setBiasCorrectionMode(false);
+                // mockMS5611.setBiasCorrectionMode(false);
+                mockMAX_M10S.setBiasCorrectionMode(false);
+            #else
+                baro1.setBiasCorrectionMode(false);
+                // baro2.setBiasCorrectionMode(false);
+                gps.setBiasCorrectionMode(false);
+            #endif
         }
         else if (AIRBRAKE.stage == PRELAUNCH)
         {
-#ifdef TEST_WITH_SERIAL
-            mockDPS310.setBiasCorrectionMode(true);
-            // mockMS5611.setBiasCorrectionMode(true);
-            mockMAX_M10S.setBiasCorrectionMode(true);
-#else
-            baro1.setBiasCorrectionMode(true);
-            baro2.setBiasCorrectionMode(true);
-            gps.setBiasCorrectionMode(true);
-#endif
+            #ifdef TEST_WITH_SERIAL
+                mockDPS310.setBiasCorrectionMode(true);
+                // mockMS5611.setBiasCorrectionMode(true);
+                mockMAX_M10S.setBiasCorrectionMode(true);
+            #else
+                baro1.setBiasCorrectionMode(true);
+                // baro2.setBiasCorrectionMode(true);
+                gps.setBiasCorrectionMode(true);
+            #endif
         }
         if (AIRBRAKE.stage == COAST)
         {
@@ -266,13 +261,23 @@ void loop()
             AIRBRAKE.goToDegree(0);
         }
 
+        #ifdef TEST_WITH_SERIAL
+            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
+            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
+        #endif
+    }
+
+
+    // Bluetooth Stuff //
+    if (loop)
+    {
         if (millis() - btLast > 1000)
         {
             btLast = millis();
             bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
             bt_aprs.spd = AIRBRAKE.getVelocity().z();
             bt_aprs.hdg = AIRBRAKE.getHeading();
-            Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
+            mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
             bt_aprs.orient[0] = euler.x();
             bt_aprs.orient[1] = euler.y();
             bt_aprs.orient[2] = euler.z();
@@ -285,12 +290,4 @@ void loop()
             btTransmitter.send(bt_aprs);
         }
     }
-
-#ifdef TEST_WITH_SERIAL
-    if (loop)
-    {
-        Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
-        // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
-    }
-#endif
 }
