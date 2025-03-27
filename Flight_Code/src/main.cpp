@@ -174,6 +174,7 @@ void setup()
         Serial.println("[][],0");
     #endif
 
+    delay(500);
     if (btTransmitter.begin()) {
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Initialized Bluetooth");
     } else {
@@ -275,7 +276,7 @@ void loop()
     // Bluetooth Stuff //
     if (loop)
     {
-        // if (millis() - btLast > 1000)
+        // if (millis() - btLast > 1000 && btTransmitter.isReady())
         // {
         //     btLast = millis();
         //     bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
