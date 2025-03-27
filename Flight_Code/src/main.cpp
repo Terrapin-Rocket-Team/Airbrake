@@ -25,7 +25,7 @@
 APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
 uint8_t encoding[] = {7, 4, 4};
 APRSTelem aprs(aprsConfig);
-mmfs::ESP32BluetoothRadio btTransmitter(Serial1, "AIRBRAKE", true);
+mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AVIONICS", false);
 APRSTelem bt_aprs(aprsConfig);
 Message bt_msg;
 
@@ -275,23 +275,25 @@ void loop()
     // Bluetooth Stuff //
     if (loop)
     {
-    //     if (millis() - btLast > 1000)
-    //     {
-    //         btLast = millis();
-    //         bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
-    //         bt_aprs.spd = AIRBRAKE.getVelocity().z();
-    //         bt_aprs.hdg = AIRBRAKE.getHeading();
-    //         mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
-    //         bt_aprs.orient[0] = euler.x();
-    //         bt_aprs.orient[1] = euler.y();
-    //         bt_aprs.orient[2] = euler.z();
-    //         bt_aprs.stateFlags.setEncoding(encoding, 3);
+        if (millis() - btLast > 1000)
+        {
+            btLast = millis();
+            bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
+            bt_aprs.spd = AIRBRAKE.getVelocity().z();
+            bt_aprs.hdg = AIRBRAKE.getHeading();
+            mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
+            bt_aprs.orient[0] = euler.x();
+            bt_aprs.orient[1] = euler.y();
+            bt_aprs.orient[2] = euler.z();
+            bt_aprs.stateFlags.setEncoding(encoding, 3);
 
-    //         uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.estimated_apogee};
-    //         aprs.stateFlags.pack(arr);
-    //         bt_msg.encode(&bt_aprs);
+            btTransmitter.rx();
+
+            uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.estimated_apogee};
+            aprs.stateFlags.pack(arr);
+            bt_msg.encode(&bt_aprs);
             
-    //         btTransmitter.send(bt_aprs);
-    //     }
+            btTransmitter.send(bt_aprs);
+        }
     }
 }
