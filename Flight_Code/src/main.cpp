@@ -19,13 +19,13 @@
 // 5. Figure out why the altitude estimation is undershooting it
 
 // Testing
-// #define TEST_WITH_SERIAL
+#define TEST_WITH_SERIAL
 
 // Bluetooth Module
 APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
 uint8_t encoding[] = {7, 4, 4};
 APRSTelem aprs(aprsConfig);
-mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AVIONICS", false);
+mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AIRBRAKE", false);
 APRSTelem bt_aprs(aprsConfig);
 Message bt_msg;
 
@@ -249,10 +249,10 @@ void loop()
         double tilt = acos(dcm.get(2, 2));            // [rad]
         tilt = M_PI/2 - tilt; // 90 deg off for some reason TODO figure out
         AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
-        // Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
-        // Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
-        // Serial.printf("VN Tilt: %f \n", vn.getTilt());
-        // Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
+        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+        Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
+        Serial.printf("VN Tilt: %f \n", vn.getTilt());
+        Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
         if (AIRBRAKE.stage == DEPLOY)
         {
             double velocity = AIRBRAKE.getVelocity().magnitude();
@@ -275,25 +275,25 @@ void loop()
     // Bluetooth Stuff //
     if (loop)
     {
-        if (millis() - btLast > 1000)
-        {
-            btLast = millis();
-            bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
-            bt_aprs.spd = AIRBRAKE.getVelocity().z();
-            bt_aprs.hdg = AIRBRAKE.getHeading();
-            mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
-            bt_aprs.orient[0] = euler.x();
-            bt_aprs.orient[1] = euler.y();
-            bt_aprs.orient[2] = euler.z();
-            bt_aprs.stateFlags.setEncoding(encoding, 3);
+        // if (millis() - btLast > 1000)
+        // {
+        //     btLast = millis();
+        //     bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
+        //     bt_aprs.spd = AIRBRAKE.getVelocity().z();
+        //     bt_aprs.hdg = AIRBRAKE.getHeading();
+        //     mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
+        //     bt_aprs.orient[0] = euler.x();
+        //     bt_aprs.orient[1] = euler.y();
+        //     bt_aprs.orient[2] = euler.z();
+        //     bt_aprs.stateFlags.setEncoding(encoding, 3);
 
-            btTransmitter.rx();
+        //     btTransmitter.rx();
 
-            uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.estimated_apogee};
-            aprs.stateFlags.pack(arr);
-            bt_msg.encode(&bt_aprs);
+        //     uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.estimated_apogee};
+        //     aprs.stateFlags.pack(arr);
+        //     bt_msg.encode(&bt_aprs);
             
-            btTransmitter.send(bt_aprs);
-        }
+        //     btTransmitter.send(bt_aprs);
+        // }
     }
 }

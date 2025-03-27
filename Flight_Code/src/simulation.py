@@ -3,8 +3,8 @@ import serial
 import time
 from colorama import Fore
 
-#serialPort = '/dev/cu.usbmodem149805801'  # Use the correct port for the Arduino
-serialPort = '/dev/cu.usbmodem160468301'
+serialPort = '/dev/cu.usbmodem149805801'  # Use the correct port for the Arduino
+#serialPort = '/dev/cu.usbmodem160468301'
 baudRate = 115200  # Match the baud rate to the Arduino's
 # dataFile = '/Users/michaelmallamaci/Downloads/Jan_Airbrake_FlightData.csv'
 
@@ -41,7 +41,7 @@ if ser.is_open:
                 a_body = interial2Body(a, tilt_angle)
                 line = (f"{getPressure(gaussian_noise_generator(r[2], baro_error))/100},{getTemperature(gaussian_noise_generator(r[2], baro_error))}," # Baro 1
                 f"{getPressure(gaussian_noise_generator(r[2], baro_error))/100},{getTemperature(gaussian_noise_generator(r[2], baro_error))}," # Baro 2
-                f"{gaussian_noise_generator(a_body[2], accel_error)},{gaussian_noise_generator(a_body[1], accel_error)},{gaussian_noise_generator(a_body[0], accel_error)}," # Accel
+                f"{gaussian_noise_generator(a_body[0], accel_error)},{gaussian_noise_generator(a_body[1], accel_error)},{gaussian_noise_generator(a_body[2], accel_error)}," # Accel
                 f"{gaussian_noise_generator(0, gyro_error)},{gaussian_noise_generator(0, gyro_error)},{gaussian_noise_generator(0, gyro_error)}," # Gyro
                 f"{0},{0},{0}," # Mag
                 f"{0},{0},{r[2]},{0}," # GPS

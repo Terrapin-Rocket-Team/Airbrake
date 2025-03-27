@@ -39,7 +39,8 @@ public:
 
     // Flight configuation parameters
     double empty_mass = 38.16;      // in [kg]
-    double target_apogee = 8382; // in [m] (27500 ft)
+    double predicted_target_apogee = 8382; // in [m] (27500 ft)
+    double target_apogee = predicted_target_apogee; // in [m]
     double ground_altitude = 11.9; // ASL in [m]
     double sim_time_to_apogee = 40; // in [s]
 
