@@ -14,12 +14,11 @@
 
 // TODO: Long List
 // 1. Make the kalman filter be able to handle no GPS. We won't get any
-// 3. Add the blue raven as a working recording sensor
 // 4. Add the vector nav and blue raven in the hardware in the loop testing
 // 5. Figure out why the altitude estimation is undershooting it
 
 // Testing
-#define TEST_WITH_SERIAL
+// #define TEST_WITH_SERIAL
 
 // Bluetooth Module
 APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};

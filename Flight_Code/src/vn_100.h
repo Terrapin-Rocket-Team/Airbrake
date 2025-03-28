@@ -34,7 +34,7 @@ public:
         addColumn(mmfs::DOUBLE, deltaTheta.xp, "VN-DTH-X (deg/s)");
         addColumn(mmfs::DOUBLE, deltaTheta.yp, "VN-DTH-Y (deg/s)");
         addColumn(mmfs::DOUBLE, deltaTheta.zp, "VN-DTH-Z (deg/s)");
-        addColumn(mmfs::DOUBLE, &tilt, "Tilt (deg)");
+        addColumn(mmfs::FLOAT, &tilt, "Tilt (deg)");
     };
     virtual ~VN_100(){};
     virtual void calibrate();
@@ -64,7 +64,7 @@ protected:
     float deltaTime = 0; // in s
     float pressure = 0; // in Pa
     float temperature = 0; // in deg C
-    float tilt; // in deg
+    float tilt = 0; // in deg
 };
 
 mmfs::Vector<3> convertToEuler(const mmfs::Quaternion &orientation);

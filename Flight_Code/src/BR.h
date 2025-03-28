@@ -39,6 +39,7 @@ protected:
     float gyroZ = 0;
     float rollAngle = 0;
     float tiltAngle = 0;
+    float batteryVoltage = 0;
     
 public:
     BR(const char *name = "BR") : 
@@ -46,19 +47,20 @@ public:
         hub1(myusb), 
         blueRaven(myusb, 1) {
         setName(name);
-        addColumn(mmfs::FLOAT, &altitude, "BR-ALT (ft)");
-        addColumn(mmfs::FLOAT, &pressure, "BR-PRES (Pa)");
-        addColumn(mmfs::FLOAT, &temperature, "BR-TEMP (C)");
-        addColumn(mmfs::FLOAT, &velocity, "BR-VEL (m/s)");
-        addColumn(mmfs::FLOAT, &angle, "BR-ANG (deg)");
-        addColumn(mmfs::FLOAT, &accelX, "BR-ACCX (m/s^2)");
-        addColumn(mmfs::FLOAT, &accelY, "BR-ACCY (m/s^2)");
-        addColumn(mmfs::FLOAT, &accelZ, "BR-ACCZ (m/s^2)");
-        addColumn(mmfs::FLOAT, &gyroX, "BR-GYROX (rad/s)");
-        addColumn(mmfs::FLOAT, &gyroY, "BR-GYROY (rad/s)");
-        addColumn(mmfs::FLOAT, &gyroZ, "BR-GYROZ (rad/s)");
-        addColumn(mmfs::FLOAT, &rollAngle, "BR-ROLL (deg)");
-        addColumn(mmfs::FLOAT, &tiltAngle, "BR-TILT (deg)");
+        addColumn(mmfs::FLOAT, &batteryVoltage, "Battery Voltage (V)");
+        addColumn(mmfs::FLOAT, &altitude, "ALT (m)");
+        addColumn(mmfs::FLOAT, &pressure, "PRES (Pa)");
+        addColumn(mmfs::FLOAT, &temperature, "TEMP (C)");
+        addColumn(mmfs::FLOAT, &velocity, "VEL (m/s)");
+        addColumn(mmfs::FLOAT, &angle, "ANG (deg)");
+        addColumn(mmfs::FLOAT, &accelX, "ACCX (m/s^2)");
+        addColumn(mmfs::FLOAT, &accelY, "ACCY (m/s^2)");
+        addColumn(mmfs::FLOAT, &accelZ, "ACCZ (m/s^2)");
+        addColumn(mmfs::FLOAT, &gyroX, "GYROX (rad/s)");
+        addColumn(mmfs::FLOAT, &gyroY, "GYROY (rad/s)");
+        addColumn(mmfs::FLOAT, &gyroZ, "GYROZ (rad/s)");
+        addColumn(mmfs::FLOAT, &rollAngle, "ROLL (deg)");
+        addColumn(mmfs::FLOAT, &tiltAngle, "TILT (deg)");
     }
     
     virtual ~BR() {
