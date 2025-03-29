@@ -1,7 +1,6 @@
 #include "vn_100.h"
 #include <RecordData/DataReporter.h>
 
-
 bool VN_100::begin(bool useBiasCorrection)
 {
     biasCorrectionMode = useBiasCorrection;
@@ -10,6 +9,11 @@ bool VN_100::begin(bool useBiasCorrection)
 
 bool VN_100::init()
 {
+    SPI.setMOSI(11);
+    SPI.setMISO(12);
+    SPI.setSCK(13);
+    SPI.begin();
+
     vn.Reset();
     if (!vn.Begin())
     {
@@ -25,8 +29,9 @@ void VN_100::update()
 }
 
 void VN_100::read()
-{   
-    if (vn.Read()) {
+{
+    if (vn.Read())
+    {
         accelerationVec = mmfs::Vector<3>(vn.accel_x_mps2(), vn.accel_y_mps2(), vn.accel_z_mps2());
         angularVelocity = mmfs::Vector<3>(vn.gyro_x_radps(), vn.gyro_y_radps(), vn.gyro_z_radps());
         orientationEuler = mmfs::Vector<3>(vn.yaw_rad() * 180 / 3.14159, vn.pitch_rad() * 180 / 3.14159, vn.roll_rad() * 180 / 3.14159);
@@ -34,8 +39,8 @@ void VN_100::read()
         deltaVelocity = mmfs::Vector<3>(vn.delta_velocity_x(), vn.delta_velocity_y(), vn.delta_velocity_z());
         deltaTheta = mmfs::Vector<3>(vn.delta_theta_x(), vn.delta_theta_y(), vn.delta_theta_z());
         deltaTime = vn.delta_time();
-        tilt = acos(cos(vn.pitch_rad()*cos(vn.roll_rad()))) * 180 / 3.14159;
-        
+        tilt = acos(cos(vn.pitch_rad() * cos(vn.roll_rad()))) * 180 / 3.14159;
+
         // TODO quaterion orientation
         pressure = vn.pres_pa();
         temperature = vn.die_temp_c();
@@ -72,7 +77,7 @@ mmfs::Vector<3> VN_100::getDeltaVelocity() const
     return deltaVelocity;
 }
 
-mmfs::Vector<3> VN_100::getDeltaTheta() const 
+mmfs::Vector<3> VN_100::getDeltaTheta() const
 {
     return deltaTheta;
 }
