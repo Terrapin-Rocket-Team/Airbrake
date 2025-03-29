@@ -39,8 +39,8 @@ public:
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
-    double empty_mass = 38.16;                      // in [kg]
-    double predicted_target_apogee = 8382;          // in [m] (27500 ft)
+    double empty_mass = 38.21;                      // in [kg]
+    double predicted_target_apogee = 7500;          // in [m] (24606.3 ft)
     double target_apogee = predicted_target_apogee; // in [m]
     double ground_altitude = 11.9;                  // ASL in [m]
     double sim_time_to_apogee = 40;                 // in [s]
@@ -67,7 +67,6 @@ public:
     // Helper Functions
     void determineStage() override;
     void updateMotor();
-    mmfs::Vector<3> globalToBodyFrame(mmfs::Vector<3> vec); // converts from global fram to Z direction body frame.
 
     // motor Stall
     bool motorStallCondition();

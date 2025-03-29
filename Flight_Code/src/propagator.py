@@ -16,15 +16,15 @@ burnTime = 4.83  # [s]
 rocketThrust = totalImpulse / burnTime  # [N]
 launchTime = 10  # time of launch [s]
 
-dryMass = 38.16  # [kg]
-wetMass = 55.3  # [kg]
+dryMass = 38.21  # [kg]
+wetMass = 55.97 + 10 # [kg]
 m = wetMass
 
 CDr = 0.55
 CDf = 0.95
 flapArea = 0.00839
 rocketArea = 0.01885
-tilt_angle = np.deg2rad(1)  # Launch tilt angle (entered in degrees)
+tilt_angle = np.deg2rad(2)  # Launch tilt angle (entered in degrees)
 
 main_deployment = 304.8  # [m]
 main_area = 11.9845  # [m^2]

@@ -10,6 +10,7 @@ AirbrakeState::AirbrakeState(mmfs::Sensor **sensors, int numSensors, mmfs::Linea
     addColumn(mmfs::DOUBLE, &actualAngle, "Acutal Angle (deg)");
     addColumn(mmfs::DOUBLE_HP, &CdA_rocket, "CdA");
     addColumn(mmfs::DOUBLE, &estimated_apogee, "Est Apo (m)");
+    addColumn(mmfs::DOUBLE, &target_apogee, "Target Apogee (m)");
     addColumn(mmfs::DOUBLE, &machNumber, "Mach Number");
     addColumn(mmfs::DOUBLE, &tilt, "Tilt [deg]");
 };
@@ -330,9 +331,9 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double k2x = 0.0;
     double k2y = 0.0;
 
-    int flapAngle = stepToDegree(desiredStep); // Used for only software testing
+    // int flapAngle = stepToDegree(desiredStep); // Used for only software testing
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor(mmfs::ENCODER_));
-    // int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
+    int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
     double CdA_flaps = 4 * 0.95 * single_flap_area * sin(flapAngle * 3.141592 / 180);
 
     while (time_integrating < sim_time_to_apogee)
@@ -375,15 +376,6 @@ double AirbrakeState::get_density(double h)
 
     density = p0 * M / (R * T0) * pow((1 - L * h / T0), ((9.8 * M / (R * L)) - 1));
     return density;
-}
-
-// change from global frame to body frame.
-mmfs::Vector<3> AirbrakeState::globalToBodyFrame(mmfs::Vector<3> vec)
-{
-    mmfs::Quaternion globalquat = mmfs::Quaternion(0, vec);
-    mmfs::Quaternion o_conj = orientation.conjugate();
-    mmfs::Quaternion b_quat = orientation * globalquat * o_conj;
-    return mmfs::Vector<3>(b_quat.x(), b_quat.y(), b_quat.z());
 }
 
 // estimate CdAs

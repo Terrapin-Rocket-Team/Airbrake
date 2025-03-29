@@ -42,18 +42,18 @@ BR blueRaven;
 
 char dataPath[2560];
 bool firstLineReceived = false;
-void onSerialEvent(const mmfs::Event *e)
-{
-    using namespace mmfs;
-    if (e->ID == "SERIAL_LINE"_i)
-    {
-        if (strncmp("telem/", getSerialHandler().getLastLine(), 6) == 0)
-        {
-            strcpy(dataPath, getSerialHandler().getLastLine() + 6);
-            firstLineReceived = true;
-        }
-    }
-}
+// void onSerialEvent(const mmfs::Event *e)
+// {
+//     using namespace mmfs;
+//     if (e->ID == "SERIAL_LINE"_i)
+//     {
+//         if (strncmp("telem/", getSerialHandler().getLastLine(), 6) == 0)
+//         {
+//             strcpy(dataPath, getSerialHandler().getLastLine() + 6);
+//             firstLineReceived = true;
+//         }
+//     }
+// }
 mmfs::MockBarometer mockDPS310(dataPath, "DPS310 - Pres (hPa)", "DPS310 - Temp (C)");
 // mmfs::MockBarometer mockMS5611(dataPath, "MS5611 - Pres (hPa)", "MS5611 - Temp (C)");
 
@@ -135,10 +135,10 @@ void setup()
     }
     if (Serial.available())
     {
-        char title[2560];
-        int i = Serial.readBytesUntil('\n', title, sizeof(title));
-        title[i] = '\0';
-        strcpy(dataPath, title + 6);
+        // char title[2560];
+        int i = Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
+        // title[i] = '\0';
+        // strcpy(dataPath, title + 6);
         Serial.println(dataPath);
         mmfs::getLogger().recordLogData(mmfs::INFO_, "This is a simulation run.");
     }
@@ -182,6 +182,12 @@ int btLast = millis();
 
 void loop()
 {
+    #ifdef TEST_WITH_SERIAL
+        if (Serial.available()){
+            Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
+            Serial.println(dataPath);
+        }
+    #endif
 
     bool doLoop = sys.update();
     AIRBRAKE.updateMotor();
@@ -242,7 +248,7 @@ void loop()
     {
         mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
         AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
-        mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
+        mmfs::Matrix dcm = AIRBRAKE.getOrientation().conjugate().toMatrix();
         double tilt = acos(dcm.get(2, 2)); // [rad]
         tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
         AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
@@ -250,10 +256,12 @@ void loop()
         Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
         Serial.printf("VN Tilt: %f \n", vn.getTilt());
         Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
+        double velocity = AIRBRAKE.getVelocity().magnitude();
+        double altitude = AIRBRAKE.getPosition().z();
         if (AIRBRAKE.stage == DEPLOY)
         {
-            double velocity = AIRBRAKE.getVelocity().magnitude();
-            int actuationAngle = AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt);
+
+            int actuationAngle = AIRBRAKE.calculateActuationAngle(altitude, velocity, tilt);
             AIRBRAKE.goToDegree(actuationAngle);
         }
         else
@@ -261,36 +269,47 @@ void loop()
             AIRBRAKE.goToDegree(0);
         }
 
+        if (AIRBRAKE.stage == COAST){
+            double estimated_apogee = AIRBRAKE.predict_apogee(.5, tilt, velocity, altitude);
+            if (estimated_apogee < (AIRBRAKE.predicted_target_apogee + 500)) {
+                AIRBRAKE.target_apogee = estimated_apogee - 500;
+            }
+        }
+
 #ifdef TEST_WITH_SERIAL
-        Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
-                                                                                 //  Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
+        // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
+        Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
 #endif
     }
 
     // Bluetooth Stuff //
-    if (doLoop)
-    {
-        if (millis() - btLast > 1000)
-        {
-            btLast = millis();
-            bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
-            bt_aprs.spd = AIRBRAKE.getVelocity().z();
-            bt_aprs.hdg = AIRBRAKE.getHeading();
-            mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
-            bt_aprs.orient[0] = euler.x();
-            bt_aprs.orient[1] = euler.y();
-            bt_aprs.orient[2] = euler.z();
-            bt_aprs.stateFlags.setEncoding(encoding, sizeof(encoding));
+    // if (doLoop)
+    // {
+    //     if (millis() - btLast > 1000)
+    //     {
+    //         btLast = millis();
+    //         bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
+    //         bt_aprs.spd = AIRBRAKE.getVelocity().z();
+    //         bt_aprs.hdg = AIRBRAKE.getHeading();
+    //         mmfs::Vector<3> euler = AIRBRAKE.getOrientation().conjugate().toEuler();
+    //         bt_aprs.orient[0] = euler.x();
+    //         bt_aprs.orient[1] = euler.y();
+    //         bt_aprs.orient[2] = euler.z();
+    //         bt_aprs.stateFlags.setEncoding(encoding, sizeof(encoding));
 
-            // btTransmitter.rx();
+    //         // btTransmitter.rx();
 
-            uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint16_t)AIRBRAKE.estimated_apogee >> 8, ((uint16_t)AIRBRAKE.estimated_apogee & 0x00ff)};
-            bt_aprs.stateFlags.pack(arr);
-            Serial.println(bt_aprs.stateFlags.get(), BIN);
-            bt_msg.encode(&bt_aprs);
-            // bt_msg.print(Serial);
+    //         uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint16_t)AIRBRAKE.estimated_apogee >> 8, ((uint16_t)AIRBRAKE.estimated_apogee & 0x00ff)};
+    //         Serial.println((uint8_t)(int)AIRBRAKE.actualAngle);
+    //         Serial.println((uint8_t)AIRBRAKE.getStage());
+    //         Serial.println((uint16_t)AIRBRAKE.estimated_apogee >> 8);
+    //         Serial.println(((uint16_t)AIRBRAKE.estimated_apogee & 0x00ff));
+    //         bt_aprs.stateFlags.pack(arr);
+    //         Serial.println(bt_aprs.stateFlags.get(), BIN);
+    //         bt_msg.encode(&bt_aprs);
+    //         // bt_msg.print(Serial);
 
-            // btTransmitter.send(bt_aprs);
-        }
-    }
+    //         // btTransmitter.send(bt_aprs);
+    //     }
+    // }
 }
