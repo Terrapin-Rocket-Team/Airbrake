@@ -26,7 +26,7 @@ bool AirbrakeState::init(bool useBiasCorrection){
 void AirbrakeState::determineStage(){
     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));
     
-    if(stage == PRELAUNCH && acceleration.z() > 40){
+    if(stage == PRELAUNCH && acceleration.magnitude() > 40){
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
         bb.aonoff(mmfs::BUZZER, 200);
         stage = BOOST;

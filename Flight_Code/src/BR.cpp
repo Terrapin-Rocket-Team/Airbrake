@@ -52,8 +52,6 @@ void BR::read() {
         resetSensorValues();
         //Serial.println("Connection timed out. Sensor values reset.");
     }
-
-    Serial.println(temperature);
 }
 
 
@@ -64,8 +62,6 @@ bool BR::parseMessage(const char* message) {
     char* ptr;
     bool success = false;
     float tempValues[3];  // Temporary storage for vector values
-
-    printf("Received message: %s\n", message);
     
     // Parse accelerometer data
     ptr = strstr(message, "XYZ:");

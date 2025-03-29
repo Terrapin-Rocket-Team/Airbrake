@@ -25,7 +25,7 @@ uint8_t encoding[] = {5, 4, 7, 8};
 // APRSTelem aprs(aprsConfig);
 mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AIRBRAKE", false);
 APRSTelem bt_aprs(aprsConfig);
-// Message bt_msg;
+Message bt_msg;
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -102,6 +102,8 @@ void setup()
     SPI.setMISO(12);
     SPI.setSCK(13);
     SPI.begin();
+
+
 
     // Immediately turn the motor off (needs the stop pin set to high)
     pinMode(brk_pin, OUTPUT);
@@ -189,8 +191,11 @@ void loop()
 {
 
     bool loop = sys.update();
+    Serial.println("L1");
     AIRBRAKE.updateMotor();
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
+    Serial.println("L2");
+
 
     if (loop)
     {
@@ -224,6 +229,8 @@ void loop()
             AIRBRAKE.update_CdA_estimate(vn.getAcceleration().z());
         }
     }
+    Serial.println("L3");
+
 
     // // Test Deployment Code //
     // if (loop){
@@ -251,10 +258,10 @@ void loop()
         double tilt = acos(dcm.get(2, 2)); // [rad]
         tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
         AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
-        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
-        Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
-        Serial.printf("VN Tilt: %f \n", vn.getTilt());
-        Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
+        // Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+        // Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
+        // Serial.printf("VN Tilt: %f \n", vn.getTilt());
+        // Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
         if (AIRBRAKE.stage == DEPLOY)
         {
             double velocity = AIRBRAKE.getVelocity().magnitude();
@@ -271,12 +278,15 @@ void loop()
                                                                                  // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
 #endif
     }
+    Serial.println("L4");
+
 
     // Bluetooth Stuff //
     if (loop)
     {
-        if (millis() - btLast > 1000 && btTransmitter.isReady())
+        if (millis() - btLast > 1000)
         {
+            Serial.println("H1");
             btLast = millis();
             bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
             bt_aprs.spd = AIRBRAKE.getVelocity().z();
@@ -285,15 +295,27 @@ void loop()
             bt_aprs.orient[0] = euler.x();
             bt_aprs.orient[1] = euler.y();
             bt_aprs.orient[2] = euler.z();
-            bt_aprs.stateFlags.setEncoding(encoding, sizeof(encoding));
+            Serial.println("H2");
+            PackedNum pn = (uint32_t)0;
+            Serial.flush();delay(100);
+            Serial.println(pn.setEncoding(encoding, sizeof(encoding)));
+            Serial.flush();delay(100);
 
-            btTransmitter.rx();
+            // btTransmitter.rx();
 
             uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint16_t)AIRBRAKE.estimated_apogee >> 8, ((uint16_t)AIRBRAKE.estimated_apogee & 0x00ff)};
-            bt_aprs.stateFlags.pack(arr);
-            // bt_msg.encode(&bt_aprs);
+            Serial.println("H3");
+            pn.pack(arr);
+            Serial.println("H4");
+            bt_aprs.stateFlags = (uint32_t)pn.get();
+            Serial.println("H5");
+            Serial.println(bt_aprs.stateFlags.get());
+            bt_msg.encode(&bt_aprs);
+            Serial.println("H6");
+            bt_msg.print(Serial);
+            Serial.println("H7");
 
-            btTransmitter.send(bt_aprs);
+            // btTransmitter.send(bt_aprs);
         }
     }
 }
