@@ -89,7 +89,7 @@ public:
     int calculateActuationAngle(double altitude, double velocity, double tilt);
     double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height);
     double get_density(double h);
-    void update_CdA_estimate(double bodyAccelZ);
+    void update_CdA_estimate();
 
     double timeOfLastStage; // in seconds
 

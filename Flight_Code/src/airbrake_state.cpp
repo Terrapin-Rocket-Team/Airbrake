@@ -1,7 +1,6 @@
 #include <Arduino.h>
 
 #include "airbrake_state.h"
-// #include "vn_100.h"
 
 AirbrakeState::AirbrakeState(mmfs::Sensor **sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter) : mmfs::State(sensors, numSensors, kfilter)
 {
@@ -379,13 +378,12 @@ double AirbrakeState::get_density(double h)
 }
 
 // estimate CdAs
-void AirbrakeState::update_CdA_estimate(double bodyAccelZ)
+void AirbrakeState::update_CdA_estimate()
 {
     CdA_number_of_measurements++;
     double bodyVelo = velocity.magnitude();
-#ifdef TEST_WITH_SERIAL
-    bodyAccelZ = acceleration.magnitude();
-#endif
+    double bodyAccelZ = acceleration.magnitude(); // TODO make this more accurate
+
     double CdA_rocket_this_time_step = (2 * empty_mass * abs(bodyAccelZ)) / (get_density(position.z()) * bodyVelo * bodyVelo);
     CdA_rocket = (CdA_rocket * (CdA_number_of_measurements - 1) + CdA_rocket_this_time_step) / CdA_number_of_measurements;
 
