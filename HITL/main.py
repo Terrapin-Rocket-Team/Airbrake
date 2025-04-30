@@ -34,6 +34,10 @@ for filename in os.listdir(data_folder):
             target_apogee = df['State - Target Apogee (m)'].iloc[0]
             apogee_error = max_pz - target_apogee
 
+            # Compute amount shaved off
+            max_est_apo = df['State - Est Apo (m)'].max()
+            shaved_off = max_est_apo - max_pz
+
             # Start plotting
             fig, ax1 = plt.subplots(figsize=(12, 6))
 
@@ -47,16 +51,16 @@ for filename in os.listdir(data_folder):
             lines1, labels1 = ax1.get_legend_handles_labels()
 
             # Right y-axis
-            ax2 = ax1.twinx()
-            for col in right_axis_cols:
-                ax2.plot(time, df[col], linestyle='--', label=col)
-            ax2.set_ylabel("Velocity / Acceleration (m/s or m/s/s)")
-            ax2.tick_params(axis='y')
-            lines2, labels2 = ax2.get_legend_handles_labels()
+            # ax2 = ax1.twinx()
+            # for col in right_axis_cols:
+            #     ax2.plot(time, df[col], linestyle='--', label=col)
+            # ax2.set_ylabel("Velocity / Acceleration (m/s or m/s/s)")
+            # ax2.tick_params(axis='y')
+            # lines2, labels2 = ax2.get_legend_handles_labels()
 
             # Third y-axis
             ax3 = ax1.twinx()
-            ax3.spines["right"].set_position(("axes", 1.12))  # offset third axis
+            # ax3.spines["right"].set_position(("axes", 1.12))  # offset third axis
             for col in third_axis_cols:
                 ax3.plot(time, df[col], linestyle=':', label=col)
             ax3.set_ylabel("Angle (deg)")
@@ -64,12 +68,13 @@ for filename in os.listdir(data_folder):
             lines3, labels3 = ax3.get_legend_handles_labels()
 
             # Combine legends
-            lines = lines1 + lines2 + lines3
-            labels = labels1 + labels2 + labels3
+            lines = lines1 + lines3
+            labels = labels1 + labels3
+            # lines = lines1 + lines2 + lines3
+            # labels = labels1 + labels2 + labels3
             ax1.legend(lines, labels, loc='center right', fontsize='small')
 
             # Apogee error text
-            annotation = f"Apogee Error: {apogee_error:.2f} m"
             plt.title(f"Flight Data - {os.path.splitext(filename)[0]}")
             # Place annotation inside plot, near the top center
             y_max = df['State - PZ (m)'].max()
@@ -78,9 +83,12 @@ for filename in os.listdir(data_folder):
             y_pos = y_max - 0.1 * y_range  # 10% below max
 
             x_pos = df[time_col].iloc[df['State - PZ (m)'].idxmax()]
-
-            ax1.text(x_pos, y_pos, annotation,
-                    fontsize=10, ha='center', va='top',
+            
+            line1 = f"Apogee Error: {apogee_error:.2f} m"
+            line2 = f"Shaved off: {shaved_off:.2f} m"
+            ax1.text(x_pos + 0.15, y_pos, line1, fontsize=10, ha='center', va='top',
+                    bbox=dict(facecolor='white', alpha=0.7, edgecolor='gray'))
+            ax1.text(x_pos + 0.15, y_pos - 0.06 * y_range, line2, fontsize=10, ha='center', va='top',
                     bbox=dict(facecolor='white', alpha=0.7, edgecolor='gray'))
 
             # Save plot
