@@ -11,13 +11,13 @@ lat, long = 0, 0
 
 updateRate = 10  # [Hz]
 timeStep = 1 / updateRate  # [s]
-totalImpulse = 33664  # [Ns]
+totalImpulse = 39038  # [Ns]
 burnTime = 4.83  # [s]
 rocketThrust = totalImpulse / burnTime  # [N]
 launchTime = 10  # time of launch [s]
 
-dryMass = 38.21  # [kg]
-wetMass = 55.97 + 10 # [kg]
+dryMass = 40.82  # [kg]
+wetMass = 60.78 # [kg]
 m = wetMass
 
 CDr = 0.55

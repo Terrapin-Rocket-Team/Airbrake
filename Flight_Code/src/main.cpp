@@ -16,14 +16,14 @@
 // 5. Figure out why the altitude estimation is undershooting it
 
 // Testing
-// #define TEST_WITH_SERIAL
+#define TEST_WITH_SERIAL
 
 // Bluetooth Module
-APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
-uint8_t encoding[] = {5, 4, 7, 8};
-mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AIRBRAKE", false);
-APRSTelem bt_aprs(aprsConfig);
-Message bt_msg;
+// APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
+// uint8_t encoding[] = {5, 4, 7, 8};
+// mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AIRBRAKE", false);
+// APRSTelem bt_aprs(aprsConfig);
+// Message bt_msg;
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -53,7 +53,6 @@ bool firstLineReceived = false;
 //     }
 // }
 mmfs::MockBarometer mockDPS310(dataPath, "DPS310 - Pres (hPa)", "DPS310 - Temp (C)");
-// mmfs::MockBarometer mockMS5611(dataPath, "MS5611 - Pres (hPa)", "MS5611 - Temp (C)");
 
 String accColNames[3] = {
     String("BMI088andLIS3MDL - AccX"),
@@ -72,10 +71,9 @@ mmfs::MockIMU mockBMI088andLIS3MDL(dataPath, accColNames, gyroColNames, magColNa
 mmfs::MockGPS mockMAX_M10S(dataPath, "MAX-M10S - Lat", "MAX-M10S - Lon", "MAX-M10S - Alt (m)", "_", "MAX-M10S - Fix Quality");
 mmfs::Sensor *airbrake_sensors[5] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMAX_M10S, &enc, &blueRaven};
 #else
-mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
-// mmfs::MS5611 baro2;                  // Avionics Sensor Board 1.1
-mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
-mmfs::MAX_M10S gps;                  // Avionics Sensor Board 1.1
+mmfs::DPS310 baro1; // Avionics Sensor Board 1.2
+mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.2
+mmfs::MAX_M10S gps;                  // Avionics Sensor Board 1.2
 mmfs::Sensor *airbrake_sensors[5] = {&baro1, &airbrake_imu, &gps, &enc, &blueRaven};
 #endif
 
@@ -133,10 +131,7 @@ void setup()
     }
     if (Serial.available())
     {
-        // char title[2560];
-        int i = Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
-        // title[i] = '\0';
-        // strcpy(dataPath, title + 6);
+        Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
         Serial.println(dataPath);
         mmfs::getLogger().recordLogData(mmfs::INFO_, "This is a simulation run.");
     }
@@ -144,11 +139,9 @@ void setup()
 
 #ifdef TEST_WITH_SERIAL
     mockDPS310.setBiasCorrectionMode(true);
-    // mockMS5611.setBiasCorrectionMode(true);
     mockMAX_M10S.setBiasCorrectionMode(true);
 #else
     baro1.setBiasCorrectionMode(true);
-    // baro2.setBiasCorrectionMode(true);
     gps.setBiasCorrectionMode(true);
 #endif
 
@@ -165,15 +158,15 @@ void setup()
     Serial.println("[][],0");
 #endif
 
-    delay(500);
-    if (btTransmitter.begin())
-    {
-        mmfs::getLogger().recordLogData(mmfs::INFO_, "Initialized Bluetooth");
-    }
-    else
-    {
-        mmfs::getLogger().recordLogData(mmfs::ERROR_, "Initialized Bluetooth Failed");
-    }
+    // delay(500);
+    // if (btTransmitter.begin())
+    // {
+    //     mmfs::getLogger().recordLogData(mmfs::INFO_, "Initialized Bluetooth");
+    // }
+    // else
+    // {
+    //     mmfs::getLogger().recordLogData(mmfs::ERROR_, "Initialized Bluetooth Failed");
+    // }
 }
 
 int btLast = millis();
@@ -188,6 +181,9 @@ void loop()
     #endif
 
     bool doLoop = sys.update();
+#ifndef TEST_WITH_SERIAL
+    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
+#endif
     AIRBRAKE.updateMotor();
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
@@ -226,58 +222,76 @@ void loop()
 
     // Test Deployment Code //
 
-    if (doLoop){
-        if (millis() > 50000){
-            Serial.print("Going to 0. Currently at: ");
-            Serial.println(enc.getSteps());
-            AIRBRAKE.goToDegree(0);
-            mmfs::getLogger().setRecordMode(mmfs::GROUND);
-        }
-        if (millis() > 30000){
-            Serial.print("Going to 40. Currently at: ");
-            Serial.println(enc.getSteps());
-            mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-            AIRBRAKE.goToDegree(40);
-        }
-    }
+    // if (doLoop){
+    //     if (millis() > 50000){
+    //         Serial.print("Going to 0. Currently at: ");
+    //         Serial.println(enc.getSteps());
+    //         AIRBRAKE.goToDegree(0);
+    //         mmfs::getLogger().setRecordMode(mmfs::GROUND);
+    //     }
+    //     if (millis() > 30000){
+    //         Serial.print("Going to 40. Currently at: ");
+    //         Serial.println(enc.getSteps());
+    //         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
+    //         AIRBRAKE.goToDegree(40);
+    //     }
+    // }
 
     // Flight Deployment Code //
 
-    // if (doLoop)
-    // {
-    //     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
-    //     AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
-    //     mmfs::Matrix dcm = AIRBRAKE.getOrientation().conjugate().toMatrix();
-    //     double tilt = acos(dcm.get(2, 2)); // [rad]
-    //     tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
-    //     AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
-    //     Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
-    //     Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
-    //     double velocity = AIRBRAKE.getVelocity().magnitude();
-    //     double altitude = AIRBRAKE.getPosition().z();
-    //     if (AIRBRAKE.stage == DEPLOY)
-    //     {
+    if (doLoop)
+    {
+        mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
+        AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
+        mmfs::Matrix dcm = AIRBRAKE.getOrientation().conjugate().toMatrix();
+        double tilt = acos(dcm.get(2, 2)); // [rad]
+        tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
+        AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
+        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+        Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
+        double velocity = AIRBRAKE.getVelocity().magnitude();
+        double altitude = AIRBRAKE.getPosition().z();
+        if (AIRBRAKE.stage == DEPLOY)
+        {
 
-    //         int actuationAngle = AIRBRAKE.calculateActuationAngle(altitude, velocity, tilt);
-    //         AIRBRAKE.goToDegree(actuationAngle);
-    //     }
-    //     else
-    //     {
-    //         AIRBRAKE.goToDegree(0);
-    //     }
+            int actuationAngle = AIRBRAKE.calculateActuationAngle(altitude, velocity, tilt);
+            AIRBRAKE.goToDegree(actuationAngle);
+        }
+        else
+        {
+            AIRBRAKE.goToDegree(0);
+        }
 
-    //     if (AIRBRAKE.stage == COAST){
-    //         double estimated_apogee = AIRBRAKE.predict_apogee(.5, tilt, velocity, altitude);
-    //         if (estimated_apogee < (AIRBRAKE.predicted_target_apogee + 500)) {
-    //             AIRBRAKE.target_apogee = estimated_apogee - 500;
-    //         }
-    //     }
+        // If not going to hit expected apogee still try to take some altitude off
+        // if (AIRBRAKE.stage == COAST){
+        //     double estimated_apogee = AIRBRAKE.predict_apogee(.5, tilt, velocity, altitude);
+        //     if (estimated_apogee < (AIRBRAKE.predicted_target_apogee + 500)) {
+        //         AIRBRAKE.target_apogee = estimated_apogee - 500;
+        //     }
+        // }
 
-    //     #ifdef TEST_WITH_SERIAL
-    //             // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep)); // Used for only software testing
-    //             Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); // Used for encoder in the loop testing
-    //     #endif
-    // }   
+        #ifdef TEST_WITH_SERIAL
+            // Used for only software testing
+            double flapSpeed = 20; // speed at which the flaps open [deg/s]
+            double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
+            int sign = 0;
+            if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
+            else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
+
+            AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
+
+            // Clamp to avoid overshoot
+            if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
+            (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
+            AIRBRAKE.actualAngle = desiredDegree;
+            }
+
+            Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
+
+            // Used for encoder in the loop testing
+            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
+        #endif
+    }   
 
     // Bluetooth Stuff //
     // if (doLoop)

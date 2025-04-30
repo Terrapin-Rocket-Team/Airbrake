@@ -2,6 +2,7 @@
 #define E5_H
 
 #include <Sensors/Encoder/Encoder_MMFS.h>
+// #include <RecordData/Logging/Logger.h>
 #include <RecordData/Logger.h>
 #include "Encoder.h"
 

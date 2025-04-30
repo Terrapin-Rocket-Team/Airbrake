@@ -119,12 +119,12 @@ void AirbrakeState::goToDegree(int degree)
     // Check to make sure degree is within [0, 70]
     if (degree > 70)
     {
-        errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle greater than 70 passed. Setting degree to 70");
+        mmfs::getLogger().recordLogData(mmfs::ERROR_, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle greater than 70 passed. Setting degree to 70");
         degree = 70;
     }
     else if (degree < 0)
-    {
-        errorHandler.addError(mmfs::GENERIC_ERROR, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle less than 0 passed. Setting degree to 0");
+    {   
+        mmfs::getLogger().recordLogData(mmfs::ERROR_, "goToDegree takes angles in degrees from 0 (closed) to 70 (open). Angle less than 0 passed. Setting degree to 0");
         degree = 0;
     }
     desiredStep = degree * degreeToStepConvertionFactor; // Negative because negative steps is open and degree defined to 0 at closed and 90 at open (v2)
@@ -161,8 +161,6 @@ bool AirbrakeState::motorStallCondition()
 void AirbrakeState::updateMotor()
 {
     auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor(mmfs::ENCODER_));
-
-    actualAngle = stepToDegree(enc->getSteps());
 
     // Set direction
     int step_diff = desiredStep - enc->getSteps();
