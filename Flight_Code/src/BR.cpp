@@ -64,44 +64,57 @@ bool BR::parseMessage(const char* message) {
     float tempValues[3];  // Temporary storage for vector values
     
     // Parse accelerometer data
-    ptr = strstr(message, "HG:");
-    if (ptr && sscanf(ptr, "HG: %f %f %f", &tempValues[0], &tempValues[1], &tempValues[2]) == 3) {
-        accelX = tempValues[0];
-        accelY = tempValues[1];
-        accelZ = tempValues[2];
+    ptr = strstr(message, "XYZ:");
+    if (ptr && sscanf(ptr, "XYZ: %f %f %f", &tempValues[0], &tempValues[1], &tempValues[2]) == 3) {
+        accelX = tempValues[0] / 1000 * 9.81; // Value stored as Gs x1000
+        accelY = tempValues[1] / 1000 * 9.81; // Value stored as Gs x1000
+        accelZ = tempValues[2] / 1000 * 9.81; // Value stored as Gs x1000
         success = true;
     }
     
     // Parse pressure and temperature
     ptr = strstr(message, "Bo:");
-    if (ptr && sscanf(ptr, "Bo: %f %f", &pressure, &temperature) == 2) {
+    if (ptr && sscanf(ptr, "Bo: %f %f", &tempValues[0], &tempValues[1]) == 2) {
+        pressure = tempValues[0] / 10000 * 101325; // Value stored as atm x 10000
+        temperature = ((tempValues[1] / 100) - 32) * (5.0/9.0); // Value stored as deg F x 100
+        success = true;
+    }
+
+    // Parse battery voltage
+    ptr = strstr(message, "bt");
+    if (ptr && sscanf(ptr, "bt %f", &tempValues[0]) == 1) {
+        batteryVoltage = tempValues[0] * 1000; // Value stored as mV
         success = true;
     }
     
     // Parse gyroscope data
     ptr = strstr(message, "gy:");
     if (ptr && sscanf(ptr, "gy: %f %f %f", &tempValues[0], &tempValues[1], &tempValues[2]) == 3) {
-        gyroX = tempValues[0];
-        gyroY = tempValues[1];
-        gyroZ = tempValues[2];
+        gyroX = tempValues[0] / 100 * M_PI / 180; // Value stored as deg/s x 100
+        gyroY = tempValues[1] / 100 * M_PI / 180; // Value stored as deg/s x 100
+        gyroZ = tempValues[2] / 100 * M_PI / 180; // Value stored as deg/s x 100
         success = true;
     }
     
     // Parse angle data
     ptr = strstr(message, "ang:");
-    if (ptr && sscanf(ptr, "ang: %f %f", &tiltAngle, &rollAngle) == 2) {
+    if (ptr && sscanf(ptr, "ang: %f %f", &tempValues[0], &tempValues[1]) == 2) {
+        tiltAngle = tempValues[0] / 10; // Value stored as deg x 10
+        rollAngle = tempValues[1]; // Value stored as deg
         success = true;
     }
     
     // Parse velocity
     ptr = strstr(message, "vel");
-    if (ptr && sscanf(ptr, "vel %f", &velocity) == 1) {
+    if (ptr && sscanf(ptr, "vel %f", &tempValues[0]) == 1) {
+        velocity = tempValues[0] * 0.3048; // Value stored as ft/s
         success = true;
     }
     
     // Parse altitude
     ptr = strstr(message, "AGL");
-    if (ptr && sscanf(ptr, "AGL %f", &altitude) == 1) {
+    if (ptr && sscanf(ptr, "AGL %f", &tempValues[0]) == 1) {
+        altitude = tempValues[0] * 0.3048; // Value stored as ft
         success = true;
     }
     

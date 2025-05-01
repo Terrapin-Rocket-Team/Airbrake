@@ -1,11 +1,29 @@
 #include <Arduino.h>
 
 #include "airbrake_state.h"
-#include "vn_100.h"
 #include "AirbrakeKF.h"
 #include "e5.h"
 #include "BR.h"
+#include "Events/Event.h"
+#include "RetrieveData/SerialHandler.h"
+#include <Math/Vector.h>
+#include <Math/Quaternion.h>
+#include <Radio/ESP32BluetoothRadio.h>
 
+// TODO: Long List
+// 1. Make the kalman filter be able to handle no GPS. We won't get any
+// 4. Add the vector nav and blue raven in the hardware in the loop testing
+// 5. Figure out why the altitude estimation is undershooting it
+
+// Testing
+#define TEST_WITH_SERIAL
+
+// Bluetooth Module
+// APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
+// uint8_t encoding[] = {5, 4, 7, 8};
+// mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AIRBRAKE", false);
+// APRSTelem bt_aprs(aprsConfig);
+// Message bt_msg;
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -16,35 +34,65 @@ const int enc_chan_b = 37;
 
 // Sensors
 E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
-VN_100 vn(&SPI, 10); // Vector Nav
-mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
-mmfs::MS5611 baro2; // Avionics Sensor Board 1.1
-mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
-mmfs::MAX_M10S gps; // Avionics Sensor Board 1.1
 BR blueRaven;
-mmfs::Sensor* airbrake_sensors[7] = {&baro1, &baro2, &airbrake_imu, &gps, &vn, &enc, &blueRaven};
 
-// Initialize Airbrake State
+#ifdef TEST_WITH_SERIAL
+
+char dataPath[2560];
+bool firstLineReceived = false;
+// void onSerialEvent(const mmfs::Event *e)
+// {
+//     using namespace mmfs;
+//     if (e->ID == "SERIAL_LINE"_i)
+//     {
+//         if (strncmp("telem/", getSerialHandler().getLastLine(), 6) == 0)
+//         {
+//             strcpy(dataPath, getSerialHandler().getLastLine() + 6);
+//             firstLineReceived = true;
+//         }
+//     }
+// }
+mmfs::MockBarometer mockDPS310(dataPath, "DPS310 - Pres (hPa)", "DPS310 - Temp (C)");
+
+String accColNames[3] = {
+    String("BMI088andLIS3MDL - AccX"),
+    String("BMI088andLIS3MDL - AccY"),
+    String("BMI088andLIS3MDL - AccZ")};
+String gyroColNames[3] = {
+    String("BMI088andLIS3MDL - GyroX"),
+    String("BMI088andLIS3MDL - GyroY"),
+    String("BMI088andLIS3MDL - GyroZ")};
+String magColNames[3] = {
+    String("BMI088andLIS3MDL - MagX"),
+    String("BMI088andLIS3MDL - MagY"),
+    String("BMI088andLIS3MDL - MagZ")};
+mmfs::MockIMU mockBMI088andLIS3MDL(dataPath, accColNames, gyroColNames, magColNames);
+
+mmfs::MockGPS mockMAX_M10S(dataPath, "MAX-M10S - Lat", "MAX-M10S - Lon", "MAX-M10S - Alt (m)", "_", "MAX-M10S - Fix Quality");
+mmfs::Sensor *airbrake_sensors[5] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMAX_M10S, &enc, &blueRaven};
+#else
+mmfs::DPS310 baro1; // Avionics Sensor Board 1.2
+mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.2
+mmfs::MAX_M10S gps;                  // Avionics Sensor Board 1.2
+mmfs::Sensor *airbrake_sensors[5] = {&baro1, &airbrake_imu, &gps, &enc, &blueRaven};
+#endif
+
+// // Initialize Airbrake State
 AirbrakeKF lkfmm;
-AirbrakeState AIRBRAKE(airbrake_sensors, 7, &lkfmm);
+AirbrakeState AIRBRAKE(airbrake_sensors, sizeof(airbrake_sensors) / 4, &lkfmm);
 
-// MMFS Stuff
+// // MMFS Stuff
 mmfs::MMFSConfig config = mmfs::MMFSConfig()
-                        .withState(&AIRBRAKE)
-                        .withBuzzerPin(BUZZER_PIN)
-                        .withUpdateRate(25);
+                              .withState(&AIRBRAKE)
+                              .withBuzzerPin(BUZZER_PIN)
+                              .withUpdateRate(10);
 
 mmfs::MMFSSystem sys(&config);
 
-void setup() {
+void setup()
+{
     // Initialize Serial and SPI Buses
     Serial.begin(115200);
-    SPI.setMOSI(11);
-    SPI.setMISO(12);
-    SPI.setSCK(13);
-    SPI.begin();
-
-    if (CrashReport) Serial.println(CrashReport);
 
     // Immediately turn the motor off (needs the stop pin set to high)
     pinMode(brk_pin, OUTPUT);
@@ -56,84 +104,223 @@ void setup() {
     digitalWrite(dir_pin, LOW);
     analogWrite(speed_pin, 0);
 
-    // MMFS Stuff
+// MMFS Stuff
+#ifdef TEST_WITH_SERIAL
+    char startBuffer[100]; // Buffer for incoming data
+    String receivedCommand = "";
+    // Wait until "Sim Start," is received
+    while (true)
+    {
+        if (Serial.available())
+        {
+            // Read incoming data into buffer
+            Serial.readBytesUntil('\n', startBuffer, sizeof(startBuffer));
+
+            // Convert char array to String
+            receivedCommand = String(startBuffer);
+            receivedCommand.trim(); // Remove any extra whitespace/newlines
+
+            // Check if received command matches "Sim Start,"
+            if (receivedCommand == "telem/Sim Start")
+            {
+                Serial.println("Sim Start Received");
+                break; // Exit loop and proceed
+            }
+        }
+        delay(100); // Prevent excessive CPU usage
+    }
+    if (Serial.available())
+    {
+        Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
+        Serial.println(dataPath);
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "This is a simulation run.");
+    }
+#endif
+
+#ifdef TEST_WITH_SERIAL
+    mockDPS310.setBiasCorrectionMode(true);
+    mockMAX_M10S.setBiasCorrectionMode(true);
+#else
+    baro1.setBiasCorrectionMode(true);
+    gps.setBiasCorrectionMode(true);
+#endif
+
     sys.init();
 
-    baro1.setBiasCorrectionMode(true);
-    baro2.setBiasCorrectionMode(true);
-    gps.setBiasCorrectionMode(true);
-
     // Limit Switch
-    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
-    delay(5000);
-    if (enc.isInitialized()){
-        AIRBRAKE.zeroMotor();
-    }
+    // pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    // if (enc.isInitialized())
+    // {
+    //     AIRBRAKE.zeroMotor();
+    // }
+    // delay(1000);
+#ifdef TEST_WITH_SERIAL
+    Serial.println("[][],0");
+#endif
 
-    bb.onoff(BUZZER_PIN, 1000);
+    // delay(500);
+    // if (btTransmitter.begin())
+    // {
+    //     mmfs::getLogger().recordLogData(mmfs::INFO_, "Initialized Bluetooth");
+    // }
+    // else
+    // {
+    //     mmfs::getLogger().recordLogData(mmfs::ERROR_, "Initialized Bluetooth Failed");
+    // }
 }
 
-void FreeMem()
+int btLast = millis();
+
+void loop()
 {
-    void *heapTop = malloc(2000);
-    int stack = 0;
-    long dif = ((long)heapTop) - ((long) &stack);
-    Serial.print(dif);
-    Serial.print("\n");
-    free(heapTop);
-}
-void loop() {
-    //FreeMem();
-    bool loop = sys.update();
+    #ifdef TEST_WITH_SERIAL
+        if (Serial.available()){
+            Serial.readBytesUntil('\n', dataPath, sizeof(dataPath));
+            Serial.println(dataPath);
+        }
+    #endif
+
+    bool doLoop = sys.update();
+#ifndef TEST_WITH_SERIAL
+    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
+#endif
     AIRBRAKE.updateMotor();
     AIRBRAKE.limitSwitchState = (digitalRead(LIMIT_SWITCH_PIN) == LOW);
 
-    // if (loop) {
-    //     Serial.print("LKF Pos z: ");
-    //     Serial.println(AIRBRAKE.getPosition().z());
-    //     Serial.println(enc.getSteps());
-    // }
-    // Turn off bias correction during flight
-    if (AIRBRAKE.stage == BOOST) {
-        baro1.setBiasCorrectionMode(false);
-        baro2.setBiasCorrectionMode(false);
-        gps.setBiasCorrectionMode(false);
-    } else if (AIRBRAKE.stage == PRELAUNCH) {
-        baro1.setBiasCorrectionMode(true);
-        baro2.setBiasCorrectionMode(true);
-        gps.setBiasCorrectionMode(true);
-    }
-
-    if (AIRBRAKE.stage == COAST){
-        AIRBRAKE.update_CdA_estimate();
+    if (doLoop)
+    {
+        // Turn off bias correction during flight
+        if (AIRBRAKE.stage == BOOST)
+        {
+#ifdef TEST_WITH_SERIAL
+            mockDPS310.setBiasCorrectionMode(false);
+            // mockMS5611.setBiasCorrectionMode(false);
+            mockMAX_M10S.setBiasCorrectionMode(false);
+#else
+            baro1.setBiasCorrectionMode(false);
+            // baro2.setBiasCorrectionMode(false);
+            gps.setBiasCorrectionMode(false);
+#endif
+        }
+        else if (AIRBRAKE.stage == PRELAUNCH)
+        {
+#ifdef TEST_WITH_SERIAL
+            mockDPS310.setBiasCorrectionMode(true);
+            // mockMS5611.setBiasCorrectionMode(true);
+            mockMAX_M10S.setBiasCorrectionMode(true);
+#else
+            baro1.setBiasCorrectionMode(true);
+            // baro2.setBiasCorrectionMode(true);
+            gps.setBiasCorrectionMode(true);
+#endif
+        }
+        if (AIRBRAKE.stage == COAST)
+        {
+            AIRBRAKE.update_CdA_estimate();
+        }
     }
 
     // Test Deployment Code //
-    // if (millis() > 50000){
-    //     Serial.print("Going to 0. Currently at: ");
-    //     Serial.println(enc.getSteps());
-    //     mmfs::getLogger().setRecordMode(mmfs::GROUND);
-    //     AIRBRAKE.goToDegree(0);  
-    // } else if (millis() > 3000){
-    //     Serial.print("Going to 40. Currently at: ");
-    //     Serial.println(enc.getSteps());
-    //     mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-    //     AIRBRAKE.goToDegree(40);
+
+    // if (doLoop){
+    //     if (millis() > 50000){
+    //         Serial.print("Going to 0. Currently at: ");
+    //         Serial.println(enc.getSteps());
+    //         AIRBRAKE.goToDegree(0);
+    //         mmfs::getLogger().setRecordMode(mmfs::GROUND);
+    //     }
+    //     if (millis() > 30000){
+    //         Serial.print("Going to 40. Currently at: ");
+    //         Serial.println(enc.getSteps());
+    //         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
+    //         AIRBRAKE.goToDegree(40);
+    //     }
     // }
 
     // Flight Deployment Code //
-    if (loop) {
-        mmfs::Matrix dcm = AIRBRAKE.getOrientation().toMatrix();
-        double tilt = acos(dcm.get(2,2));
+
+    if (doLoop)
+    {
+        mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
+        AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
+        mmfs::Matrix dcm = AIRBRAKE.getOrientation().conjugate().toMatrix();
+        double tilt = acos(dcm.get(2, 2)); // [rad]
+        tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
+        AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
+        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+        Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
         double velocity = AIRBRAKE.getVelocity().magnitude();
-        AIRBRAKE.calculateActuationAngle(AIRBRAKE.getPosition().z(), velocity, tilt, UPDATE_INTERVAL/1000);
-        if (AIRBRAKE.stage == DEPLOY){
-            AIRBRAKE.goToDegree(AIRBRAKE.actuationAngle);
-        } else {
+        double altitude = AIRBRAKE.getPosition().z();
+        if (AIRBRAKE.stage == DEPLOY)
+        {
+
+            int actuationAngle = AIRBRAKE.calculateActuationAngle(altitude, velocity, tilt);
+            AIRBRAKE.goToDegree(actuationAngle);
+        }
+        else
+        {
             AIRBRAKE.goToDegree(0);
         }
-    }
-    
 
+        // If not going to hit expected apogee still try to take some altitude off
+        // if (AIRBRAKE.stage == COAST){
+        //     double estimated_apogee = AIRBRAKE.predict_apogee(.5, tilt, velocity, altitude);
+        //     if (estimated_apogee < (AIRBRAKE.predicted_target_apogee + 500)) {
+        //         AIRBRAKE.target_apogee = estimated_apogee - 500;
+        //     }
+        // }
+
+        #ifdef TEST_WITH_SERIAL
+            // Used for only software testing
+            double flapSpeed = 20; // speed at which the flaps open [deg/s]
+            double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
+            int sign = 0;
+            if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
+            else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
+
+            AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
+
+            // Clamp to avoid overshoot
+            if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
+            (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
+            AIRBRAKE.actualAngle = desiredDegree;
+            }
+
+            Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
+
+            // Used for encoder in the loop testing
+            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
+        #endif
+    }   
+
+    // Bluetooth Stuff //
+    // if (doLoop)
+    // {
+    //     if (millis() - btLast > 1000)
+    //     {
+    //         btLast = millis();
+    //         bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
+    //         bt_aprs.spd = AIRBRAKE.getVelocity().z();
+    //         bt_aprs.hdg = AIRBRAKE.getHeading();
+    //         mmfs::Vector<3> euler = AIRBRAKE.getOrientation().conjugate().toEuler();
+    //         bt_aprs.orient[0] = euler.x();
+    //         bt_aprs.orient[1] = euler.y();
+    //         bt_aprs.orient[2] = euler.z();
+    //         bt_aprs.stateFlags.setEncoding(encoding, sizeof(encoding));
+
+    //         // btTransmitter.rx();
+
+    //         uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint16_t)AIRBRAKE.estimated_apogee >> 8, ((uint16_t)AIRBRAKE.estimated_apogee & 0x00ff)};
+    //         Serial.println((uint8_t)(int)AIRBRAKE.actualAngle);
+    //         Serial.println((uint8_t)AIRBRAKE.getStage());
+    //         Serial.println((uint16_t)AIRBRAKE.estimated_apogee >> 8);
+    //         Serial.println(((uint16_t)AIRBRAKE.estimated_apogee & 0x00ff));
+    //         bt_aprs.stateFlags.pack(arr);
+    //         Serial.println(bt_aprs.stateFlags.get(), BIN);
+    //         bt_msg.encode(&bt_aprs);
+    //         // bt_msg.print(Serial);
+
+    //         // btTransmitter.send(bt_aprs);
+    //     }
+    // }
 }
-
