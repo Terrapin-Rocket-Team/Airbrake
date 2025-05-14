@@ -61,6 +61,7 @@ public:
     double single_flap_area = 0.00839;
     double machNumber = 0;
     double tilt = 0; // [deg]
+    int motorSpeed = 128;  // value from 0 to 255
 
     AirbrakeStages stage = PRELAUNCH;
 
