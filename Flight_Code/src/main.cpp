@@ -16,7 +16,7 @@
 // 5. Figure out why the altitude estimation is undershooting it
 
 // Testing
-#define TEST_WITH_SERIAL
+// #define TEST_WITH_SERIAL
 
 // Bluetooth Module
 // APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
@@ -54,18 +54,18 @@ bool firstLineReceived = false;
 // }
 mmfs::MockBarometer mockDPS310(dataPath, "DPS310 - Pres (hPa)", "DPS310 - Temp (C)");
 
-String accColNames[3] = {
-    String("BMI088andLIS3MDL - AccX"),
-    String("BMI088andLIS3MDL - AccY"),
-    String("BMI088andLIS3MDL - AccZ")};
-String gyroColNames[3] = {
-    String("BMI088andLIS3MDL - GyroX"),
-    String("BMI088andLIS3MDL - GyroY"),
-    String("BMI088andLIS3MDL - GyroZ")};
-String magColNames[3] = {
-    String("BMI088andLIS3MDL - MagX"),
-    String("BMI088andLIS3MDL - MagY"),
-    String("BMI088andLIS3MDL - MagZ")};
+std::string accColNames[3] = {
+    std::string("BMI088andLIS3MDL - AccX"),
+    std::string("BMI088andLIS3MDL - AccY"),
+    std::string("BMI088andLIS3MDL - AccZ")};
+std::string gyroColNames[3] = {
+    std::string("BMI088andLIS3MDL - GyroX"),
+    std::string("BMI088andLIS3MDL - GyroY"),
+    std::string("BMI088andLIS3MDL - GyroZ")};
+std::string magColNames[3] = {
+    std::string("BMI088andLIS3MDL - MagX"),
+    std::string("BMI088andLIS3MDL - MagY"),
+    std::string("BMI088andLIS3MDL - MagZ")};
 mmfs::MockIMU mockBMI088andLIS3MDL(dataPath, accColNames, gyroColNames, magColNames);
 
 mmfs::MockGPS mockMAX_M10S(dataPath, "MAX-M10S - Lat", "MAX-M10S - Lon", "MAX-M10S - Alt (m)", "_", "MAX-M10S - Fix Quality");
@@ -222,54 +222,54 @@ void loop()
 
     // Test Deployment Code //
 
-    // if (doLoop){
-    //     if (millis() > 50000){
-    //         Serial.print("Going to 0. Currently at: ");
-    //         Serial.println(enc.getSteps());
-    //         AIRBRAKE.goToDegree(0);
-    //         mmfs::getLogger().setRecordMode(mmfs::GROUND);
-    //     }
-    //     if (millis() > 30000){
-    //         Serial.print("Going to 40. Currently at: ");
-    //         Serial.println(enc.getSteps());
-    //         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-    //         AIRBRAKE.goToDegree(40);
-    //     }
-    // }
+    if (doLoop){
+        if (millis() > 50000){
+            Serial.print("Going to 0. Currently at: ");
+            Serial.println(enc.getSteps());
+            AIRBRAKE.goToDegree(0);
+            mmfs::getLogger().setRecordMode(mmfs::GROUND);
+        }
+        if (millis() > 30000 && millis() < 50000){
+            Serial.print("Going to 40. Currently at: ");
+            Serial.println(enc.getSteps());
+            mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
+            AIRBRAKE.goToDegree(40);
+        }
+    }
 
     // Flight Deployment Code //
 
-    if (doLoop)
-    {
-        mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
-        AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
-        mmfs::Matrix dcm = AIRBRAKE.getOrientation().conjugate().toMatrix();
-        double tilt = acos(dcm.get(2, 2)); // [rad]
-        tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
-        AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
-        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
-        Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
-        double velocity = AIRBRAKE.getVelocity().magnitude();
-        double altitude = AIRBRAKE.getPosition().z();
-        if (AIRBRAKE.stage == DEPLOY)
-        {
-
-            int actuationAngle = AIRBRAKE.calculateActuationAngle(altitude, velocity, tilt);
-            AIRBRAKE.goToDegree(actuationAngle);
-        }
-        else
-        {
-            AIRBRAKE.goToDegree(0);
-        }
-
-        // If not going to hit expected apogee still try to take some altitude off
-        // if (AIRBRAKE.stage == COAST){
-        //     double estimated_apogee = AIRBRAKE.predict_apogee(.5, tilt, velocity, altitude);
-        //     if (estimated_apogee < (AIRBRAKE.predicted_target_apogee + 500)) {
-        //         AIRBRAKE.target_apogee = estimated_apogee - 500;
-        //     }
-        // }
-
+    //if (doLoop)
+    //{
+    //    mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor(mmfs::BAROMETER_));
+    //    AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
+    //    mmfs::Matrix dcm = AIRBRAKE.getOrientation().conjugate().toMatrix();
+    //    double tilt = acos(dcm.get(2, 2)); // [rad]
+    //    tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
+    //    AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
+    //    Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+    //    Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
+    //    double velocity = AIRBRAKE.getVelocity().magnitude();
+    //    double altitude = AIRBRAKE.getPosition().z();
+    //    if (AIRBRAKE.stage == DEPLOY)
+    //    {
+//
+    //        int actuationAngle = AIRBRAKE.calculateActuationAngle(altitude, velocity, tilt);
+    //        AIRBRAKE.goToDegree(actuationAngle);
+    //    }
+    //    else
+    //    {
+    //        AIRBRAKE.goToDegree(0);
+    //    }
+//
+    //    // If not going to hit expected apogee still try to take some altitude off
+    //    // if (AIRBRAKE.stage == COAST){
+    //    //     double estimated_apogee = AIRBRAKE.predict_apogee(.5, tilt, velocity, altitude);
+    //    //     if (estimated_apogee < (AIRBRAKE.predicted_target_apogee + 500)) {
+    //    //         AIRBRAKE.target_apogee = estimated_apogee - 500;
+    //    //     }
+    //    // }
+//
         #ifdef TEST_WITH_SERIAL
             // Used for only software testing
             double flapSpeed = 20; // speed at which the flaps open [deg/s]
@@ -323,4 +323,4 @@ void loop()
     //         // btTransmitter.send(bt_aprs);
     //     }
     // }
-}
+
