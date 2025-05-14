@@ -182,7 +182,7 @@ void AirbrakeState::updateMotor()
         if (currentDirection == HIGH)
         {
             // Start closing the flaps
-            analogWrite(speed_pin, 128);
+            analogWrite(speed_pin, motorSpeed);
             digitalWrite(stop_pin, LOW);
             digitalWrite(dir_pin, HIGH);
         }
@@ -209,7 +209,7 @@ void AirbrakeState::updateMotor()
         if (currentDirection == LOW)
         {
             // Start opening the flaps
-            analogWrite(speed_pin, 128);
+            analogWrite(speed_pin, motorSpeed);
             digitalWrite(stop_pin, LOW);
             digitalWrite(dir_pin, LOW);
         }
@@ -262,7 +262,7 @@ void AirbrakeState::zeroMotor()
         {
             break; // Exit if the limit switch is hit
         }
-        analogWrite(speed_pin, 128);
+        analogWrite(speed_pin, motorSpeed);
         digitalWrite(stop_pin, LOW);
         digitalWrite(dir_pin, HIGH);
         delay(5);
