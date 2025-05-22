@@ -43,7 +43,7 @@ protected:
     
 public:
     BR(const char *name = "BR") : 
-        mmfs::Sensor(),  // Explicitly call base class constructor
+        mmfs::Sensor("BlueRaven", name),  // Explicitly call base class constructor
         hub1(myusb), 
         blueRaven(myusb, 1) {
         setName(name);
@@ -93,7 +93,7 @@ public:
     bool isDeviceConnected() const { return isConnected(); }
     
     // Sensor type information
-    virtual const mmfs::SensorType getType() const override { return mmfs::OTHER_; }
+    virtual const mmfs::SensorType getType() const override { return "BlueRaven"_i; }
     virtual const char* getTypeString() const override { return "BLUE_RAVEN"; }
 
     int getAvailableBytes()  { return blueRaven.available(); }

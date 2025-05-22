@@ -25,7 +25,7 @@ const int speed_pin = 2; // set to 255 for full speed, set to 0 for no speed
 // Limit Switch Pin
 const int LIMIT_SWITCH_PIN = 6;
 
-const int stepGranularity = 5000;
+const int stepGranularity = 10000;
 
 class AirbrakeState : public mmfs::State
 {
@@ -61,7 +61,6 @@ public:
     double single_flap_area = 0.00839;
     double machNumber = 0;
     double tilt = 0; // [deg]
-    int motorSpeed = 128;  // value from 0 to 255
 
     AirbrakeStages stage = PRELAUNCH;
 
@@ -84,11 +83,11 @@ public:
     int desiredStep = 0;
     int dir_change_time = 0;
     void zeroMotor();
-    bool limitSwitchState; // True means it is clicked
+    int motorSpeed = 255;  // value from 0 to 255
 
     // Airbrake functions from last year
     int calculateActuationAngle(double altitude, double velocity, double tilt);
-    double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height);
+    double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height, int flapAngle);
     double get_density(double h);
     void update_CdA_estimate();
 

@@ -28,7 +28,7 @@ bool AirbrakeState::init(bool useBiasCorrection)
 
 void AirbrakeState::determineStage()
 {
-    mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor(mmfs::BAROMETER_));
+    mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor("Barometer"_i));
 
     if (stage == PRELAUNCH && acceleration.magnitude() > 40)
     {
@@ -139,7 +139,7 @@ int AirbrakeState::stepToDegree(int step)
 bool AirbrakeState::motorStallCondition()
 {
     bool stall = true;
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor(mmfs::ENCODER_));
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor("Encoder"_i));
 
     int currentEncoderValue = enc->getSteps();
     for (int i = 0; i < encoderSame; i++)
@@ -160,7 +160,7 @@ bool AirbrakeState::motorStallCondition()
 
 void AirbrakeState::updateMotor()
 {
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor(mmfs::ENCODER_));
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor("Encoder"_i));
 
     // Set direction
     int step_diff = desiredStep - enc->getSteps();
@@ -172,7 +172,7 @@ void AirbrakeState::updateMotor()
     if (step_diff > stepGranularity)
     {
         // Close the flaps
-        if (limitSwitchState == HIGH)
+        if (digitalRead(LIMIT_SWITCH_PIN) == HIGH)
         {
             // Stop closing the flaps if the limit switch is activated
             digitalWrite(stop_pin, HIGH);
@@ -240,29 +240,28 @@ void AirbrakeState::updateMotor()
 
 void AirbrakeState::zeroMotor()
 {
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor(mmfs::ENCODER_));
+    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor("Encoder"_i));
 
     unsigned long startTime = millis();
 
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
     while (1)
     {
+        Serial.println(digitalRead(LIMIT_SWITCH_PIN));
         enc->update();
-        // Serial.print("Encoder Steps: ");
-        // Serial.println(enc->getSteps());
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000)
         {
-            if (motorStallCondition())
-            {
-                break; // Exit if the encoder has read repetitive numbers
-            }
+            // if (motorStallCondition())
+            // {
+            //     break; // Exit if the encoder has read repetitive numbers
+            // }
         }
-        if (digitalRead(LIMIT_SWITCH_PIN) == LOW)
+        if (digitalRead(LIMIT_SWITCH_PIN) == HIGH)
         {
             break; // Exit if the limit switch is hit
         }
-        analogWrite(speed_pin, motorSpeed);
+        analogWrite(speed_pin, int(motorSpeed/4));
         digitalWrite(stop_pin, LOW);
         digitalWrite(dir_pin, HIGH);
         delay(5);
@@ -287,7 +286,7 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
     while (i < max_guesses)
     {
 
-        estimated_apogee = predict_apogee(.5, tilt, velocity, altitude);
+        estimated_apogee = predict_apogee(.05, tilt, velocity, altitude, actuationAngle);
         double apogee_difference = estimated_apogee - target_apogee;
 
         if (abs(apogee_difference) < threshold)
@@ -313,7 +312,7 @@ int AirbrakeState::calculateActuationAngle(double altitude, double velocity, dou
 }
 
 // Calculate apogee
-double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height)
+double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height, int flapAngle)
 {
     // Uses RK2 (two-stage Runge-Kutta or midpoint method) for integration
     double time_integrating = 0.0;
@@ -329,20 +328,24 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double k2y = 0.0;
 
     // int flapAngle = stepToDegree(desiredStep); // Used for only software testing
-    auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor(mmfs::ENCODER_));
-    int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
+    // auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor("Encoder"_i));
+    // int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
     double CdA_flaps = 4 * 0.95 * single_flap_area * sin(flapAngle * 3.141592 / 180);
 
     while (time_integrating < sim_time_to_apogee)
     {
-        k1x = -0.5 * get_density(y + ground_altitude) * (CdA_rocket + CdA_flaps) * sqrt(dx * dx + dy * dy) * dx / empty_mass; // TODO:
-        k1y = -0.5 * get_density(y + ground_altitude) * (CdA_rocket + CdA_flaps) * sqrt(dx * dx + dy * dy) * dy / empty_mass - 9.81;
+        double rho = get_density(y + ground_altitude);
+        k1x = -0.5 * rho * (CdA_rocket + CdA_flaps) * sqrt(dx * dx + dy * dy) * dx / empty_mass; // TODO:
+        k1y = -0.5 * rho * (CdA_rocket + CdA_flaps) * sqrt(dx * dx + dy * dy) * dy / empty_mass - 9.81;
 
         s1x = dx + (time_step * k1x);
         s1y = dy + (time_step * k1y);
 
-        k2x = -0.5 * get_density(y + ground_altitude) * (CdA_rocket + CdA_flaps) * sqrt(pow(s1x, 2) + pow(s1y, 2)) * (s1x) / empty_mass;
-        k2y = -0.5 * get_density(y + ground_altitude) * (CdA_rocket + CdA_flaps) * sqrt(pow(s1x, 2) + pow(s1y, 2)) * (s1y) / empty_mass - 9.81;
+        double y_mid = y + time_step * dy / 2;
+        double rho_mid = get_density(y_mid + ground_altitude);
+
+        k2x = -0.5 * rho_mid * (CdA_rocket + CdA_flaps) * sqrt(s1x * s1x + s1y * s1y) * (s1x) / empty_mass;
+        k2y = -0.5 * rho_mid * (CdA_rocket + CdA_flaps) * sqrt(s1x * s1x + s1y * s1y) * (s1y) / empty_mass - 9.81;
 
         dx += time_step * (k1x + k2x) / 2;
         dy += time_step * (k1y + k2y) / 2;

@@ -4,7 +4,7 @@ import time
 from colorama import Fore
 
 # serialPort = '/dev/cu.usbmodem149805801'  # Use the correct port for the Arduino
-serialPort = '/dev/cu.usbmodem160459601'
+serialPort = '/dev/cu.usbmodem166861901'
 baudRate = 115200  # Match the baud rate to the Arduino's
 # dataFile = '/Users/michaelmallamaci/Downloads/Jan_Airbrake_FlightData.csv'
 
