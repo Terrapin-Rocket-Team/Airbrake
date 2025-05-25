@@ -12,8 +12,7 @@
 
 // TODO: Long List
 // 1. Make the kalman filter be able to handle no GPS. We won't get any
-// 4. Add the vector nav and blue raven in the hardware in the loop testing
-// 5. Figure out why the altitude estimation is undershooting it
+// 4. Add the blue raven in the hardware in the loop testing
 
 // Testing
 // #define TEST_WITH_SERIAL
@@ -171,7 +170,7 @@ void loop()
     #endif
 
     bool doLoop = sys.update();
-    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
+    // AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
     AIRBRAKE.updateMotor();
 
     if (doLoop)
@@ -255,25 +254,25 @@ void loop()
        // }
 
         #ifdef TEST_WITH_SERIAL
-            // // Used for only software testing
-            // double flapSpeed = 20; // speed at which the flaps open [deg/s]
-            // double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
-            // int sign = 0;
-            // if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
-            // else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
+            // Used for only software testing
+            double flapSpeed = 25; // speed at which the flaps open [deg/s]
+            double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
+            int sign = 0;
+            if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
+            else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
 
-            // AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
+            AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
 
-            // // Clamp to avoid overshoot
-            // if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
-            // (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
-            // AIRBRAKE.actualAngle = desiredDegree;
-            // }
+            // Clamp to avoid overshoot
+            if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
+            (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
+            AIRBRAKE.actualAngle = desiredDegree;
+            }
 
-            // Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
+            Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
 
-            // Used for encoder in the loop testing
-            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
+            // // Used for encoder in the loop testing
+            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
         #endif
     }   
 

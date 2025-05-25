@@ -247,7 +247,6 @@ void AirbrakeState::zeroMotor()
     // Move motor up slowly until the limit switch is clicked or the encoder stops changing values (after 1 second of the loop has passed)
     while (1)
     {
-        Serial.println(digitalRead(LIMIT_SWITCH_PIN));
         enc->update();
         // Check if at least 2 second has passed before checking for encoder stalling
         if (millis() - startTime >= 2000)
@@ -328,8 +327,6 @@ double AirbrakeState::predict_apogee(double time_step, double tilt, double cur_v
     double k2y = 0.0;
 
     // int flapAngle = stepToDegree(desiredStep); // Used for only software testing
-    // auto *enc = reinterpret_cast<mmfs::Encoder_MMFS *>(getSensor("Encoder"_i));
-    // int flapAngle = stepToDegree(enc->getSteps()); // Used for encoder in the loop testing
     double CdA_flaps = 4 * 0.95 * single_flap_area * sin(flapAngle * 3.141592 / 180);
 
     while (time_integrating < sim_time_to_apogee)
@@ -381,14 +378,18 @@ double AirbrakeState::get_density(double h)
 // estimate CdAs
 void AirbrakeState::update_CdA_estimate()
 {
-    CdA_number_of_measurements++;
+    double alpha = 0.2; // Smoothing factor: closer to 1 = faster response, closer to 0 = slower response
+
     double bodyVelo = velocity.magnitude();
-    double bodyAccelZ = acceleration.magnitude(); // TODO make this more accurate
+    mmfs::Vector<3> dragAccel = {acceleration.x(), acceleration.y(), acceleration.z()+9.81};
+    double CdA_rocket_this_time_step = (2 * empty_mass * abs(dragAccel.magnitude())) / (get_density(position.z()) * bodyVelo * bodyVelo);
 
-    double CdA_rocket_this_time_step = (2 * empty_mass * abs(bodyAccelZ)) / (get_density(position.z()) * bodyVelo * bodyVelo);
-    CdA_rocket = (CdA_rocket * (CdA_number_of_measurements - 1) + CdA_rocket_this_time_step) / CdA_number_of_measurements;
+    CdA_rocket = (1 - alpha) * CdA_rocket + alpha * CdA_rocket_this_time_step;
 
-    if (CdA_rocket > 1.3 * predicted_CdA_rocket || CdA_rocket < .7 * predicted_CdA_rocket)
+    // Top bound is higher for a few reasons
+    // 1. If anything we want to overestimate CdA. Actuating when we should be closed is a worse failure mode and not actuating when we should (we can always try and make it up later)
+    // 2. The predicted CdA is for when the rocket is < mach ~.8. When the rocket is going max speed (mach ~1.8) it has a much higher CdA
+    if (CdA_rocket > 2 * predicted_CdA_rocket || CdA_rocket < .8 * predicted_CdA_rocket)
     {
         CdA_rocket = predicted_CdA_rocket;
     }

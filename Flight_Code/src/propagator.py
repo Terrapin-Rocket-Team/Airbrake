@@ -1,5 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from drag import total_drag_coefficient
+import csv
+from ambiance import Atmosphere
+import time
 
 a = np.array([0.0, 0.0, -9.8])  # inertial acceleration [m/s^2]
 v = np.array([0.0, 0.0, 0.0])  # inertial velocity [m/s]
@@ -15,7 +19,7 @@ totalImpulse = 39038  # [Ns]
 burnTime = 4.83  # [s]
 rocketThrust = totalImpulse / burnTime  # [N]
 launchTime = 10  # time of launch [s]
-
+surface_roughness = 5e-6 # [m]
 dryMass = 40.82  # [kg]
 wetMass = 60.78 # [kg]
 m = wetMass
@@ -23,8 +27,11 @@ m = wetMass
 CDr = 0.55
 CDf = 0.95
 flapArea = 0.00839
-rocketArea = 0.01885
+rocket_diameter = 0.15494 # [m] (6.1 in)
+rocket_area = np.pi * (rocket_diameter/2)**2
+rocket_length = 3.3528 # [m] (11 ft)
 tilt_angle = np.deg2rad(2)  # Launch tilt angle (entered in degrees)
+ground_altitude = 850 # [m]
 
 main_deployment = 304.8  # [m]
 main_area = 11.9845  # [m^2]
@@ -52,7 +59,7 @@ def Propagate(flapAngle):
         a[:] = [0.0, 0.0, -9.8]
         return
 
-    density = getDensity(r[2])
+    atmosphere = Atmosphere(r[2]+ground_altitude)
 
     if t < burnTime + launchTime:
         m -= (wetMass - dryMass) / burnTime * timeStep
@@ -60,27 +67,36 @@ def Propagate(flapAngle):
         m = dryMass
 
     speed = np.linalg.norm(v[[0, 2]])
-    drag_force = 0.5 * density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + CDr * rocketArea) * speed ** 2
+    reynolds = (atmosphere.density * speed * rocket_diameter / atmosphere.dynamic_viscosity[0])
+    Cdr = total_drag_coefficient(reynolds, speed/atmosphere.speed_of_sound[0], surface_roughness, rocket_length)
+    # print(Cdr)
+    time.sleep(.005)
+    drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + Cdr * rocket_area) * speed ** 2
+    # drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + CDr * rocketArea) * speed ** 2
     drag_accel = drag_force / m
 
     if t < burnTime + launchTime:
+        # Boost Phase
         thrust_accel = rocketThrust / m
         a[0] = thrust_accel * np.sin(tilt_angle) - drag_accel * np.sin(tilt_angle)
         a[2] = thrust_accel * np.cos(tilt_angle) - drag_accel * np.cos(tilt_angle) - 9.8
     elif v[2] < 0 and r[2] < main_deployment:
+        # Main Deployment Phase
         a[0] = 0
         if not main_deployed:
             main_deployed = True
             settling_timer = main_settling_time
         if settling_timer > 0:
-            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] * 0.5
+            a[2] = -0.5 / m * atmosphere.density * (main_Cd * main_area) * abs(v[2]) * v[2] * 0.5
             settling_timer -= timeStep
         else:
-            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] - 9.8
+            a[2] = -0.5 / m * atmosphere.density * (main_Cd * main_area) * abs(v[2]) * v[2] - 9.8
     elif v[2] < 0:
-        a[2] = -0.5 / m * density * (drogue_Cd * drogue_area) * abs(v[2]) * v[2] - 9.8
+        # Drogue Deployment Phase
+        a[2] = -0.5 / m * atmosphere.density * (drogue_Cd * drogue_area) * abs(v[2]) * v[2] - 9.8
         a[0] = 0
     else:
+        # Coasting Phase
         a[0] = -drag_accel * np.sin(tilt_angle)
         a[2] = -drag_accel * np.cos(tilt_angle) - 9.8
 
@@ -90,51 +106,6 @@ def Propagate(flapAngle):
     
     return
 
-
-def getDensity(h):
-    """
-    Calculate air density given altitude h (in meters ASL).
-    
-    :param h: Altitude above sea level (m)
-    :return: Air density (kg/m³)
-    """
-    # Constants
-    R = 8.31446   # Universal gas constant (J/(mol·K))
-    M = 0.0289652 # Molar mass of air (kg/mol)
-    L = 0.0065    # Temperature lapse rate in the troposphere (K/m)
-
-    p0 = 101325   # Ground-level pressure (Pa)
-    T0 = 288.15   # Ground-level temperature (K)
-    
-    # Density calculation
-    density = (p0 * M) / (R * T0) * np.power((1 - L * h / T0), ((9.8 * M / (R * L)) - 1))
-
-    return density
-
-def getPressure(h):
-
-    # Constants
-    R = 8.31446   # Universal gas constant (J/(mol·K))
-    M = 0.0289652 # Molar mass of air (kg/mol)
-    g0 = 9.81     # [m/s^2]
-    Pb = 101325   # [Pa]
-    Lb = -0.0065  # Temperature lapse rate in the troposphere (K/m)
-    Tb = 288      # [K]
-    h0 = 0        # [m]
-
-    pressure = Pb * np.power((1 + (Lb/Tb) * (h - h0)), (-g0*M/(R*Lb)))
-
-    return pressure
-
-def getTemperature(h):
-
-    # Constants
-    R = 287   # Universal gas constant (J/(mol·K))
-
-    temperature = getPressure(h)/(R*getDensity(h)) # ideal gas law
-    temperature = temperature - 273.15 # kelvin to C
-
-    return temperature
 
 def getLatLong(r):
     """
@@ -213,16 +184,19 @@ def simulate_flight(flap_angle):
     m = wetMass  # Initial mass
 
     # Data storage
-    time_data, altitude_data, x_data = [], [], []
+    data = []
 
     # Simulate flight
     while r[2] >= 0:
         Propagate(flap_angle)
-        time_data.append(t)
-        altitude_data.append(r[2])
-        x_data.append(r[0])
+        data.append([
+            t,
+            r[0], r[1], r[2],
+            v[0], v[1], v[2],
+            a[0], a[1], a[2]
+        ])
 
-    return np.array(time_data), np.array(altitude_data), np.array(x_data)
+    return np.array(data)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -230,7 +204,23 @@ import matplotlib.pyplot as plt
 if __name__ == "__main__":
     # Run simulation for a chosen flap angle
     flap_angle = 0
-    time_data, altitude_data, x_data = simulate_flight(flap_angle)
+    data = simulate_flight(flap_angle)
+
+    # Save to CSV
+    with open("flight_data.csv", "w", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([
+            "Time (s)",
+            "Pos X (m)", "Pos Y (m)", "Pos Z (m)",
+            "Vel X (m/s)", "Vel Y (m/s)", "Vel Z (m/s)",
+            "Acc X (m/s²)", "Acc Y (m/s²)", "Acc Z (m/s²)"
+        ])
+        writer.writerows(data)
+
+    # Extract for plotting
+    time_data = data[:, 0]
+    altitude_data = data[:, 3]  # z
+    x_data = data[:, 1]         # x
 
     # Print maximum altitude reached
     max_altitude = np.max(altitude_data)
