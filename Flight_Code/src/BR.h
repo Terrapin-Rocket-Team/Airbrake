@@ -12,7 +12,7 @@ class BR : public mmfs::Sensor {
 private:
     USBHub hub1;
     
-USBSerial_BigBuffer blueRaven;
+    USBSerial_BigBuffer blueRaven;
     
     static const int BUFFER_SIZE = 512;
     char buffer[BUFFER_SIZE];
@@ -29,7 +29,7 @@ protected:
     float altitude = 0;
     float pressure = 0;
     float temperature = 0;
-    float velocity = 0;
+    float velocity = 0; // This is not a measured value. Rather it is just the IMU velocity (intergrated accelerameter readings) but is preformed on the BlueRaven using its software
     float angle = 0;
     float accelX = 0;
     float accelY = 0;
@@ -70,9 +70,7 @@ public:
     }
     
     // Core functions
-    virtual bool begin(bool useBiasCorrection = true) override;
     virtual bool init() override;
-    virtual void update() override;
     virtual void read() override;
     
     // Getters with connection check

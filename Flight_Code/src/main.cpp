@@ -9,10 +9,14 @@
 #include <Math/Vector.h>
 #include <Math/Quaternion.h>
 #include <Radio/ESP32BluetoothRadio.h>
+#include "MockBR.h"
 
 // TODO: Long List
-// 1. Make the kalman filter be able to handle no GPS. We won't get any
-// 4. Add the blue raven in the hardware in the loop testing
+// 2(a). Add supersonic pressure (and temperature) spike for input barometer data
+// 2(b). Add flap deployment pressure spike for input barometer data (see Ezra's paper)
+// 3(a). Remake the KF to be an EKF
+// 3(b). Make the kalman filter be able to handle no GPS. We won't get any
+// 4. Encoder test in setup
 
 // Testing
 // #define TEST_WITH_SERIAL
@@ -33,7 +37,6 @@ const int enc_chan_b = 37;
 
 // Sensors
 E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
-BR blueRaven;
 
 #ifdef TEST_WITH_SERIAL
 
@@ -57,11 +60,23 @@ std::string magColNames[3] = {
 mmfs::MockIMU mockBMI088andLIS3MDL(dataPath, accColNames, gyroColNames, magColNames);
 
 mmfs::MockGPS mockMAX_M10S(dataPath, "MAX-M10S - Lat", "MAX-M10S - Lon", "MAX-M10S - Alt (m)", "_", "MAX-M10S - Fix Quality");
-mmfs::Sensor *airbrake_sensors[5] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMAX_M10S, &enc, &blueRaven};
+
+std::string brAccColNames[3] = {
+    std::string("BR - ACCX (m/s^2)"),
+    std::string("BR - ACCY (m/s^2)"),
+    std::string("BR - ACCZ (m/s^2)")};
+std::string brGyroColNames[3] = {
+    std::string("BR - GYROX (rad/s)"),
+    std::string("BR - GYROY (rad/s)"),
+    std::string("BR - GYROZ (rad/s)")};
+mmfs::MockBR mockBlueRaven(dataPath, "BR - ALT (m)", "BR - PRES (Pa)", "BR - TEMP (C)", "BR - TILT (deg)", "BR - ROLL (deg)", "BR - VEL (m/s)", brAccColNames, brGyroColNames);
+
+mmfs::Sensor *airbrake_sensors[5] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMAX_M10S, &enc, &mockBlueRaven};
 #else
 mmfs::DPS368 baro1; // Avionics Sensor Board 1.2
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.2
 mmfs::MAX_M10S gps;                  // Avionics Sensor Board 1.2
+BR blueRaven;
 mmfs::Sensor *airbrake_sensors[5] = {&baro1, &airbrake_imu, &gps, &enc, &blueRaven};
 #endif
 
@@ -138,7 +153,8 @@ void setup()
     // Limit Switch
     pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
     if (enc.isInitialized())
-    {
+    {   
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "Zeroing Motor.");
         AIRBRAKE.zeroMotor();
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Motor Zeroed.");
     }
@@ -170,7 +186,7 @@ void loop()
     #endif
 
     bool doLoop = sys.update();
-    // AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
+    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
     AIRBRAKE.updateMotor();
 
     if (doLoop)
@@ -180,11 +196,9 @@ void loop()
         {
             #ifdef TEST_WITH_SERIAL
                 mockDPS310.setBiasCorrectionMode(false);
-                // mockMS5611.setBiasCorrectionMode(false);
                 mockMAX_M10S.setBiasCorrectionMode(false);
             #else
                 baro1.setBiasCorrectionMode(false);
-                // baro2.setBiasCorrectionMode(false);
                 gps.setBiasCorrectionMode(false);
             #endif
         }
@@ -192,11 +206,9 @@ void loop()
         {
             #ifdef TEST_WITH_SERIAL
                 mockDPS310.setBiasCorrectionMode(true);
-                // mockMS5611.setBiasCorrectionMode(true);
                 mockMAX_M10S.setBiasCorrectionMode(true);
             #else
                 baro1.setBiasCorrectionMode(true);
-                // baro2.setBiasCorrectionMode(true);
                 gps.setBiasCorrectionMode(true);
             #endif
         }
@@ -255,24 +267,24 @@ void loop()
 
         #ifdef TEST_WITH_SERIAL
             // Used for only software testing
-            double flapSpeed = 25; // speed at which the flaps open [deg/s]
-            double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
-            int sign = 0;
-            if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
-            else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
+            // double flapSpeed = 25; // speed at which the flaps open [deg/s]
+            // double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
+            // int sign = 0;
+            // if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
+            // else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
 
-            AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
+            // AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
 
-            // Clamp to avoid overshoot
-            if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
-            (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
-            AIRBRAKE.actualAngle = desiredDegree;
-            }
+            // // Clamp to avoid overshoot
+            // if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
+            // (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
+            // AIRBRAKE.actualAngle = desiredDegree;
+            // }
 
-            Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
+            // Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
 
             // // Used for encoder in the loop testing
-            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
+            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
         #endif
     }   
 

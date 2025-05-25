@@ -53,14 +53,14 @@ void AirbrakeState::determineStage()
         stage = COAST;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Coasting detected.");
     }
-    else if (stage == COAST && machNumber < .8)
+    else if (stage == COAST && machNumber < .8 && (currentTime - timeOfLastStage) > 5)
     {
         bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
         stage = DEPLOY;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Entering Deploy Stage.");
     }
-    else if (stage == DEPLOY && velocity.z() <= 0 && (currentTime - timeOfLastStage) > 5)
+    else if (stage == DEPLOY && velocity.z() <= 0 && (currentTime - timeOfLastStage) > 10)
     {
         bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
@@ -260,7 +260,7 @@ void AirbrakeState::zeroMotor()
         {
             break; // Exit if the limit switch is hit
         }
-        analogWrite(speed_pin, int(motorSpeed/4));
+        analogWrite(speed_pin, int(motorSpeed/2));
         digitalWrite(stop_pin, LOW);
         digitalWrite(dir_pin, HIGH);
         delay(5);

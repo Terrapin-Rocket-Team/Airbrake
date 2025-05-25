@@ -32,6 +32,7 @@ rocket_area = np.pi * (rocket_diameter/2)**2
 rocket_length = 3.3528 # [m] (11 ft)
 tilt_angle = np.deg2rad(2)  # Launch tilt angle (entered in degrees)
 ground_altitude = 850 # [m]
+atmosphere = Atmosphere(ground_altitude)
 
 main_deployment = 304.8  # [m]
 main_area = 11.9845  # [m^2]
@@ -48,9 +49,12 @@ accel_error = 0.1  # [m/s^2]
 gyro_error = 0.02  # [rad/s]
 mag_error = 50  # [micro T]
 baro_error = 0.2  # [m]
+br_baro_error = 0.5  # [m]
+br_accel_error = 0.05  # [m/s^2]
+br_gryo_error = 0.01  # [rad/s]
 
 def Propagate(flapAngle):
-    global t, a, v, r, m, main_deployed, settling_timer, lat, long
+    global t, a, v, r, m, main_deployed, settling_timer, lat, long, atmosphere
     t += timeStep
 
     if t < launchTime:
@@ -69,8 +73,6 @@ def Propagate(flapAngle):
     speed = np.linalg.norm(v[[0, 2]])
     reynolds = (atmosphere.density * speed * rocket_diameter / atmosphere.dynamic_viscosity[0])
     Cdr = total_drag_coefficient(reynolds, speed/atmosphere.speed_of_sound[0], surface_roughness, rocket_length)
-    # print(Cdr)
-    time.sleep(.005)
     drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + Cdr * rocket_area) * speed ** 2
     # drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + CDr * rocketArea) * speed ** 2
     drag_accel = drag_force / m

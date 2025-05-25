@@ -1,19 +1,40 @@
 #include "BR.h"
 #include <math.h>
 
-bool BR::begin(bool useBiasCorrection) {
-    myusb.begin();
-    //resetSensorValues();
-    return init();
-}
-
 bool BR::init() {
-    initialized = true;
-    return true;
-}
+    myusb.begin();
+    delay(100);  // Allow time for USB enumeration
 
-void BR::update() {
-    read();
+    unsigned long startTime = millis();
+    bool deviceResponding = false;
+
+    while (millis() - startTime < 3000) {  // Try for up to 3 seconds
+        myusb.Task();
+
+        if (blueRaven.available()) {
+            int bytesRead = blueRaven.readBytesUntil('\n', buffer, BUFFER_SIZE - 1);
+            if (bytesRead > 0) {
+                buffer[bytesRead] = '\0';
+
+                mmfs::getLogger().recordLogData(mmfs::INFO_, (std::string("Init: Received message: ") + buffer).c_str());
+
+                if (strncmp(buffer, "@ BLR_STAT", 10) == 0) {
+                    deviceResponding = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (deviceResponding) {
+        initialized = true;
+        mmfs::getLogger().recordLogData(mmfs::INFO_, "BlueRaven connection successful.");
+    } else {
+        initialized = false;
+        mmfs::getLogger().recordLogData(mmfs::ERROR_, "BlueRaven did not respond during init.");
+    }
+
+    return initialized;
 }
 
 void BR::resetSensorValues() {
@@ -24,17 +45,18 @@ void BR::resetSensorValues() {
 }
 
 void BR::read() {
+    myusb.Task();
     if (blueRaven.available()) {
         int bytesRead = blueRaven.readBytesUntil('\n', buffer, BUFFER_SIZE - 1);
         if (bytesRead > 0) {
             buffer[bytesRead] = '\0';
 
-            //Serial.print("Raw message: ");
-            //Serial.println(buffer);
+            // Serial.print("Raw message: ");
+            // Serial.println(buffer);
             if (strncmp(buffer, "@ BLR_STAT", 10) == 0) {
                 if (parseMessage(buffer)) {
                     lastReadTime = millis();
-                    //mmfs::getLogger().recordLogData(mmfs::INFO_, "Message parsed successfully");
+                    // mmfs::getLogger().recordLogData(mmfs::INFO_, "Message parsed successfully");
                 } else {
                     mmfs::getLogger().recordLogData(mmfs::INFO_, "Failed to parse message");
                 }
@@ -45,12 +67,12 @@ void BR::read() {
             mmfs::getLogger().recordLogData(mmfs::INFO_, "No bytes read from blueRaven");
         }
     } else {
-        //mmfs::getLogger().recordLogData(mmfs::INFO_, "No data available from blueRaven");
+        // mmfs::getLogger().recordLogData(mmfs::INFO_, "No data available from blueRaven");
     }
     
     if (!isConnected()) {
         resetSensorValues();
-        //Serial.println("Connection timed out. Sensor values reset.");
+        Serial.println("Connection timed out. Sensor values reset.");
     }
 }
 

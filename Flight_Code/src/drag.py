@@ -87,14 +87,14 @@ def total_drag_coefficient(reynolds, mach_number: float, surface_roughness: floa
     friction_cd = max(cf, roughness_cd)
     
     # Calculate pressure drag
-    stagnation_cd = calculate_stagnation_cd(mach_number)/2
+    stagnation_cd = calculate_stagnation_cd(mach_number)/3 # TODO this 3 shouldn't be there. 2 maybe makes more sense idk
     
     # Calculate base drag
     base_cd = calculate_base_cd(mach_number)
     
     total_cd = friction_cd + stagnation_cd + base_cd
 
-    print(f"{'Friction Cd':>12} | {'Stagnation Cd':>14} | {'Base Cd':>8} | {'Total Cd':>9}")
-    print("-" * 55)
-    print(f"{friction_cd:12.5f} | {stagnation_cd:14.5f} | {base_cd:8.5f} | {total_cd:9.5f}")
+    # print(f"{'Friction Cd':>12} | {'Stagnation Cd':>14} | {'Base Cd':>8} | {'Total Cd':>9}")
+    # print("-" * 55)
+    # print(f"{friction_cd:12.5f} | {stagnation_cd:14.5f} | {base_cd:8.5f} | {total_cd:9.5f}")
     return total_cd
