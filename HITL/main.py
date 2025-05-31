@@ -48,6 +48,8 @@ for filename in os.listdir(data_folder):
             ax1.set_xlabel("Time (s)")
             ax1.grid(True)
             ax1.tick_params(axis='y')
+            y_max = min(12000, df[left_axis_cols].max().max())
+            ax1.set_ylim(top=y_max)
             lines1, labels1 = ax1.get_legend_handles_labels()
 
             # Right y-axis

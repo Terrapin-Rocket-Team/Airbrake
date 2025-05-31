@@ -3,7 +3,8 @@
 
 #include <Arduino.h>
 #include <MMFS.h>
-// #include "BR.h"
+#include <Filters/Filter.h>
+#include "BR.h"
 
 enum AirbrakeStages
 {
@@ -32,18 +33,22 @@ class AirbrakeState : public mmfs::State
 
 public:
     // Construtor
-    AirbrakeState(mmfs::Sensor **sensors, int numSensors, mmfs::LinearKalmanFilter *kfilter);
+    AirbrakeState(mmfs::Sensor **sensors, int numSensors, Filter *kfilter);
 
     virtual bool init(bool useBiasCorrection = false) override;
 
     uint8_t currentDirection = LOW;
 
     // Flight configuation parameters
+    double full_mass = 60.78;                      // in [kg]
     double empty_mass = 40.82;                      // in [kg]
+    double mass = empty_mass;                       // current step mass in [kg]
     double predicted_target_apogee = 9144;          // in [m] (30000 ft)
     double target_apogee = predicted_target_apogee; // in [m]
     double ground_altitude = 850;                  // ASL in [m]
     double sim_time_to_apogee = 45;                 // in [s]
+    double burn_time  = 4.83;                       // estimated burn time of motor in [s]
+    double g = 9.81;                                // in [m/s^2]
 
     // Simulated parameters
     int max_guesses = 10;        // number of guesses before converging on desired actuation
@@ -57,6 +62,7 @@ public:
     double density = 1.225;      // in [kg/m^3] (this is just std atm denisty at sea level for initialization)
     double predicted_CdA_rocket = .55 * 0.01885; // CDr*Area (6.1in): Will get updated during flight but initial set based on: https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5
     double CdA_rocket = predicted_CdA_rocket;
+    double CdA; // CdA flaps + CdA rocket
     double single_flap_area = 0.00839;
     double machNumber = 0;
     double tilt = 0; // [deg]
@@ -96,8 +102,45 @@ private:
     double timeOfLaunch; // in seconds
 
 protected:
-    // void updateKF() override;
-    // bool isOutlier(int stateSize, double* stateVars, int measSize, double* measurements, double threshold);
+    void updateVariables() override;
+    void updateKF() override;
+
+    double z_accel = 0;
+    double zdot_accel = 0;
+
+    // //EKF Functions/Variables
+    // mmfs::Matrix X;
+    // mmfs::Matrix P; // Error covariance matrix
+    // mmfs::Matrix K; // Kalman gain
+    // mmfs::Matrix K_super; // Kalman gain
+
+    // // Measurement noise
+    // double br_std = .5; // [m]
+    // double dps310_std = .2; // [m]
+    // double imu_std = .1; // [m/s^2]
+    // double processNoise = 10000; // [m/s^2]
+
+    // mmfs::Matrix IB;
+
+    // void iterate(double dt, double* measurements, bool supersonic_flag);
+
+    // void predictState(double dt);
+    // void covarianceExtrapolate(double dt);
+    // void calculateKalmanGain(bool supersonic_flag);
+    // void estimateState(mmfs::Matrix measurement, bool supersonic_flag);
+    // void covarianceUpdate(bool supersonic_flag);
+
+    // mmfs::Matrix f(mmfs::Matrix X);
+    // mmfs::Matrix getF(double dt);
+    // mmfs::Matrix h(mmfs::Matrix X);
+    // mmfs::Matrix getH();
+    // mmfs::Matrix getR();
+
+    // mmfs::Matrix h_super(mmfs::Matrix X);
+    // mmfs::Matrix getH_super();
+    // mmfs::Matrix getR_super();
+
+    // mmfs::Matrix getQ(double dt);
 };
 
 #endif

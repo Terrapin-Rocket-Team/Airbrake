@@ -12,11 +12,11 @@
 #include "MockBR.h"
 
 // TODO: Long List
-// 2(a). Add supersonic pressure (and temperature) spike for input barometer data
 // 2(b). Add flap deployment pressure spike for input barometer data (see Ezra's paper)
 // 3(a). Remake the KF to be an EKF
-// 3(b). Make the kalman filter be able to handle no GPS. We won't get any
 // 4. Encoder test in setup
+// 5. Battery test (check voltage every 20 minutes across 3 hours under head lamp)
+// 6. Monte-carlo testing
 
 // Testing
 // #define TEST_WITH_SERIAL
@@ -186,7 +186,7 @@ void loop()
     #endif
 
     bool doLoop = sys.update();
-    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
+    // AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
     AIRBRAKE.updateMotor();
 
     if (doLoop)
@@ -221,11 +221,11 @@ void loop()
     // Test Deployment Code //
 
     // if (doLoop){
-    //     if (millis() > 25000){
+    //     if (millis() > 30000){
     //         AIRBRAKE.goToDegree(0);
     //         mmfs::getLogger().setRecordMode(mmfs::GROUND);
     //     }
-    //     if (millis() > 15000 && millis() < 25000){
+    //     if (millis() > 20000 && millis() < 30000){
     //         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
     //         AIRBRAKE.goToDegree(70);
     //     }
@@ -235,6 +235,7 @@ void loop()
 
     if (doLoop)
     {
+    //    Serial.println(AIRBRAKE.getPosition().z());
        mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(AIRBRAKE.getSensor("Barometer"_i));
        AIRBRAKE.machNumber = AIRBRAKE.getVelocity().magnitude() / sqrt(1.4 * 286 * (baro->getTemp() + 273.15)); // M = V/sqrt(gamma*R*T)
        mmfs::Matrix dcm = AIRBRAKE.getOrientation().conjugate().toMatrix();
@@ -267,24 +268,24 @@ void loop()
 
         #ifdef TEST_WITH_SERIAL
             // Used for only software testing
-            // double flapSpeed = 25; // speed at which the flaps open [deg/s]
-            // double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
-            // int sign = 0;
-            // if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
-            // else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
+            double flapSpeed = 25; // speed at which the flaps open [deg/s]
+            double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
+            int sign = 0;
+            if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
+            else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
 
-            // AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
+            AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
 
-            // // Clamp to avoid overshoot
-            // if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
-            // (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
-            // AIRBRAKE.actualAngle = desiredDegree;
-            // }
+            // Clamp to avoid overshoot
+            if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
+            (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
+            AIRBRAKE.actualAngle = desiredDegree;
+            }
 
-            // Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
+            Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
 
             // // Used for encoder in the loop testing
-            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
+            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
         #endif
     }   
 
