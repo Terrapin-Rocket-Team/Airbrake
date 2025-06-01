@@ -4,7 +4,6 @@
 
 AirbrakeState::AirbrakeState(mmfs::Sensor **sensors, int numSensors, Filter *kfilter) : mmfs::State(sensors, numSensors, kfilter)
 {
-    insertColumn(1, mmfs::INT, &stage, "Stage");
     addColumn(mmfs::DOUBLE, &actuationAngle, "Actuation Angle (deg)");
     addColumn(mmfs::DOUBLE, &actualAngle, "Acutal Angle (deg)");
     addColumn(mmfs::DOUBLE_HP, &CdA_rocket, "CdA");
@@ -139,7 +138,9 @@ void AirbrakeState::updateVariables(){
         heading = 0;
     }
     double dt = UPDATE_INTERVAL/1000.0;
-    zdot_accel += imu->getAccelerationGlobal().z() * dt; // z velo based only on accel
+    double zdotdot_accel = imu->getAccelerationGlobal().z();
+    if(stage == 0){zdotdot_accel += 9.81;}
+    zdot_accel += zdotdot_accel * dt; // z velo based only on accel
     z_accel += zdot_accel * dt; // z position based only on accel
     
     double alpha_velo = 0.3; // closer to 1, the more you trust the barometer
@@ -155,8 +156,6 @@ void AirbrakeState::updateVariables(){
     }
     position.z() = alpha_pos * baro->getAGLAltM() + (1-alpha_pos) * z_accel;
     velocity.z() = alpha_velo * baroVelocity + (1-alpha_velo) * zdot_accel;
-//     Serial.println(baro->getAGLAltM());
-//     Serial.println(position.z());
 }
 
 void AirbrakeState::updateKF()

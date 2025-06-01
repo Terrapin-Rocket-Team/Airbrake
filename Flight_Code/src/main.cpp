@@ -186,7 +186,7 @@ void loop()
     #endif
 
     bool doLoop = sys.update();
-    // AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
+    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
     AIRBRAKE.updateMotor();
 
     if (doLoop)
@@ -268,24 +268,24 @@ void loop()
 
         #ifdef TEST_WITH_SERIAL
             // Used for only software testing
-            double flapSpeed = 25; // speed at which the flaps open [deg/s]
-            double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
-            int sign = 0;
-            if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
-            else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
+            // double flapSpeed = 25; // speed at which the flaps open [deg/s]
+            // double desiredDegree = AIRBRAKE.stepToDegree(AIRBRAKE.desiredStep);
+            // int sign = 0;
+            // if (desiredDegree > AIRBRAKE.actualAngle) sign = 1;
+            // else if (desiredDegree < AIRBRAKE.actualAngle) sign = -1;
 
-            AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
+            // AIRBRAKE.actualAngle += (sign * flapSpeed * (UPDATE_INTERVAL / 1000.0));
 
-            // Clamp to avoid overshoot
-            if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
-            (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
-            AIRBRAKE.actualAngle = desiredDegree;
-            }
+            // // Clamp to avoid overshoot
+            // if ((sign > 0 && AIRBRAKE.actualAngle > desiredDegree) ||
+            // (sign < 0 && AIRBRAKE.actualAngle < desiredDegree)) {
+            // AIRBRAKE.actualAngle = desiredDegree;
+            // }
 
-            Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
+            // Serial.printf("[][],%d\n", (int)AIRBRAKE.actualAngle); 
 
             // // Used for encoder in the loop testing
-            // Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
+            Serial.printf("[][],%d\n", AIRBRAKE.stepToDegree(enc.getSteps())); 
         #endif
     }   
 
