@@ -15,7 +15,6 @@
 // 2(b). Add flap deployment pressure spike for input barometer data (see Ezra's paper)
 // 3(a). Remake the KF to be an EKF
 // 4. Encoder test in setup
-// 5. Battery test (check voltage every 20 minutes across 3 hours under head lamp)
 // 6. Monte-carlo testing
 
 // Testing

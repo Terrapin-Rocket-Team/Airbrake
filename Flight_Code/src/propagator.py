@@ -74,7 +74,6 @@ def Propagate(flapAngle):
     reynolds = (atmosphere.density * speed * rocket_diameter / atmosphere.dynamic_viscosity[0])
     Cdr = total_drag_coefficient(reynolds, speed/atmosphere.speed_of_sound[0], surface_roughness, rocket_length)
     drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + Cdr * rocket_area) * speed ** 2
-    # drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + CDr * rocketArea) * speed ** 2
     drag_accel = drag_force / m
 
     if t < burnTime + launchTime:

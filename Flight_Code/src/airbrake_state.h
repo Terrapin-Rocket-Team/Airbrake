@@ -103,44 +103,44 @@ private:
 
 protected:
     void updateVariables() override;
-    void updateKF() override;
+    // void updateKF() override;
 
     double z_accel = 0;
     double zdot_accel = 0;
 
-    // //EKF Functions/Variables
-    // mmfs::Matrix X;
-    // mmfs::Matrix P; // Error covariance matrix
-    // mmfs::Matrix K; // Kalman gain
-    // mmfs::Matrix K_super; // Kalman gain
+    //EKF Functions/Variables
+    mmfs::Matrix X;
+    mmfs::Matrix P; // Error covariance matrix
+    mmfs::Matrix K; // Kalman gain
+    mmfs::Matrix K_super; // Kalman gain
 
-    // // Measurement noise
-    // double br_std = .5; // [m]
-    // double dps310_std = .2; // [m]
-    // double imu_std = .1; // [m/s^2]
-    // double processNoise = 10000; // [m/s^2]
+    // Measurement noise
+    double br_std = .5; // [m]
+    double dps310_std = .2; // [m]
+    double imu_std = .1; // [m/s^2]
+    double processNoise = 10; // [m/s^2]
 
-    // mmfs::Matrix IB;
+    mmfs::Matrix IB;
 
-    // void iterate(double dt, double* measurements, bool supersonic_flag);
+    void iterate(double dt, double* measurements, bool supersonic_flag);
 
-    // void predictState(double dt);
-    // void covarianceExtrapolate(double dt);
-    // void calculateKalmanGain(bool supersonic_flag);
-    // void estimateState(mmfs::Matrix measurement, bool supersonic_flag);
-    // void covarianceUpdate(bool supersonic_flag);
+    void predictState(double dt);
+    void covarianceExtrapolate(double dt);
+    void calculateKalmanGain(bool supersonic_flag);
+    void estimateState(mmfs::Matrix measurement, bool supersonic_flag);
+    void covarianceUpdate(bool supersonic_flag);
 
-    // mmfs::Matrix f(mmfs::Matrix X);
-    // mmfs::Matrix getF(double dt);
-    // mmfs::Matrix h(mmfs::Matrix X);
-    // mmfs::Matrix getH();
-    // mmfs::Matrix getR();
+    mmfs::Matrix f(mmfs::Matrix X);
+    mmfs::Matrix getF(double dt);
+    mmfs::Matrix h(mmfs::Matrix X);
+    mmfs::Matrix getH();
+    mmfs::Matrix getR();
 
-    // mmfs::Matrix h_super(mmfs::Matrix X);
-    // mmfs::Matrix getH_super();
-    // mmfs::Matrix getR_super();
+    mmfs::Matrix h_super(mmfs::Matrix X);
+    mmfs::Matrix getH_super();
+    mmfs::Matrix getR_super();
 
-    // mmfs::Matrix getQ(double dt);
+    mmfs::Matrix getQ(double dt);
 };
 
 #endif
