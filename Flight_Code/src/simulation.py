@@ -5,8 +5,8 @@ from colorama import Fore
 from ambiance import Atmosphere
 from shock import cone_shock
 
-# serialPort = '/dev/cu.usbmodem166861901' # Use the correct port for the Arduino
-serialPort = '/dev/cu.usbmodem160459601'
+serialPort = '/dev/cu.usbmodem166861901' # Use the correct port for the Arduino
+# serialPort = '/dev/cu.usbmodem160459601'
 baudRate = 115200  # Match the baud rate to the Arduino's
 # dataFile = '/Users/michaelmallamaci/Downloads/Jan_Airbrake_FlightData.csv'
 
@@ -44,7 +44,7 @@ if ser.is_open:
                 a_body = interial2Body(a, tilt_angle)
                 mach = np.linalg.norm(v)/atmosphere.speed_of_sound[0]
                 print(mach)
-                if mach > 2:
+                if mach > 2.5:
                     B, flow_redirection_amount, Ma2, T2, p2, rho2, v_x, v_y = cone_shock(np.deg2rad(10), mach, atmosphere.temperature[0], atmosphere.pressure[0], atmosphere.density[0])
                     baro1_pressure_pa = gaussian_noise_generator(p2, baro_error*10) # The *10 is a very rough approximation for meters to Pa (Pa/m ~= 12 @ sea level, Pa/m ~= 3 @ 10,000 m)
                     baro1_temperature_k = gaussian_noise_generator(T2, baro_error*.0065) # standard lapse rate is −6.5 K/km = -.0065 K/m in the troposphere (up to ~11,000 m)
