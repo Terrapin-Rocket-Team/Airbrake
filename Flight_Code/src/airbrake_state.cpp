@@ -100,7 +100,7 @@ void AirbrakeState::determineStage()
         bb.aonoff(mmfs::BUZZER, 200, 2);
         stage = PRELAUNCH;
     }
-    else if ((stage == PRELAUNCH || stage == BOOST) && (baro->getAGLAltM() > 1500) && (millis() > 60000))
+    else if ((stage == PRELAUNCH || stage == BOOST) && (baro->getAGLAltM() > 2500) && (millis() > 60000))
     {
         mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
         bb.aonoff(mmfs::BUZZER, 200, 2);
