@@ -56,7 +56,7 @@ if ser.is_open:
                     br_pressure_pa = br_atmosphere.pressure[0]
                     br_temperature_k = br_atmosphere.temperature[0]
                 line = (f"{baro1_pressure_pa/100},{baro1_atmosphere.T2t(baro1_temperature_k)[0]}," # Baro 1
-                f"{gaussian_noise_generator(a_body[2], accel_error)},{gaussian_noise_generator(a_body[1], accel_error)},{gaussian_noise_generator(a_body[0], accel_error)}," # Accel
+                f"{gaussian_noise_generator(-a_body[2], accel_error)},{gaussian_noise_generator(a_body[1], accel_error)},{gaussian_noise_generator(a_body[0], accel_error)}," # Accel
                 f"{gaussian_noise_generator(0, gyro_error)},{gaussian_noise_generator(0, gyro_error)},{gaussian_noise_generator(0, gyro_error)}," # Gyro
                 f"{0},{0},{0}," # Mag
                 f"{0},{0},{r[2]},{0}," # GPS

@@ -46,7 +46,7 @@ settling_timer = 0.0
 
 # Errors
 accel_error = 0.1  # [m/s^2]
-gyro_error = 0.02  # [rad/s]
+gyro_error = 0.1  # [rad/s]
 mag_error = 50  # [micro T]
 baro_error = 0.2  # [m]
 br_baro_error = 0.5  # [m]

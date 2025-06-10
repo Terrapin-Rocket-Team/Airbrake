@@ -140,6 +140,8 @@ void AirbrakeState::updateVariables(){
         coordinates = mmfs::Vector<2>(0, 0);
         heading = 0;
     }
+
+    if (stage == PRELAUNCH){return;}
     
     // Get postion and velocity from integrating acceleration
     double dt = UPDATE_INTERVAL/1000.0;

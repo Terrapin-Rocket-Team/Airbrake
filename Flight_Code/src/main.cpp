@@ -239,7 +239,6 @@ void loop()
        double tilt = acos(dcm.get(2, 2)); // [rad]
        tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
        AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
-       Serial.println("Tilt" + String(AIRBRAKE.tilt));
     //    Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
     //    Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
        double velocity = AIRBRAKE.getVelocity().magnitude();
@@ -312,6 +311,8 @@ void loop()
         aprs.stateFlags.pack(arr);
         // Serial.printf("%f %ld\n", baro1.getTemp(), aprs.stateFlags.get());
         btRad.send(aprs);
+        // btRad.tx("short", 5);
+        // btRad.tx("This is a medium string.", 25);
         #endif
     }
 }
