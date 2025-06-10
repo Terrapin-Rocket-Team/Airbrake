@@ -67,6 +67,12 @@ public:
     double machNumber = 0;
     double tilt = 4; // [deg]
 
+    // Barometric error correction (based on https://drive.google.com/drive/u/0/folders/150lm54Gioq1RoHnZDieAeiPLmdDmVhk5)
+    double altitudeDelta = 0; // [m]
+    const double c = 0.052; // [~]
+    const double tau = .15; // [~]
+    const double baroAlpha = .1/(.1 + tau); // [~]
+
     AirbrakeStages stage = PRELAUNCH;
 
     // Helper Functions
@@ -103,7 +109,7 @@ private:
 
 protected:
     void updateVariables() override;
-    // void updateKF() override;
+    void updateKF() override;
 
     double z_accel = 0;
     double zdot_accel = 0;

@@ -14,6 +14,7 @@ AirbrakeState::AirbrakeState(mmfs::Sensor **sensors, int numSensors, Filter *kfi
     addColumn(mmfs::DOUBLE, &tilt, "Tilt [deg]");
     addColumn(mmfs::DOUBLE, &z_accel, "Pos - Accel Integrated [m]");
     addColumn(mmfs::DOUBLE, &zdot_accel, "Velo - Accel Integrated [m/s]");
+    addColumn(mmfs::DOUBLE, &altitudeDelta, "Baro Correction Altitude Delta [m]");
 };
 
 bool AirbrakeState::init(bool useBiasCorrection)
@@ -123,6 +124,15 @@ void AirbrakeState::updateVariables(){
     mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor("Barometer"_i));
     orientation = sensorOK(imu) ? imu->getOrientation() : mmfs::Quaternion(1, 0, 0, 0);
 
+    // Do Barometric error correction
+    if (stage == DEPLOY){
+        double altitudeErrorFunction;
+        double q = .5 * get_density(position.z()) * velocity.magnitude() * velocity.magnitude();
+        if(actualAngle > 45) {c*q*sin(45 * M_PI / 180);}
+        else {c*q*sin(actualAngle * M_PI / 180);}
+        altitudeDelta = (1 - baroAlpha)*altitudeDelta + baroAlpha*altitudeErrorFunction;
+    }
+
     if (filter)
         updateKF();
     else
@@ -174,6 +184,47 @@ void AirbrakeState::updateVariables(){
     // }
     // position.z() = alpha_pos * baro->getAGLAltM() + (1-alpha_pos) * z_accel;
     // velocity.z() = alpha_velo * baroVelocity + (1-alpha_velo) * zdot_accel;
+}
+
+void AirbrakeState::updateKF(){
+    mmfs::GPS *gps = reinterpret_cast<mmfs::GPS *>(getSensor("GPS"_i));
+    mmfs::IMU *imu = reinterpret_cast<mmfs::IMU *>(getSensor("IMU"_i));
+    mmfs::Barometer *baro = reinterpret_cast<mmfs::Barometer *>(getSensor("Barometer"_i));
+
+    double *measurements = new double[filter->getMeasurementSize()];
+    double *inputs = new double[filter->getInputSize()];
+
+    // gps x y barometer z
+    measurements[0] = sensorOK(gps) ? gps->getDisplacement().x() : 0;
+    measurements[1] = sensorOK(gps) ? gps->getDisplacement().y() : 0;
+    measurements[2] = baro->getAGLAltM() - altitudeDelta;
+
+    // imu x y z
+    inputs[0] = acceleration.x() = imu->getAccelerationGlobal().x();
+    inputs[1] = acceleration.y() = imu->getAccelerationGlobal().y();
+    inputs[2] = acceleration.z() = imu->getAccelerationGlobal().z();
+
+    stateVars[0] = position.x();
+    stateVars[1] = position.y();
+    stateVars[2] = position.z();
+    stateVars[3] = velocity.x();
+    stateVars[4] = velocity.y();
+    stateVars[5] = velocity.z();
+
+    filter->iterate(currentTime - lastTime, stateVars, measurements, inputs);
+    // pos x, y, z, vel x, y, z
+    position.x() = stateVars[0];
+    position.y() = stateVars[1];
+    position.z() = stateVars[2];
+    velocity.x() = stateVars[3];
+    velocity.y() = stateVars[4];
+    velocity.z() = stateVars[5];
+
+    if (sensorOK(baro))
+    {
+        baroVelocity = (baro->getAGLAltM() - baroOldAltitude) / (currentTime - lastTime);
+        baroOldAltitude = baro->getAGLAltM();
+    }
 }
 
 // void AirbrakeState::updateKF()
