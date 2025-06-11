@@ -11,9 +11,6 @@
 #include <Radio/ESP32BluetoothRadio.h>
 #include "MockBR.h"
 
-// TODO: Long List
-// 2(b). Add flap deployment pressure spike for input barometer data (see Ezra's paper)
-
 // Testing
 // #define TEST_WITH_SERIAL
 
@@ -218,13 +215,13 @@ void loop()
     // Test Deployment Code //
 
     // if (doLoop){
-    //     // if (millis() > 30000){
-    //     //     AIRBRAKE.goToDegree(0);
-    //     //     mmfs::getLogger().setRecordMode(mmfs::GROUND);
-    //     // }
+    //     if (millis() > 40000){
+    //         AIRBRAKE.goToDegree(0);
+    //         // mmfs::getLogger().setRecordMode(mmfs::GROUND);
+    //     }
     //     if (millis() > 20000){
     //         // mmfs::getLogger().setRecordMode(mmfs::FLIGHT);
-    //         AIRBRAKE.goToDegree(65);
+    //         AIRBRAKE.goToDegree(35);
     //         Serial.println(enc.getSteps());
     //     }
     // }

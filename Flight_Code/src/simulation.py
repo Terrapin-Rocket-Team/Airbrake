@@ -5,6 +5,7 @@ from colorama import Fore
 from ambiance import Atmosphere
 from shock import cone_shock
 
+# serialPort = '/dev/cu.usbmodem160466801'
 serialPort = '/dev/cu.usbmodem166861901' # Use the correct port for the Arduino
 # serialPort = '/dev/cu.usbmodem160459601'
 baudRate = 115200  # Match the baud rate to the Arduino's

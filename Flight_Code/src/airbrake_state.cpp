@@ -70,7 +70,7 @@ void AirbrakeState::determineStage()
         stage = DEPLOY;
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Entering Deploy Stage.");
     }
-    else if (stage == DEPLOY && velocity.z() <= 0 && (currentTime - timeOfLastStage) > 10)
+    else if (stage == DEPLOY && velocity.z() < 0 && (currentTime - timeOfLastStage) > 10)
     {
         bb.aonoff(mmfs::BUZZER, 200, 2);
         timeOfLastStage = currentTime;
@@ -128,8 +128,8 @@ void AirbrakeState::updateVariables(){
     if (stage == DEPLOY){
         double altitudeErrorFunction;
         double q = .5 * get_density(position.z()) * velocity.magnitude() * velocity.magnitude();
-        if(actualAngle > 45) {c*q*sin(45 * M_PI / 180);}
-        else {c*q*sin(actualAngle * M_PI / 180);}
+        if(actualAngle > 45) {altitudeErrorFunction = c*q*sin(45 * M_PI / 180);}
+        else {altitudeErrorFunction = c*q*sin(actualAngle * M_PI / 180);}
         altitudeDelta = (1 - baroAlpha)*altitudeDelta + baroAlpha*altitudeErrorFunction;
     }
 
