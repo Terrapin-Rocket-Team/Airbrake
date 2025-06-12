@@ -23,7 +23,7 @@ def motor_parameters(motor_torque, motor_speed, gear_ratio, screw_lead, motor_vo
     ARM_HORIZONTAL_IN = 1.5  # in inches
     ARM_HORIZONTAL_SI = ARM_HORIZONTAL_IN * 0.0254  # meters
     LEAD_SCREW_EFFICIENCY = 0.5  # range 0–1
-    BATTERY_VOLTAGE = 3.7  # V per battery
+    BATTERY_VOLTAGE = 4  # V per battery
     BATTERY_CAPACITY = 200  # mAh
     BATTERY_CAPACITY_SI = BATTERY_CAPACITY / 1000  # Ah
 
@@ -40,15 +40,17 @@ def motor_parameters(motor_torque, motor_speed, gear_ratio, screw_lead, motor_vo
     print(f"Motor Wattage: {motor_wattage:.2f} W")
 
     # Battery calculations
-    voltage_batteries = motor_voltage / BATTERY_VOLTAGE
-    number_of_batteries = math.ceil(voltage_batteries)
-    print(f"Number of Batteries: {number_of_batteries}")
+    # voltage_batteries = motor_voltage / BATTERY_VOLTAGE
+    # number_of_batteries = math.ceil(voltage_batteries)
+    # print(f"Number of Batteries: {number_of_batteries}")
 
-    battery_life = BATTERY_CAPACITY_SI / motor_amps
-    print(f"Battery Life (hours): {battery_life:.2f}")
+    # battery_life = BATTERY_CAPACITY_SI / motor_amps
+    # print(f"Battery Life (hours): {battery_life:.2f}")
 
     # Output speed and force
     speed = (2 * ARM_HORIZONTAL_SI / screw_lead_si) / motor_speed_si
-    force = motor_torque * 2 * math.pi * LEAD_SCREW_EFFICIENCY / screw_lead_si
+    force = motor_torque * 2 * math.pi * LEAD_SCREW_EFFICIENCY / screw_lead_si\
+    
+    print(f"Motor Force: {force:.2f} N")
 
     return force, speed

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # Constants
 force_drag_range = np.arange(1, 3001, 1)  # N
-force_motor = motor_parameters(.144, 3500, 50, 2.54, 24, 1.67)[0]  # N
+force_motor = motor_parameters(.144*2, 4000, 10, 2.54, 24, 1.67)[0]  # N
 
 ### Plot 1: Max Flap Angle vs Drag Force ###
 # Define drag force range
