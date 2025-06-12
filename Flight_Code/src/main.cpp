@@ -16,7 +16,7 @@
 
 // Bluetooth Module
 APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
-uint8_t encoding[] = {7, 4, 5, 7, 8};
+uint8_t encoding[] = {7, 5, 7, 8, 4};
 APRSTelem aprs(aprsConfig);
 Message msg;
 mmfs::ESP32BluetoothRadio btRad(Serial5, "AVIONICS", true);
@@ -296,17 +296,20 @@ void loop()
         // printf("%f\n", gps.getPos().y());
         aprs.lng = 0.0;
         // printf("%f\n", computer.getVelocity().z());
-        aprs.spd = AIRBRAKE.getVelocity().z();
+        aprs.spd = AIRBRAKE.getVelocity().z()*3.24;
         // printf("%f\n", bno.getAngularVelocity().x());
         aprs.orient[0] = airbrake_imu.getAngularVelocity().x();
         // printf("%f\n", bno.getAngularVelocity().y());
         aprs.orient[1] = airbrake_imu.getAngularVelocity().y();
         // printf("%f\n", bno.getAngularVelocity().z());
         aprs.orient[2] = airbrake_imu.getAngularVelocity().z();
-        aprs.stateFlags.setEncoding(encoding, 3);
-        uint8_t arr[] = {(uint8_t)(int)baro1.getTemp(), (uint8_t)AIRBRAKE.getStage(), (uint8_t)AIRBRAKE.actualAngle, (uint8_t)((int)AIRBRAKE.estimated_apogee << 8), (uint8_t)((int)AIRBRAKE.estimated_apogee & 0xff)};
+        aprs.stateFlags.setEncoding(encoding, sizeof(encoding));
+        Serial.println(AIRBRAKE.estimated_apogee);
+        Serial.println((uint8_t)((int)AIRBRAKE.estimated_apogee >> 8));
+        Serial.println((uint8_t)((int)AIRBRAKE.estimated_apogee & 0xff));
+        uint8_t arr[] = {(uint8_t)(int)baro1.getTemp(), (uint8_t)AIRBRAKE.actualAngle, (uint8_t)((int)AIRBRAKE.estimated_apogee >> 8), (uint8_t)((int)AIRBRAKE.estimated_apogee & 0xff), (uint8_t)AIRBRAKE.getStage()};
         aprs.stateFlags.pack(arr);
-        // Serial.printf("%f %ld\n", baro1.getTemp(), aprs.stateFlags.get());
+        Serial.printf("%f %ld\n", baro1.getTemp(), aprs.stateFlags.get());
         btRad.send(aprs);
         // btRad.tx("short", 5);
         // btRad.tx("This is a medium string.", 25);
