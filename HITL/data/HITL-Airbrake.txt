@@ -1,0 +1,16 @@
+2.354 - [INFO] This flight is running MMFS v3.1.0
+6.472 - [INFO] This is a simulation run.
+6.478 - [INFO] Initializing MMFS.
+8.491 - [INFO] Barometer [MockBarometer] initialized.
+8.498 - [ERROR] GENERIC_ERROR: Acceleration magnitude 0 while running quaternionBasedComplimentaryFilterSetup(). Need to record acceleration vector on setup before running this function. at -1
+8.504 - [INFO] IMU [MockIMU] initialized.
+8.508 - [INFO] GPS [MockGPS] initialized.
+8.511 - [INFO] Encoder [E5] initialized.
+8.524 - [INFO] BLUE_RAVEN [BR] initialized.
+8.528 - [INFO] State Initialized. All sensors OK.
+10.547 - [INFO] MMFS initialized.
+20.650 - [INFO] Launch detected.
+25.498 - [INFO] Coasting detected.
+39.537 - [INFO] Entering Deploy Stage.
+58.424 - [INFO] Apogee detected at 9189.09 m.
+58.431 - [INFO] Drogue detected.

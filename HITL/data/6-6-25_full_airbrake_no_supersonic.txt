@@ -1,0 +1,17 @@
+12.117 - [INFO] Barometer [MockBarometer] initialized.
+12.122 - [ERROR] Acceleration magnitude 0 while running quaternionBasedComplimentaryFilterSetup(). Need to record acceleration vector on setup before running this function.
+12.128 - [INFO] IMU [MockIMU] initialized.
+12.130 - [INFO] GPS [MockGPS] initialized.
+12.132 - [INFO] Encoder [E5] initialized.
+12.134 - [INFO] BLUE_RAVEN [MockBR] initialized.
+12.137 - [INFO] State Initialized. All sensors OK.
+14.147 - [INFO] MMFS initialized.
+14.152 - [INFO] Zeroing Motor.
+14.154 - [INFO] Moving motor out 2 deg.
+18.497 - [INFO] [Encoder]: Initial Steps set to: 9440
+18.506 - [INFO] Motor Zeroed.
+29.608 - [INFO] Launch detected.
+34.456 - [INFO] Coasting detected.
+48.899 - [INFO] Entering Deploy Stage.
+68.392 - [INFO] Apogee detected at 9345.22 m.
+68.395 - [INFO] Drogue detected.

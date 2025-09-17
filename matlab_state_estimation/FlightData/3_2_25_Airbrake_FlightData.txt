@@ -1,0 +1,42 @@
+1349.000 - [INFO] This flight is running MMFS v3.0.0
+
+2111.000 - [INFO] Initializing MMFS.
+4545.000 - [INFO] Barometer [DPS310] initialized.
+4765.000 - [INFO] Barometer [MS5611] initialized.
+5206.000 - [ERROR] GENERIC_ERROR: Acceleration magnitude 0 while running quaternionBasedComplimentaryFilterSetup(). Need to record acceleration vector on setup before running this function. at -1
+5210.000 - [INFO] IMU [BMI088andLIS3MDL] initialized.
+5723.000 - [INFO] GPS [MAX-M10S] initialized.
+7728.000 - [INFO] VN_100 [VN_100] initialized.
+7732.000 - [INFO] Encoder [E5] initialized.
+7746.000 - [INFO] BLUE_RAVEN [BR] initialized.
+7750.000 - [INFO] State Initialized. All sensors OK.
+9764.000 - [INFO] MMFS initialized.
+14769.000 - [INFO] [Encoder]: Initial Steps set to: 0
+15794.000 - [INFO] Received message does not start with @ BLR_STAT
+57000.000 - [INFO] Received message does not start with @ BLR_STAT
+57040.000 - [INFO] Received message does not start with @ BLR_STAT
+57860.000 - [INFO] Received message does not start with @ BLR_STAT
+59584.000 - [INFO] Received message does not start with @ BLR_STAT
+59624.000 - [INFO] Received message does not start with @ BLR_STAT
+60525.000 - [INFO] Received message does not start with @ BLR_STAT
+62534.000 - [INFO] Received message does not start with @ BLR_STAT
+62578.000 - [INFO] Received message does not start with @ BLR_STAT
+63847.000 - [INFO] Received message does not start with @ BLR_STAT
+92386.000 - [INFO] Received message does not start with @ BLR_STAT
+92425.000 - [INFO] Received message does not start with @ BLR_STAT
+93163.000 - [INFO] Received message does not start with @ BLR_STAT
+920084.000 - [INFO] Launch detected.
+920246.000 - [INFO] Received message does not start with @ BLR_STAT
+921640.000 - [INFO] Launch detected. Using Backup Condition.
+921645.000 - [INFO] Printing static data.
+922670.000 - [INFO] Coasting detected.
+927834.000 - [INFO] Apogee detected at nan m.
+927838.000 - [INFO] Drogue detected.
+943334.000 - [INFO] Received message does not start with @ BLR_STAT
+946122.000 - [INFO] Received message does not start with @ BLR_STAT
+1026523.000 - [INFO] Main detected.
+1031239.000 - [INFO] Received message does not start with @ BLR_STAT
+1033740.000 - [INFO] Received message does not start with @ BLR_STAT
+1046737.000 - [INFO] Landing detected.
+1046742.000 - [INFO] Dumped data after landing.
+1058878.000 - [INFO] Received message does not start with @ BLR_STAT
