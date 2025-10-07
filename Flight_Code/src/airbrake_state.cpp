@@ -384,6 +384,8 @@ void AirbrakeState::updateMotor()
     //     digitalWrite(stop_pin, HIGH);
     //     analogWrite(speed_pin, 0);
     // }
+
+    
     if (step_diff > stepGranularity)
     {
         // Close the flaps
@@ -418,6 +420,7 @@ void AirbrakeState::updateMotor()
             }
         }
     }
+   
     else if (step_diff < -stepGranularity)
     {
         // Open the flaps
@@ -467,6 +470,8 @@ void AirbrakeState::zeroMotor()
         digitalWrite(dir_pin, LOW);
         delay(5);
     }
+
+    //stops motor
     analogWrite(speed_pin, 0);
     digitalWrite(stop_pin, HIGH);
     digitalWrite(dir_pin, LOW);

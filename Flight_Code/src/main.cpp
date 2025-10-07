@@ -10,6 +10,7 @@
 #include <Math/Quaternion.h>
 #include <Radio/ESP32BluetoothRadio.h>
 #include "MockBR.h"
+#include "md6.h"
 
 // Testing
 // #define TEST_WITH_SERIAL
@@ -24,12 +25,8 @@ mmfs::ESP32BluetoothRadio btRad(Serial5, "AVIONICS", true);
 // Buzzer
 const int BUZZER_PIN = 23;
 
-// Encoder pins
-const int enc_chan_a = 36;
-const int enc_chan_b = 37;
-
-// Sensors
-E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
+// Motor Driver
+mmfs::MotorDriver mot("MotorDriver");
 
 #ifdef TEST_WITH_SERIAL
 
@@ -64,13 +61,13 @@ std::string brGyroColNames[3] = {
     std::string("BR - GYROZ (rad/s)")};
 mmfs::MockBR mockBlueRaven(dataPath, "BR - ALT (m)", "BR - PRES (Pa)", "BR - TEMP (C)", "BR - TILT (deg)", "BR - ROLL (deg)", "BR - VEL (m/s)", brAccColNames, brGyroColNames);
 
-mmfs::Sensor *airbrake_sensors[5] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMAX_M10S, &enc, &mockBlueRaven};
+mmfs::Sensor *airbrake_sensors[5] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMAX_M10S, &MotorDriver, &mockBlueRaven};
 #else
 mmfs::DPS368 baro1; // Avionics Sensor Board 1.2
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.2
 mmfs::MAX_M10S gps;                  // Avionics Sensor Board 1.2
 BR blueRaven;
-mmfs::Sensor *airbrake_sensors[5] = {&baro1, &airbrake_imu, &gps, &enc, &blueRaven};
+mmfs::Sensor *airbrake_sensors[5] = {&baro1, &airbrake_imu, &gps, &mot, &blueRaven};
 #endif
 
 // // Initialize Airbrake State
@@ -89,16 +86,6 @@ void setup()
 {
     // Initialize Serial and SPI Buses
     Serial.begin(115200);
-
-    // Immediately turn the motor off (needs the stop pin set to high)
-    pinMode(brk_pin, OUTPUT);
-    pinMode(stop_pin, OUTPUT);
-    pinMode(dir_pin, OUTPUT);
-    pinMode(speed_pin, OUTPUT);
-    digitalWrite(brk_pin, LOW);
-    digitalWrite(stop_pin, HIGH);
-    digitalWrite(dir_pin, LOW);
-    analogWrite(speed_pin, 0);
 
 // MMFS Stuff
     #ifdef TEST_WITH_SERIAL
@@ -133,6 +120,7 @@ void setup()
         }
     #endif
 
+    //mock sensors or real sensors
     #ifdef TEST_WITH_SERIAL
         mockDPS310.setBiasCorrectionMode(true);
         mockMAX_M10S.setBiasCorrectionMode(true);
@@ -145,7 +133,7 @@ void setup()
 
     // Limit Switch
     pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
-    if (enc.isInitialized())
+    if (mot.isInitialized())
     {   
         mmfs::getLogger().recordLogData(mmfs::INFO_, "Zeroing Motor.");
         AIRBRAKE.zeroMotor();
@@ -180,8 +168,7 @@ void loop()
     #endif
 
     bool doLoop = sys.update();
-    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(enc.getSteps());
-    AIRBRAKE.updateMotor();
+    AIRBRAKE.actualAngle = AIRBRAKE.stepToDegree(mot.getPosition());
 
     if (doLoop)
     {

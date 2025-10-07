@@ -18,10 +18,8 @@ enum AirbrakeStages
 };
 
 // Motor driver pins
-const int brk_pin = 3;
-const int stop_pin = 4;  // set to low to STOP the motor, high to let the motor move (it is just an enable pin)
-const int dir_pin = 5;   // set low to open the airbrake, high to close the airbrake
-const int speed_pin = 2; // set to 255 for full speed, set to 0 for no speed
+const int mdrx = 1; // Motor Driver RX pin
+const int mdtx = 2; // Motor Driver TX pin
 
 // Limit Switch Pin
 const int LIMIT_SWITCH_PIN = 6;
@@ -96,7 +94,7 @@ public:
     void zeroMotor();
     int motorSpeed = 255;  // value from 0 to 255
 
-    // Airbrake functions from last year
+    // Airbrake flap angle calculation
     int calculateActuationAngle(double altitude, double velocity, double tilt);
     double predict_apogee(double time_step, double tilt, double cur_velocity, double cur_height, int flapAngle);
     double get_density(double h);
