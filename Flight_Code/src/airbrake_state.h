@@ -2,9 +2,8 @@
 #define AIRBRAKE_STATE_H
 
 #include <Arduino.h>
-#include <MMFS.h>
+#include <State/State.h>
 #include <Filters/Filter.h>
-#include "BR.h"
 
 enum AirbrakeStages
 {
@@ -17,23 +16,12 @@ enum AirbrakeStages
     LANDED
 };
 
-// Motor driver pins
-const int mdrx = 1; // Motor Driver RX pin
-const int mdtx = 2; // Motor Driver TX pin
-
-// Limit Switch Pin
-const int LIMIT_SWITCH_PIN = 6;
-
-const int stepGranularity = 17500;
-
-class AirbrakeState : public mmfs::State
+class AirbrakeState : public astra::State
 {
 
 public:
     // Construtor
-    AirbrakeState(mmfs::Sensor **sensors, int numSensors, Filter *kfilter);
-
-    virtual bool init(bool useBiasCorrection = false) override;
+    AirbrakeState(astra::Sensor **sensors, int numSensors, Filter *kfilter);
 
     uint8_t currentDirection = LOW;
 
@@ -41,7 +29,6 @@ public:
     double full_mass = 63.5;                      // in [kg]
     double empty_mass = 43.5;                      // in [kg]
     double mass = empty_mass;                       // current step mass in [kg]
-    // double predicted_target_apogee = 9144;          // in [m] 
     double target_apogee = 9144;                    // in [m] (30000 ft)
     double ground_altitude = 884;                  // ASL in [m]
     double sim_time_to_apogee = 45;                 // in [s]
@@ -74,25 +61,7 @@ public:
     AirbrakeStages stage = PRELAUNCH;
 
     // Helper Functions
-    void determineStage() override;
-    void updateMotor();
-
-    // motor Stall
-    bool motorStallCondition();
-    static const int encoderSame = 8; // size of the circular buffer
-    int historyIndex = 0;
-    int encoderHistory[encoderSame]; // Circular buffer to store the last encoderSame values, size of array is the amount of the same values
-
-    // Motor and encoder functions
-    void goToStep(int step);
-    void goToDegree(int degree);
-    int stepToDegree(int step);
-    // Number for degree to desired step: https://docs.google.com/spreadsheets/d/1bsWIpDW322UWTvhwyznNfmbBDd-kcjSC/edit?gid=1716849137#gid=1716849137
-    int degreeToStepConvertionFactor = -10471; // // Negative because negative steps is open and degree defined to 0 at closed and 90 at open (v3), v1 old number: 10537, v2 old number: 9259
-    int desiredStep = 0;
-    int dir_change_time = 0;
-    void zeroMotor();
-    int motorSpeed = 255;  // value from 0 to 255
+    void determineStage();
 
     // Airbrake flap angle calculation
     int calculateActuationAngle(double altitude, double velocity, double tilt);
@@ -106,45 +75,11 @@ private:
     double timeOfLaunch; // in seconds
 
 protected:
-    void updateVariables() override;
-    void updateKF() override;
+    void updateVariables();
 
     double z_accel = 0;
     double zdot_accel = 0;
 
-    //EKF Functions/Variables
-    // mmfs::Matrix X;
-    // mmfs::Matrix P; // Error covariance matrix
-    // mmfs::Matrix K; // Kalman gain
-    // mmfs::Matrix K_super; // Kalman gain
-
-    // Measurement noise
-    // double br_std = .5; // [m]
-    // double dps310_std = .2; // [m]
-    // double imu_std = .1; // [m/s^2]
-    // double processNoise = 10; // [m/s^2]
-
-    // mmfs::Matrix IB;
-
-    // void iterate(double dt, double* measurements, bool supersonic_flag);
-
-    // void predictState(double dt);
-    // void covarianceExtrapolate(double dt);
-    // void calculateKalmanGain(bool supersonic_flag);
-    // void estimateState(mmfs::Matrix measurement, bool supersonic_flag);
-    // void covarianceUpdate(bool supersonic_flag);
-
-    // mmfs::Matrix f(mmfs::Matrix X);
-    // mmfs::Matrix getF(double dt);
-    // mmfs::Matrix h(mmfs::Matrix X);
-    // mmfs::Matrix getH();
-    // mmfs::Matrix getR();
-
-    // mmfs::Matrix h_super(mmfs::Matrix X);
-    // mmfs::Matrix getH_super();
-    // mmfs::Matrix getR_super();
-
-    // mmfs::Matrix getQ(double dt);
 };
 
 #endif

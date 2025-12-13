@@ -1,48 +1,66 @@
 #ifndef MD_H
 #define MD_H
-#include <MMFS.h>
 #include <ODriveUART.h>
 #include <SoftwareSerial.h>
 #include "airbrake_state.h"
+#include "Utils/CircBuffer.h"
 
-SoftwareSerial odrive_serial(mdrx, mdtx); // RX, TX
-unsigned long baudrate = 115200;
-ODriveUART odrive(odrive_serial);
 
-namespace mmfs
+enum StalledState{
+    STOPPED,
+    TOP,
+    BOTTOM,
+    MOVING,
+    ERROR
+};
+
+namespace astra
 {
-    class MotorDriver : public mmfs::Sensor
+    class MotorDriver : public astra::Sensor
     {
     private:
-        // Add private members and methods specific to MD6 here
+        int motorstallcounter = 10;
+        ODriveFeedback feedback;
+        CircBuffer<float> positionHistory = CircBuffer<float>(motorstallcounter);
+               
 
     protected:
         // Add protected members and methods specific to MD6 here
-        double position = 0; // Example variable
-        double velocity = 0; // Example variable
+        float position = 0; // current position
+        float velocity = 0; // current velocity
+        float initposition = 0; // position when zeroed
+        float targetposition = 0; // target position
+        float targetvelocity = 0; // target velocity
 
+        int topLimitSwitchPin = 35;
+        StalledState stalledstate = STOPPED;
+        
 
     public:
         MotorDriver(const char *name = "MotorDriver") : Sensor("MotorDriver", name)
         {
             setName(name);
-            addColumn(mmfs::FLOAT, &position, "Motor Position");
-            addColumn(mmfs::FLOAT, &velocity, "Motor Velocity");        
+            addColumn("%0.3f", &position, "Motor Position");
+            addColumn("%0.3f", &velocity, "Motor Velocity");
+            pinMode(topLimitSwitchPin, INPUT);
         }
 
         bool init() override;
-        void read() override;
+        bool read() override;
         bool isInitialized() const { return initialized; }
 
-        float getPosition() const { return position; }
-        float getVelocity() const { return velocity; }
+        float getPosition();
+        float getVelocity();
+        float angleToPos(int angle);
+        float posToAngle(float pos);
 
-        void setPosition(float pos);
-        void setVelocity(float vel);
-        void angleToPos(int angle);
+        void setPos(float pos);
+        void setVel(float vel);
+
+        bool zeroMotor();
+        bool motorStall();
     };
 }
 
 
 #endif // MD_H
-

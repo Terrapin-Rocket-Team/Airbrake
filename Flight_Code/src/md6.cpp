@@ -1,76 +1,172 @@
 #include "md6.h"
 
+HardwareSerial& odrive_serial = Serial1;
+unsigned long baudrate = 115200;
+ODriveUART odrive(odrive_serial);
 
-using namespace mmfs;
+using namespace astra;
 bool MotorDriver::init()
 {
+    Serial.println("Initializing Motor Driver...");
     odrive_serial.begin(baudrate);
     delay(1000); // Give some time for the serial connection to establish
     // Implement initialization logic for MD6 sensor
 
-    long int timeout = millis() + 5000; // 5 second timeout
-    bool deviceResponding = false;
-    bool deviceResponding2 = false;
+    Serial.println("Waiting for ODrive...");
+    while (odrive.getState() == AXIS_STATE_UNDEFINED) {
+        delay(100);
 
-    while (millis() < timeout)
-    {
-        if(odrive.getState() == AXIS_STATE_UNDEFINED){
-            delay(100);
-        }
-        else{
-            deviceResponding = true;
-            break;
-        }
-    }
-    timeout += 5000; // Extend timeout by another 5 seconds
-    while (deviceResponding && millis() < timeout){
-        if(odrive.getState() !=AXIS_STATE_CLOSED_LOOP_CONTROL){
-            odrive.clearErrors();
-            odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
-            delay(10);
-        }
-        else{
-            deviceResponding2 = true;
-            break;
-        }
-        
     }
 
-    if (deviceResponding && deviceResponding2)
-    {
-        initialized = true;
-        mmfs::getLogger().recordLogData(mmfs::INFO_, "Motor Driver connection successful.");
+    Serial.println("found ODrive");
+    
+    Serial.print("DC voltage: ");
+    Serial.println(odrive.getParameterAsFloat("vbus_voltage"));
+    
+    Serial.println("Enabling closed loop control...");
+    while (odrive.getState() != AXIS_STATE_CLOSED_LOOP_CONTROL) {
+        Serial.println("still enabling...");
+        odrive.clearErrors();
+        odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
+        delay(1000);
     }
-    else
-    {
-        initialized = false;
-        mmfs::getLogger().recordLogData(mmfs::ERROR_, "Motor Driver did not respond during init.");
-    }
+    
+    Serial.println("ODrive running!");
 
-    return initialized; // Return true if initialization is successful
+    pinMode(topLimitSwitchPin, INPUT_PULLUP);
+
+    initialized = true;
+    return true;
 } 
     //gets the position and velocity from the motor driver
-void MotorDriver::read()
+bool MotorDriver::read()
 {
-    ODriveFeedback feedback = odrive.getFeedback();
-    position = feedback.pos;
+    feedback = odrive.getFeedback();
+    position = initposition - feedback.pos;
     velocity = feedback.vel;
+    return true;
 }
 
-void MotorDriver::setPosition(float pos)
+float MotorDriver::getPosition() //since last read() relative to initposition;
 {
-    odrive.setPosition(pos);
+    position = initposition -  feedback.pos;
+    return position;
 }
 
-void MotorDriver::setVelocity(float vel)
+float MotorDriver::getVelocity() // since last read()
 {
-    odrive.setVelocity(vel);
+    velocity = feedback.vel;
+    return velocity;
 }
 
-void MotorDriver::angleToPos(int angle){ //need to update for actual motor
+void MotorDriver::setPos(float pos)                 
+{
+    if (pos < 0 || pos > 26){ //limit to 0-65 degrees
+        Serial.println("Position out of bounds");
+        return;
+    }
+    targetposition = initposition - pos;
+    if (!motorStall()){
+        odrive.setPosition(targetposition);
+    } else if ((stalledstate == TOP || stalledstate == STOPPED) && pos > position){
+        odrive.setPosition(targetposition);
+    } else if (stalledstate == BOTTOM && pos < position){
+        odrive.setPosition(targetposition);
+    } else {
+        Serial.println("cant move");
+        Serial.println("Stalled State: " + String(stalledstate));
+        Serial.println("Current Position: " + String(position));
+        Serial.println("Target Position: " + String(pos));
+    }
+}
+
+void MotorDriver::setVel(float vel)                 // TODO: make sure directions are correct
+{
+    if(!motorStall()){
+        targetvelocity = vel;
+    } else if (stalledstate == TOP && vel < 0){
+        targetvelocity = vel;
+    } else if (stalledstate == BOTTOM && vel > 0){
+        targetvelocity = vel;
+    } else {
+        targetvelocity = 0;
+    }
+    
+}
+
+float MotorDriver::angleToPos(int angle){
     // Convert angle in degrees to position in steps
-    int position = (angle * stepGranularity) / 360;
-    setPosition(position);
+    float pos = 26/80.0 * angle; // 80 steps per degree
+    return pos;
 }
 
+float MotorDriver::posToAngle(float pos){
+    // Convert position in steps to angle in degrees
+    int angle = (pos * 80 / 26);
+    return angle;
+}
+
+bool MotorDriver::zeroMotor()
+{
+    if (!initialized)
+    {
+        LOGE("Motor Driver not initialized. Cannot zero motor.");
+        return false;
+    }
+
+    // Move the motor towards the bottom limit switch until it is triggered
+    LOGI("Zeroing motor...");
+    odrive.setVelocity(0); // Move up at a constant speed
+
+    while (!motorStall()) // Assuming HIGH means not triggered
+    {
+        read();
+        odrive.setVelocity(1); // Move down at a constant speed
+        delay(100); // Small delay to allow movement    
+    }
+
+    odrive.setVelocity(0); // Stop the motor
+    delay(500); // Wait for a moment to ensure the motor has stopped
+
+    initposition = -getPosition(); // Update internal position variable
+
+    LOGI("Motor zeroed successfully.");
+    return true;
+}
+
+bool MotorDriver::motorStall()                       // TODO: make sure directions are correct
+{
+    bool stalled = false;
+
+    // Read limit switches
+    bool topLimitSwitchState = digitalRead(topLimitSwitchPin) == LOW;
+
+    //position doesnt change
+    for (int i = 0; i < motorstallcounter; i++){
+        if (positionHistory[i] != position){
+            stalledstate = MOVING; 
+            stalled = false;
+            break;
+        } else {
+            stalled = true;
+        }
+    }
+
+    if (!stalled){
+        if (topLimitSwitchState)
+        {
+            stalledstate = TOP;
+            stalled = true;
+        }
+        else
+        {
+            stalledstate = MOVING;
+            stalled = false;
+        }
+    } else {
+        stalledstate = STOPPED;
+    }
+
+    return stalled;
+}
 
