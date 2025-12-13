@@ -10,6 +10,7 @@
 #include <Math/Vector.h>
 #include <Math/Quaternion.h>
 #include <Radio/ESP32BluetoothRadio.h>
+#include <BTGPS.h>
 
 // TODO: Long List
 // 1. Make the kalman filter be able to handle no GPS. We won't get any
@@ -20,11 +21,7 @@
 // #define TEST_WITH_SERIAL
 
 // Bluetooth Module
-APRSConfig aprsConfig = {"KC3UTM", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
-uint8_t encoding[] = {5, 4, 7, 8};
-mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "AIRBRAKE", false);
-APRSTelem bt_aprs(aprsConfig);
-Message bt_msg;
+mmfs::ESP32BluetoothRadio btTransmitter(Serial6, "TRT-BT", false);
 
 // Buzzer
 const int BUZZER_PIN = 23;
@@ -34,9 +31,9 @@ const int enc_chan_a = 36;
 const int enc_chan_b = 37;
 
 // Sensors
-E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
-VN_100 vn(&SPI, 10);                  // Vector Nav
-BR blueRaven;
+// E5 enc(enc_chan_a, enc_chan_b, "E5"); // Encoder
+// VN_100 vn(&SPI, 10);                  // Vector Nav
+// BR blueRaven;
 
 #ifdef TEST_WITH_SERIAL
 
@@ -77,8 +74,9 @@ mmfs::Sensor *airbrake_sensors[6] = {&mockDPS310, &mockBMI088andLIS3MDL, &mockMA
 mmfs::DPS310 baro1; // Avionics Sensor Board 1.1
 // mmfs::MS5611 baro2;                  // Avionics Sensor Board 1.1
 mmfs::BMI088andLIS3MDL airbrake_imu; // Avionics Sensor Board 1.1
-mmfs::MAX_M10S gps;                  // Avionics Sensor Board 1.1
-mmfs::Sensor *airbrake_sensors[6] = {&baro1, &airbrake_imu, &gps, &enc, &vn, &blueRaven};
+// mmfs::MAX_M10S gps;                  // Avionics Sensor Board 1.1
+BTGPS gps("BTGPS", &btTransmitter);
+mmfs::Sensor *airbrake_sensors[1] = {&gps};
 #endif
 
 // // Initialize Airbrake State
@@ -158,10 +156,10 @@ void setup()
 
     // Limit Switch
     pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
-    if (enc.isInitialized())
-    {
-        AIRBRAKE.zeroMotor();
-    }
+    // if (enc.isInitialized())
+    // {
+    //     AIRBRAKE.zeroMotor();
+    // }
     delay(1000);
 #ifdef TEST_WITH_SERIAL
     Serial.println("[][],0");
@@ -216,7 +214,7 @@ void loop()
         }
         if (AIRBRAKE.stage == COAST)
         {
-            AIRBRAKE.update_CdA_estimate(vn.getAcceleration().z());
+            // AIRBRAKE.update_CdA_estimate(vn.getAcceleration().z());
         }
     }
 
@@ -246,10 +244,11 @@ void loop()
         double tilt = acos(dcm.get(2, 2)); // [rad]
         tilt = M_PI / 2 - tilt;            // 90 deg off for some reason TODO figure out
         AIRBRAKE.tilt = tilt * 180 / M_PI; // [deg]
-        Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
-        Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
-        Serial.printf("VN Tilt: %f \n", vn.getTilt());
-        Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
+        // Serial.printf("Tilt: %f\n", AIRBRAKE.tilt);
+        // Serial.printf("Sensor Acc Glob Z: %f\n", AIRBRAKE.getAcceleration().z());
+        // Serial.printf("VN Tilt: %f \n", vn.getTilt());
+        // Serial.printf("VN Acc Z: %f\n", vn.getAcceleration().z());
+        Serial.printf("%.2f, %.2f, %.2f\n", gps.getPos().x(), gps.getPos().y(), gps.getPos().z());
         if (AIRBRAKE.stage == DEPLOY)
         {
             double velocity = AIRBRAKE.getVelocity().magnitude();
@@ -270,27 +269,8 @@ void loop()
     // Bluetooth Stuff //
     if (doLoop)
     {
-        if (millis() - btLast > 1000)
-        {
-            btLast = millis();
-            bt_aprs.alt = AIRBRAKE.getPosition().z() * 3.28084; // Convert to feet
-            bt_aprs.spd = AIRBRAKE.getVelocity().z();
-            bt_aprs.hdg = AIRBRAKE.getHeading();
-            mmfs::Vector<3> euler = AIRBRAKE.getOrientation().toEuler();
-            bt_aprs.orient[0] = euler.x();
-            bt_aprs.orient[1] = euler.y();
-            bt_aprs.orient[2] = euler.z();
-            bt_aprs.stateFlags.setEncoding(encoding, sizeof(encoding));
-
-            // btTransmitter.rx();
-
-            uint8_t arr[] = {(uint8_t)(int)AIRBRAKE.actualAngle, (uint8_t)AIRBRAKE.getStage(), (uint16_t)AIRBRAKE.estimated_apogee >> 8, ((uint16_t)AIRBRAKE.estimated_apogee & 0x00ff)};
-            bt_aprs.stateFlags.pack(arr);
-            Serial.println(bt_aprs.stateFlags.get(), BIN);
-            bt_msg.encode(&bt_aprs);
-            // bt_msg.print(Serial);
-
-            // btTransmitter.send(bt_aprs);
-        }
+        char btStr[50];
+        snprintf(btStr, 50, "Ang %f", AIRBRAKE.actualAngle);
+        btTransmitter.tx((uint8_t *)btStr, strlen(btStr));
     }
 }
