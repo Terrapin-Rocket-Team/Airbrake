@@ -69,7 +69,7 @@ void loop()
 
     sys.update(); // Update astra System    
 
-    mot.setPos(mot.angleToPos(60)); // Set motor to 10 degrees
+    mot.setPos(mot.angleToPos(70)); // Set motor to 10 degrees
     Serial.println("Motor Position: " + String(mot.posToAngle(mot.getPosition())));
 
     delay(100); // Small delay to avoid overwhelming the serial output

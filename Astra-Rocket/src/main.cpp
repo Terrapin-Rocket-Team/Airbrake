@@ -36,7 +36,7 @@ DataReporter *others[] = {&mot};
 
 // Create a custom configuration with LED status pins
 AstraRocketConfig config = AstraRocketConfig()
-                               .withHITL(true)
+                              //  .withHITL(true)
                                .withGPS(new MAX_M10S)
                                .withSensorStatusLEDPin(32)
                                .withFlightLogRate(1)

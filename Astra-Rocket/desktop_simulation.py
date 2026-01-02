@@ -978,7 +978,7 @@ def main():
         plt.tight_layout()
         plt.savefig('hitl_altitude_comparison.png', dpi=150)
         print("Plot saved as 'hitl_altitude_comparison.png'")
-        plt.show()
+        plt.show(block=False)
     else:
         print("\nNo telemetry data received - cannot generate plot.")
 
