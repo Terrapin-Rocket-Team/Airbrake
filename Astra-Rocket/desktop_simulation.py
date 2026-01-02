@@ -552,16 +552,38 @@ def main():
     column_map: Optional[Dict[str, int]] = None
     header_columns: Optional[List[str]] = None
 
-    # Clear any startup messages and look for header
-    time.sleep(0.5)
+    # Request header from FC using CMD/HEADER
+    print("Requesting telemetry header from FC...")
+    ser.write(b"CMD/HEADER\n")
+    ser.flush()
+
+    # Wait for header response (with timeout)
+    header_timeout = time.time() + 5.0  # 5 second timeout
+    header_received = False
+
+    while time.time() < header_timeout and not header_received:
+        if ser.in_waiting:
+            line = ser.readline().decode('utf-8', errors='ignore').strip()
+            # Check if this is the telemetry header
+            if line.startswith("TELEM/") and ('State - Time (s)' in line or 'State - Flight Stage' in line):
+                column_map = parse_telem_header(line)
+                header_columns = line[6:].strip().split(',')  # Save header for CSV
+                print(f"[FC] [HEADER] Received and parsed telemetry header with {len(column_map)} columns")
+                header_received = True
+            else:
+                if line:  # Only print non-empty lines
+                    print(f"[FC] {line}")
+        else:
+            time.sleep(0.01)  # Small delay to avoid busy waiting
+
+    if not header_received:
+        print("WARNING: Did not receive header from FC within timeout. Will try to parse from telemetry stream.")
+
+    # Clear any remaining startup messages
+    time.sleep(0.1)
     while ser.in_waiting:
         line = ser.readline().decode('utf-8', errors='ignore').strip()
-        # Check if this is the telemetry header
-        if line.startswith("TELEM/") and ('State - Time (s)' in line or 'State - Flight Stage' in line):
-            column_map = parse_telem_header(line)
-            header_columns = line[6:].strip().split(',')  # Save header for CSV
-            print(f"[FC] [HEADER] Parsed telemetry header with {len(column_map)} columns")
-        else:
+        if line:
             print(f"[FC] {line}")
 
     print("\nStarting simulation...")

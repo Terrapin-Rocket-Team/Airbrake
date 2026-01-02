@@ -26,6 +26,7 @@
 #include <Arduino.h>
 #include <AstraRocket.h>
 #include <Sensors/GPS/MAX_M10S.h>
+#include <Communication/SerialMessageRouter.h>
 #include "md6.h"
 
 using namespace astra_rocket;
@@ -33,6 +34,35 @@ using namespace astra_rocket;
 astra::MotorDriver mot("MotorDriver");
 
 DataReporter *others[] = {&mot};
+
+// Serial message router for commands
+SerialMessageRouter router;
+
+// Handler for AIRBRAKE/XX commands
+void handleAirbrakeCommand(const char* message, const char* prefix, Stream* source) {
+    // message is just the angle value (e.g., "60" when sent as "AIRBRAKE/60")
+    int angle = atoi(message);
+
+    // Validate range (0-80 degrees based on motor specs)
+    if (angle < 0 || angle > 80) {
+        source->printf("ERROR: Angle %d out of range (0-80)\n", angle);
+        LOGW("Invalid airbrake angle command: %d", angle);
+        return;
+    }
+
+    // Convert to motor position and command
+    float pos = mot.angleToPos(angle);
+    mot.setPos(pos);
+
+    // Send confirmation
+    source->printf("OK: Airbrake set to %d degrees (pos=%.2f)\n", angle, pos);
+    LOGI("Airbrake angle set to %d degrees", angle);
+}
+
+// Default handler for unrecognized messages
+void handleUnknown(const char* message, const char* prefix, Stream* source) {
+    LOGW("Unknown message: %s", message);
+}
 
 // Create a custom configuration with LED status pins
 AstraRocketConfig config = AstraRocketConfig()
@@ -50,6 +80,15 @@ void setup()
   Serial.begin(115200);
   config.getAstraConfig()->withOtherDataReporters(others, sizeof(others) / sizeof(DataReporter*));
   delay(2000); // Wait for serial connection
+
+  // Configure serial message router
+  router.withInterface(&Serial)
+        .withListener("AIRBRAKE/", handleAirbrakeCommand)
+        .withDefaultHandler(handleUnknown);
+
+  LOGI("Router configured with %d interfaces and %d listeners",
+       router.getInterfaceCount(), router.getListenerCount());
+
   if (!rocket.init())
   {
     Serial.println("ERROR: AstraRocket initialization failed!");
@@ -68,6 +107,9 @@ void setup()
 
 void loop()
 {
+  // Update serial message router (non-blocking)
+  router.update();
+
   FlightStage f = rocket.getFlightStage();
   rocket.update();
   if (f == rocket.getFlightStage())
