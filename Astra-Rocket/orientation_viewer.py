@@ -123,12 +123,15 @@ class OrientationViewer:
                     # Try HITL sensors first, then real BMI088 sensors
                     ax_idx = self.column_map.get('HITL_Accelerometer - Acc X (m/s^2)') or \
                              self.column_map.get('BMI088 - Acc X (m/s^2)') or \
+                             self.column_map.get('BNO085Accel - Acc X (m/s^2)') or \
                              self.column_map.get('BMI088andLIS3MDL - Acc X (m/s^2)')
                     ay_idx = self.column_map.get('HITL_Accelerometer - Acc Y (m/s^2)') or \
                              self.column_map.get('BMI088 - Acc Y (m/s^2)') or \
+                             self.column_map.get('BNO085Accel - Acc Y (m/s^2)') or \
                              self.column_map.get('BMI088andLIS3MDL - Acc Y (m/s^2)')
                     az_idx = self.column_map.get('HITL_Accelerometer - Acc Z (m/s^2)') or \
                              self.column_map.get('BMI088 - Acc Z (m/s^2)') or \
+                             self.column_map.get('BNO085Accel - Acc Z (m/s^2)') or \
                              self.column_map.get('BMI088andLIS3MDL - Acc Z (m/s^2)')
 
                     if ax_idx is not None and ax_idx < len(values):
@@ -142,12 +145,15 @@ class OrientationViewer:
                     # Try HITL sensors first, then real BMI088 sensors
                     gx_idx = self.column_map.get('HITL_Gyroscope - Gyro X (rad/s)') or \
                              self.column_map.get('BMI088 - Gyro X (rad/s)') or \
+                             self.column_map.get('BNO085Gyro - Gyro X (rad/s)') or \
                              self.column_map.get('BMI088andLIS3MDL - Gyro X (rad/s)')
                     gy_idx = self.column_map.get('HITL_Gyroscope - Gyro Y (rad/s)') or \
                              self.column_map.get('BMI088 - Gyro Y (rad/s)') or \
+                             self.column_map.get('BNO085Gyro - Gyro Y (rad/s)') or \
                              self.column_map.get('BMI088andLIS3MDL - Gyro Y (rad/s)')
                     gz_idx = self.column_map.get('HITL_Gyroscope - Gyro Z (rad/s)') or \
                              self.column_map.get('BMI088 - Gyro Z (rad/s)') or \
+                             self.column_map.get('BNO085Gyro - Gyro Z (rad/s)') or \
                              self.column_map.get('BMI088andLIS3MDL - Gyro Z (rad/s)')
 
                     if gx_idx is not None and gx_idx < len(values):

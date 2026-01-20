@@ -20,8 +20,7 @@ bool MotorDriver::init()
 
     LOGI("found ODrive");
 
-    Serial.print("DC voltage: ");
-    LOGI("%.2f", odrive.getParameterAsFloat("vbus_voltage"));
+    LOGI("ODrive Voltage: %0.2f", odrive.getParameterAsFloat("vbus_voltage"));
 
     LOGI("Enabling closed loop control...");
     while (odrive.getState() != AXIS_STATE_CLOSED_LOOP_CONTROL)
@@ -44,6 +43,8 @@ bool MotorDriver::read()
     feedback = odrive.getFeedback();
     position = initposition - feedback.pos;
     velocity = feedback.vel;
+    voltage = odrive.getParameterAsFloat("vbus_voltage");
+    angle = posToAngle(position);
     return true;
 }
 
@@ -108,7 +109,7 @@ void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
     }
 }
 
-float MotorDriver::angleToPos(int angle)
+float MotorDriver::angleToPos(float angle)
 {
     // Convert angle in degrees to position in steps
     float pos = 26 / 80.0 * angle; // 80 steps per degree
@@ -118,7 +119,7 @@ float MotorDriver::angleToPos(int angle)
 float MotorDriver::posToAngle(float pos)
 {
     // Convert position in steps to angle in degrees
-    int angle = (pos * 80 / 26);
+    float angle = (pos * 80 / 26.0);
     return angle;
 }
 
@@ -156,7 +157,6 @@ bool MotorDriver::motorStall() // TODO: make sure directions are correct
 
     // Read limit switches
     bool topLimitSwitchState = digitalRead(topLimitSwitchPin) == LOW;
-
     // position doesnt change
     for (int i = 0; i < motorstallcounter; i++)
     {

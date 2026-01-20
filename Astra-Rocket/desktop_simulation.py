@@ -6,9 +6,14 @@ This script simulates a rocket flight and sends sensor data to the
 flight computer over USB Serial at a controlled rate. The FC processes the data
 and sends back TELEM/ packets at its configured logging rate.
 
-Supports two modes:
-    1. CSV mode: Load data from an OpenRocket CSV export file
-    2. Physics mode: Generate data from simple physics simulation
+Supports three modes:
+    1. OpenRocket CSV mode: Load data from an OpenRocket CSV export file
+    2. Flight Data CSV mode: Load real sensor data from previous flight recordings
+    3. Physics mode: Generate data from simple physics simulation
+
+The script automatically detects the CSV type based on column headers:
+    - Flight data CSVs contain sensor names (BMI088, DPS310, etc.) and raw sensor readings
+    - OpenRocket CSVs contain simulation outputs (Vertical acceleration, Altitude (ft), etc.)
 
 Protocol:
     1. Sim sends HITL/ packet at simulation rate (50Hz)
@@ -26,7 +31,7 @@ Usage:
     python desktop_simulation.py /dev/ttyACM0 [csv_file]  # Linux/Mac
     python desktop_simulation.py COM3 [csv_file]          # Windows
 
-    If csv_file is provided, uses CSV data. Otherwise uses physics simulation.
+    If csv_file is provided, uses CSV data (auto-detects type). Otherwise uses physics simulation.
 """
 
 import serial
@@ -49,6 +54,345 @@ class SimState:
     velocity: np.ndarray = field(default_factory=lambda: np.array([0.0, 0.0, 0.0]))  # [vx, vy, vz] in m/s
     orientation: np.ndarray = field(default_factory=lambda: np.array([0.0, 0.0, 0.0]))  # [roll, pitch, yaw] in radians
     ang_velocity: np.ndarray = field(default_factory=lambda: np.array([0.0, 0.0, 0.0]))  # [wx, wy, wz] in rad/s
+
+
+class FlightDataSimulation:
+    """Rocket simulation from old flight data CSV (actual sensor data from previous flights)"""
+
+    def __init__(self, csv_file: str, dt=0.02, ignition_delay=2.0):
+        """
+        Load flight data CSV file and prepare for playback
+
+        Args:
+            csv_file: Path to flight data CSV export
+            dt: Desired timestep for playback (will interpolate data)
+            ignition_delay: Time to hold at first data point before starting playback
+        """
+        self.dt = dt
+        self.g = 9.81  # Gravity (m/s^2)
+        self.state = SimState()
+        self.ignition_delay = ignition_delay
+
+        # Load CSV data
+        self.data = self._load_csv(csv_file)
+        self.current_index = 0
+        self.max_index = len(self.data['time']) - 1
+
+        print(f"Loaded flight data CSV with {len(self.data['time'])} data points")
+        print(f"Flight duration: {self.data['time'][-1]:.2f} seconds")
+        if self.data['altitude']:
+            print(f"Max altitude: {max(self.data['altitude']):.2f} m")
+        print(f"First row - Time: {self.data['time'][0]:.3f}s")
+
+    def _load_csv(self, csv_file: str) -> Dict[str, List[float]]:
+        """Load and parse flight data CSV file"""
+        data = {
+            'time': [],
+            'altitude': [],
+            'velocity': [],
+            'accel_x': [],
+            'accel_y': [],
+            'accel_z': [],
+            'gyro_x': [],
+            'gyro_y': [],
+            'gyro_z': [],
+            'mag_x': [],
+            'mag_y': [],
+            'mag_z': [],
+            'pressure': [],
+            'temperature': [],
+            'lat': [],
+            'lon': [],
+            'gps_alt': []
+        }
+
+        with open(csv_file, 'r') as f:
+            reader = csv.reader(f)
+            header = next(reader)
+
+            # Strip whitespace from headers
+            header = [h.strip() for h in header]
+
+            # Helper function to find column index (case-insensitive, flexible matching)
+            def find_col(*keywords):
+                for kw in keywords:
+                    for i, h in enumerate(header):
+                        if kw.lower() in h.lower():
+                            return i
+                return None
+
+            # Find time column
+            col_time = find_col('state - time (s)', 'time (s)')
+
+            # Find ANY accelerometer columns (excluding State columns)
+            col_accel_x = None
+            col_accel_y = None
+            col_accel_z = None
+            for i, h in enumerate(header):
+                h_lower = h.lower()
+                if 'state' not in h_lower:  # Skip State columns
+                    if 'accx' in h_lower or 'acc x' in h_lower:
+                        col_accel_x = i
+                        print(f"Found accelerometer X: '{header[i]}'")
+                    elif 'accy' in h_lower or 'acc y' in h_lower:
+                        col_accel_y = i
+                        print(f"Found accelerometer Y: '{header[i]}'")
+                    elif 'accz' in h_lower or 'acc z' in h_lower:
+                        col_accel_z = i
+                        print(f"Found accelerometer Z: '{header[i]}'")
+
+            # Find ANY gyro columns (excluding State columns)
+            col_gyro_x = None
+            col_gyro_y = None
+            col_gyro_z = None
+            for i, h in enumerate(header):
+                h_lower = h.lower()
+                if 'state' not in h_lower:  # Skip State columns
+                    if 'gyrox' in h_lower or 'gyro x' in h_lower:
+                        col_gyro_x = i
+                        print(f"Found gyroscope X: '{header[i]}'")
+                    elif 'gyroy' in h_lower or 'gyro y' in h_lower:
+                        col_gyro_y = i
+                        print(f"Found gyroscope Y: '{header[i]}'")
+                    elif 'gyroz' in h_lower or 'gyro z' in h_lower:
+                        col_gyro_z = i
+                        print(f"Found gyroscope Z: '{header[i]}'")
+
+            # Find ANY magnetometer columns (excluding State columns)
+            col_mag_x = None
+            col_mag_y = None
+            col_mag_z = None
+            for i, h in enumerate(header):
+                h_lower = h.lower()
+                if 'state' not in h_lower:  # Skip State columns
+                    if 'magx' in h_lower or 'mag x' in h_lower:
+                        col_mag_x = i
+                        print(f"Found magnetometer X: '{header[i]}'")
+                    elif 'magy' in h_lower or 'mag y' in h_lower:
+                        col_mag_y = i
+                        print(f"Found magnetometer Y: '{header[i]}'")
+                    elif 'magz' in h_lower or 'mag z' in h_lower:
+                        col_mag_z = i
+                        print(f"Found magnetometer Z: '{header[i]}'")
+
+            # Find barometer columns (look for any barometer sensor)
+            col_pressure = find_col('pres (hpa)', 'pressure')
+            col_temp = find_col('temp (c)', 'temperature')
+
+            # Find GPS columns
+            col_lat = find_col('lat', 'latitude')
+            col_lon = find_col('lon', 'longitude')
+            col_gps_alt = find_col('alt (m)', 'altitude')
+
+            # Find altitude columns (State PZ or GPS alt)
+            col_alt = find_col('state - pz (m)')
+            if col_alt is None:
+                col_alt = col_gps_alt
+
+            # Find velocity columns
+            col_vel_z = find_col('state - vz (m/s)')
+
+            # Read data rows
+            first_time = None
+            for row in reader:
+                try:
+                    # Time (required) - normalize to start from 0
+                    if col_time is not None:
+                        raw_time = float(row[col_time])
+                        if first_time is None:
+                            first_time = raw_time
+                        data['time'].append(raw_time - first_time)  # Offset to start at 0
+
+                    # Altitude (from State PZ or GPS)
+                    if col_alt is not None:
+                        data['altitude'].append(float(row[col_alt]))
+                    else:
+                        data['altitude'].append(0.0)
+
+                    # Velocity Z
+                    if col_vel_z is not None:
+                        data['velocity'].append(float(row[col_vel_z]))
+                    else:
+                        data['velocity'].append(0.0)
+
+                    # Accelerometer (m/s^2)
+                    if col_accel_x is not None:
+                        data['accel_x'].append(float(row[col_accel_x]))
+                    else:
+                        data['accel_x'].append(0.0)
+
+                    if col_accel_y is not None:
+                        data['accel_y'].append(float(row[col_accel_y]))
+                    else:
+                        data['accel_y'].append(0.0)
+
+                    if col_accel_z is not None:
+                        data['accel_z'].append(float(row[col_accel_z]))
+                    else:
+                        data['accel_z'].append(self.g)  # Default to 1g upward
+
+                    # Gyroscope (rad/s)
+                    if col_gyro_x is not None:
+                        data['gyro_x'].append(float(row[col_gyro_x]))
+                    else:
+                        data['gyro_x'].append(0.0)
+
+                    if col_gyro_y is not None:
+                        data['gyro_y'].append(float(row[col_gyro_y]))
+                    else:
+                        data['gyro_y'].append(0.0)
+
+                    if col_gyro_z is not None:
+                        data['gyro_z'].append(float(row[col_gyro_z]))
+                    else:
+                        data['gyro_z'].append(0.0)
+
+                    # Magnetometer (uT - will convert to standard units later if needed)
+                    if col_mag_x is not None:
+                        data['mag_x'].append(float(row[col_mag_x]))
+                    else:
+                        data['mag_x'].append(20.0)
+
+                    if col_mag_y is not None:
+                        data['mag_y'].append(float(row[col_mag_y]))
+                    else:
+                        data['mag_y'].append(10.0)
+
+                    if col_mag_z is not None:
+                        data['mag_z'].append(float(row[col_mag_z]))
+                    else:
+                        data['mag_z'].append(-45.0)
+
+                    # Barometer
+                    if col_pressure is not None:
+                        data['pressure'].append(float(row[col_pressure]))
+                    else:
+                        data['pressure'].append(1013.25)
+
+                    if col_temp is not None:
+                        data['temperature'].append(float(row[col_temp]))
+                    else:
+                        data['temperature'].append(25.0)
+
+                    # GPS
+                    if col_lat is not None:
+                        data['lat'].append(float(row[col_lat]))
+                    else:
+                        data['lat'].append(45.0)
+
+                    if col_lon is not None:
+                        data['lon'].append(float(row[col_lon]))
+                    else:
+                        data['lon'].append(-122.0)
+
+                    if col_gps_alt is not None:
+                        data['gps_alt'].append(float(row[col_gps_alt]))
+                    else:
+                        data['gps_alt'].append(0.0)
+
+                except (ValueError, IndexError):
+                    # Skip malformed rows
+                    continue
+
+        return data
+
+    def step(self) -> SimState:
+        """Get next timestep of data (interpolates between CSV rows if needed)"""
+        # Update simulation time
+        self.state.time += self.dt
+
+        # If still in ignition delay, hold at first data point
+        if self.state.time < self.ignition_delay:
+            idx = 0
+            self.state.position[0] = 0.0
+            self.state.position[1] = 0.0
+            self.state.position[2] = self.data['altitude'][idx] if self.data['altitude'] else 0.0
+            self.state.velocity[0] = 0.0
+            self.state.velocity[1] = 0.0
+            self.state.velocity[2] = 0.0
+            self.state.ang_velocity[0] = 0.0
+            self.state.ang_velocity[1] = 0.0
+            self.state.ang_velocity[2] = 0.0
+            return self.state
+
+        # After ignition delay, use CSV data
+        # Adjust target time to account for ignition delay
+        csv_time = self.state.time - self.ignition_delay
+
+        # Find the two data points to interpolate between
+        while self.current_index < self.max_index and self.data['time'][self.current_index + 1] < csv_time:
+            self.current_index += 1
+
+        # Clamp to valid range
+        if self.current_index >= self.max_index:
+            self.current_index = self.max_index
+            idx = self.current_index
+            alpha = 0.0
+        else:
+            idx = self.current_index
+            t0 = self.data['time'][idx]
+            t1 = self.data['time'][idx + 1]
+            alpha = (csv_time - t0) / (t1 - t0) if t1 > t0 else 0.0
+
+        # Linear interpolation helper
+        def lerp(key):
+            if alpha == 0.0 or idx >= self.max_index:
+                return self.data[key][idx]
+            return self.data[key][idx] * (1 - alpha) + self.data[key][idx + 1] * alpha
+
+        # Position (assume stationary in X/Y)
+        self.state.position[0] = 0.0
+        self.state.position[1] = 0.0
+        self.state.position[2] = lerp('altitude')
+
+        # Velocity (only have vertical)
+        self.state.velocity[0] = 0.0
+        self.state.velocity[1] = 0.0
+        self.state.velocity[2] = lerp('velocity')
+
+        # Angular velocity (from gyro)
+        self.state.ang_velocity[0] = lerp('gyro_x')
+        self.state.ang_velocity[1] = lerp('gyro_y')
+        self.state.ang_velocity[2] = lerp('gyro_z')
+
+        return self.state
+
+    def get_sensor_data(self, state: SimState) -> dict:
+        """Convert state to sensor readings"""
+        # During ignition delay, use first data point
+        if state.time < self.ignition_delay:
+            idx = 0
+        else:
+            idx = min(self.current_index, self.max_index)
+
+        # Use actual sensor data from CSV (already in m/s^2 for accelerometer)
+        accel_body = np.array([
+            self.data['accel_x'][idx],
+            self.data['accel_y'][idx],
+            self.data['accel_z'][idx]
+        ])
+
+        # Magnetometer data (convert from uT to uT, no conversion needed)
+        mag_body = np.array([
+            self.data['mag_x'][idx],
+            self.data['mag_y'][idx],
+            self.data['mag_z'][idx]
+        ])
+
+        return {
+            'timestamp': state.time,
+            'accel': accel_body,
+            'gyro': state.ang_velocity,
+            'mag': mag_body,
+            'pressure': self.data['pressure'][idx],
+            'temperature': self.data['temperature'][idx],
+            'gps_lat': self.data['lat'][idx],
+            'gps_lon': self.data['lon'][idx],
+            'gps_alt': self.data['gps_alt'][idx],
+            'gps_fix': 1 if state.time > 1.0 else 0,
+            'gps_fix_quality': 8 if state.time > 1.0 else 0,
+            'gps_heading': 0.0
+        }
 
 
 class CSVSimulation:
@@ -540,12 +884,30 @@ def main():
 
     print(f"Connecting to {port} at {baud} baud...")
 
-    try:
-        ser = serial.Serial(port, baud, timeout=1.0)
-        time.sleep(2)  # Wait for connection to stabilize
-        print("Connected!")
-    except serial.SerialException as e:
-        print(f"ERROR: Could not open serial port: {e}")
+    # Connect to flight computer with retry
+    ser = None
+    max_retries = 30  # Try for 30 seconds
+    retry_delay = 1.0
+
+    for attempt in range(max_retries):
+        try:
+            ser = serial.Serial(port, baud, timeout=1.0)
+            time.sleep(2)  # Wait for connection to stabilize
+            print(f"Connected on attempt {attempt + 1}!")
+            break
+        except serial.SerialException as e:
+            if attempt == 0:
+                print(f"Connection failed, retrying... ({e})")
+            elif (attempt + 1) % 5 == 0:
+                print(f"  Still trying... (attempt {attempt + 1}/{max_retries})")
+            time.sleep(retry_delay)
+
+    if ser is None:
+        print(f"\nERROR: Could not connect to {port} after {max_retries} attempts")
+        print("\nMake sure:")
+        print("  1. Flight computer is connected via USB")
+        print("  2. Correct port is specified")
+        print("  3. No other program is using the port")
         sys.exit(1)
 
     # Column mapping from header (will be populated when we receive header)
@@ -597,10 +959,27 @@ def main():
     ignition_delay = 5.0  # Time on pad before motor ignites
 
     if csv_file:
-        # CSV mode - load the file to get flight duration
+        # CSV mode - detect file type and load
         try:
-            temp_sim = CSVSimulation(csv_file, dt, ignition_delay)
+            # Detect CSV type by reading the header
+            with open(csv_file, 'r') as f:
+                header_line = f.readline().strip()
+                # Flight data CSVs have sensor columns like "BMI088" or actual sensor names
+                # OpenRocket CSVs have columns like "Vertical acceleration" or "Altitude (ft)"
+                is_flight_data = any(keyword in header_line for keyword in [
+                    'BMI088', 'DPS310', 'DPS368', 'MS5611', 'MAX-M10S', 'LIS3MDL',
+                    'AccX', 'AccY', 'AccZ', 'GyroX', 'GyroY', 'GyroZ'
+                ])
+
+            if is_flight_data:
+                print("Detected: Old flight data CSV (using real sensor data)")
+                temp_sim = FlightDataSimulation(csv_file, dt, ignition_delay)
+            else:
+                print("Detected: OpenRocket CSV (using simulated data)")
+                temp_sim = CSVSimulation(csv_file, dt, ignition_delay)
+
             max_time = temp_sim.data['time'][-1] + ignition_delay  # Add ignition delay to total time
+            csv_type = 'flight_data' if is_flight_data else 'openrocket'
             del temp_sim  # We'll create a fresh one after warmup
             print(f"CSV flight duration: {max_time:.2f} seconds (includes {ignition_delay:.1f}s ignition delay)")
         except Exception as e:
@@ -630,6 +1009,11 @@ def main():
     csv_log_filename = 'hitl_telemetry_log.csv'
     csv_log_file = open(csv_log_filename, 'w', newline='', encoding='utf-8')
     csv_writer = None  # Will be initialized when we get the header
+
+    # Open text file for logging all FC messages
+    fc_log_filename = 'hitl_fc_messages.txt'
+    fc_log_file = open(fc_log_filename, 'w', encoding='utf-8')
+    print(f"Logging all FC messages to '{fc_log_filename}'")
 
     # Write CSV header now if we already have it from startup
     if header_columns is not None:
@@ -673,6 +1057,11 @@ def main():
         # Read any available telemetry (non-blocking)
         while ser.in_waiting:
             line = ser.readline().decode('utf-8', errors='ignore').strip()
+
+            # Log all FC messages to text file
+            if line:
+                fc_log_file.write(f"[WARMUP {warmup_packet_count*dt:.3f}s] {line}\n")
+                fc_log_file.flush()  # Ensure immediate write
 
             # Check if FC reports it's ready
             if "Flight computer ready" in line or "Ready for simulation" in line:
@@ -738,9 +1127,15 @@ def main():
 
     # Create simulation based on mode
     if csv_file:
-        sim = CSVSimulation(csv_file, dt, ignition_delay)
+        if csv_type == 'flight_data':
+            sim = FlightDataSimulation(csv_file, dt, ignition_delay)
+        else:
+            sim = CSVSimulation(csv_file, dt, ignition_delay)
         print(f"CSV simulation loaded: {len(sim.data['time'])} data points")
-        print(f"Flight duration: {max_time:.2f}s, Max altitude: {max(sim.data['altitude']):.2f}m")
+        if sim.data['altitude']:
+            print(f"Flight duration: {max_time:.2f}s, Max altitude: {max(sim.data['altitude']):.2f}m")
+        else:
+            print(f"Flight duration: {max_time:.2f}s")
         print(f"Motor will ignite at t={ignition_delay:.1f}s")
     else:
         sim = RocketSimulation(dt=dt, ignition_delay=ignition_delay)
@@ -762,11 +1157,11 @@ def main():
         matplotlib.use('TkAgg')  # Use non-blocking backend
         plt.ion()  # Turn on interactive mode
         fig, ax = plt.subplots(figsize=(12, 6))
-        sim_line, = ax.plot([], [], 'b-', label='Simulation Truth', linewidth=2)
-        fc_line, = ax.plot([], [], 'r--', label='Kalman Filter (State PZ)', linewidth=2)
+        sim_line, = ax.plot([], [], 'b-', label='Barometer Altitude', linewidth=2)
+        fc_line, = ax.plot([], [], 'r--', label='Kalman Filter Estimate', linewidth=2)
         ax.set_xlabel('Time (s)', fontsize=12)
         ax.set_ylabel('Altitude (m)', fontsize=12)
-        ax.set_title('Live Altitude Comparison: Simulation vs Kalman Filter', fontsize=14, fontweight='bold')
+        ax.set_title('Live Altitude: Barometer vs Kalman Filter', fontsize=14, fontweight='bold')
         ax.legend(fontsize=11, loc='upper left')
         ax.grid(True, alpha=0.3)
         fig.canvas.draw()
@@ -789,8 +1184,9 @@ def main():
             packet_count += 1
 
             # Show detailed packet data for first few packets or if verbose
-            if verbose or packet_count <= 3:
+            if verbose or packet_count <= 5:
                 print(f"\n>>> SENT TO FC (packet {packet_count}):")
+                print(f"    Raw packet: {packet[:100]}...")  # Show first 100 chars
                 print(f"    Time: {sensor_data['timestamp']:.3f}s")
                 print(f"    Accel: [{sensor_data['accel'][0]:7.2f}, {sensor_data['accel'][1]:7.2f}, {sensor_data['accel'][2]:7.2f}] m/s²")
                 print(f"    Pressure: {sensor_data['pressure']:.2f} hPa")
@@ -800,6 +1196,11 @@ def main():
             # Read all available telemetry (non-blocking)
             while ser.in_waiting:
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
+
+                # Log all FC messages to text file
+                if line:
+                    fc_log_file.write(f"[{sim.state.time:.3f}s] {line}\n")
+                    fc_log_file.flush()  # Ensure immediate write
 
                 if line.startswith("TELEM/"):
                     # Check if this is the header line
@@ -817,27 +1218,36 @@ def main():
                         # Got telemetry data
                         telem = parse_telem_line(line, column_map)
 
+                        # Extract fields using column mapping if available
+                        if column_map and 'fields' in telem:
+                            fields = telem['fields']
+                        else:
+                            fields = {}
+
                         # Write to CSV
                         if csv_writer is not None:
+                            # Use FC barometer altitude as truth for SimAlt column
+                            fc_baro_alt = fields.get('HITL_Barometer - Alt ASL (m)', 0.0)
                             sim_values = [
                                 round(sim.state.time, 2),
-                                round(state.position[2], 2),
+                                round(float(fc_baro_alt) if fc_baro_alt != 'N/A' else 0.0, 2),
                                 round(state.velocity[2], 2)
                             ]
                             csv_writer.writerow(sim_values + telem['values'])
 
-                        # Extract fields using column mapping if available
-                        if column_map and 'fields' in telem:
-                            fields = telem['fields']
+                        # Use parsed fields for display and plotting
+                        if column_map and fields:
                             fc_time = fields.get('State - Time (s)', 'N/A')
                             fc_stage = fields.get('State - Flight Stage', 'N/A')
                             fc_pz = fields.get('State - PZ (m)', 'N/A')
                             fc_alt = fields.get('HITL_Barometer - Alt ASL (m)', 'N/A')
 
                             # Collect data for plotting
+                            # Use barometer altitude as simulation truth instead of position[2]
                             try:
                                 time_data.append(sim.state.time)
-                                sim_alt_data.append(state.position[2])
+                                # Use barometer altitude from FC as the truth
+                                sim_alt_data.append(float(fc_alt) if fc_alt != 'N/A' else 0.0)
                                 fc_alt_data.append(float(fc_pz) if fc_pz != 'N/A' else 0.0)
                             except (ValueError, IndexError):
                                 pass
@@ -929,9 +1339,10 @@ def main():
             if state.position[2] > max_altitude:
                 max_altitude = state.position[2]
 
-            # Stop if landed and stationary
-            if state.position[2] <= 0 and state.time > 10.0:
-                print("\nRocket has landed. Ending simulation.")
+            # Stop if simulation time exceeds max (don't use altitude-based landing detection for flight data)
+            # Flight data CSV may have negative altitudes due to different reference points
+            if sim.state.time >= max_time - ignition_delay:
+                print("\nReached end of flight data. Ending simulation.")
                 break
 
             # Maintain steady timing (50Hz = 20ms per loop)
@@ -946,6 +1357,10 @@ def main():
         csv_log_file.close()
         print(f"\nTelemetry data saved to '{csv_log_filename}'")
 
+        # Close FC message log file
+        fc_log_file.close()
+        print(f"FC messages saved to '{fc_log_filename}'")
+
     print("-" * 60)
     print(f"\nSimulation complete!")
     print(f"Max altitude: {max_altitude:.2f} m")
@@ -959,8 +1374,8 @@ def main():
         print("\nGenerating altitude comparison plot...")
 
         plt.figure(figsize=(12, 6))
-        plt.plot(time_data, sim_alt_data, 'b-', label='Simulation Truth', linewidth=2)
-        plt.plot(time_data, fc_alt_data, 'r--', label='Kalman Filter (State PZ)', linewidth=2)
+        plt.plot(time_data, sim_alt_data, 'b-', label='Barometer Altitude', linewidth=2)
+        plt.plot(time_data, fc_alt_data, 'r--', label='Kalman Filter Estimate', linewidth=2)
 
         # Add vertical lines for stage transitions
         stage_colors = {
@@ -985,7 +1400,7 @@ def main():
 
         plt.xlabel('Time (s)', fontsize=12)
         plt.ylabel('Altitude (m)', fontsize=12)
-        plt.title('Altitude Comparison: Simulation vs Kalman Filter', fontsize=14, fontweight='bold')
+        plt.title('Altitude Comparison: Barometer vs Kalman Filter', fontsize=14, fontweight='bold')
         plt.legend(fontsize=11, loc='upper left')
         plt.grid(True, alpha=0.3)
 

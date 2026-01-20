@@ -3,7 +3,10 @@
     "allow": [
       "Bash(git checkout:*)",
       "Bash(ls:*)",
-      "Bash(pio test:*)"
+      "Bash(pio test:*)",
+      "Bash(python:*)",
+      "Bash(python desktop_simulation.py:*)",
+      "Bash(pio run:*)"
     ]
   }
 }

@@ -26,17 +26,15 @@
 #include <Arduino.h>
 #include <AstraRocket.h>
 #include <Sensors/GPS/MAX_M10S.h>
-#include <Communication/SerialMessageRouter.h>
+#include <Sensors/VoltageSensor/VoltageSensor.h>
 #include "md6.h"
 
 using namespace astra_rocket;
 
 astra::MotorDriver mot("MotorDriver");
+astra::VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
 
-DataReporter *others[] = {&mot};
-
-// Serial message router for commands
-SerialMessageRouter router;
+DataReporter *others[] = {&mot, &vs};
 
 // Handler for AIRBRAKE/XX commands
 void handleAirbrakeCommand(const char* message, const char* prefix, Stream* source) {
@@ -59,18 +57,13 @@ void handleAirbrakeCommand(const char* message, const char* prefix, Stream* sour
     LOGI("Airbrake angle set to %d degrees", angle);
 }
 
-// Default handler for unrecognized messages
-void handleUnknown(const char* message, const char* prefix, Stream* source) {
-    LOGW("Unknown message: %s", message);
-}
-
 // Create a custom configuration with LED status pins
 AstraRocketConfig config = AstraRocketConfig()
                               //  .withHITL(true)
                                .withGPS(new MAX_M10S)
                                .withSensorStatusLEDPin(32)
-                               .withFlightLogRate(1)
-                               .withPreflightLogRate(1)
+                               .withFlightLogRate(4)
+                               .withPreflightLogRate(4)
                                .withGPSStatusLEDPin(31);
 AstraRocket rocket(config);
 
@@ -81,37 +74,35 @@ void setup()
   config.getAstraConfig()->withOtherDataReporters(others, sizeof(others) / sizeof(DataReporter*));
   delay(2000); // Wait for serial connection
 
-  // Configure serial message router
-  router.withInterface(&Serial)
-        .withListener("AIRBRAKE/", handleAirbrakeCommand)
-        .withDefaultHandler(handleUnknown);
-
-  LOGI("Router configured with %d interfaces and %d listeners",
-       router.getInterfaceCount(), router.getListenerCount());
-
   if (!rocket.init())
   {
     Serial.println("ERROR: AstraRocket initialization failed!");
     LOGE("ASTRA FAILED TO INIT");
   }
+
+  // Register AIRBRAKE handler with Astra's built-in message router
+  if (rocket.getAstraSystem() && rocket.getAstraSystem()->getMessageRouter())
+  {
+    rocket.getAstraSystem()->getMessageRouter()->withListener("AIRBRAKE/", handleAirbrakeCommand);
+    LOGI("AIRBRAKE command handler registered with Astra message router");
+  }
+
   if (mot.begin())
   {
-    LOGI("Zeroing Motor...");
     mot.zeroMotor();
-    LOGI("Motor Zeroed.");
   }
   else{
     LOGE("Motor Not Initialized");
   }
+  vs.begin();
 }
 
 void loop()
 {
-  // Update serial message router (non-blocking)
-  router.update();
-
   FlightStage f = rocket.getFlightStage();
-  rocket.update();
+  vs.update();
+  mot.read();
+  rocket.update(); // This also updates Astra's internal message router
   if (f == rocket.getFlightStage())
     return;
   if (rocket.getFlightStage() == FlightStage::COAST)

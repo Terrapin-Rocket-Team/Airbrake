@@ -27,10 +27,12 @@ namespace astra
     protected:
         // Add protected members and methods specific to MD6 here
         float position = 0; // current position
+        float angle = 0;
         float velocity = 0; // current velocity
         float initposition = 0; // position when zeroed
         float targetposition = 0; // target position
         float targetvelocity = 0; // target velocity
+        float voltage = 0;
 
         int topLimitSwitchPin = 35;
         StalledState stalledstate = STOPPED;
@@ -41,8 +43,9 @@ namespace astra
         {
             setName(name);
             addColumn("%0.3f", &position, "Motor Position");
+            addColumn("%0.1f", &angle, "Motor Angle");
             addColumn("%0.3f", &velocity, "Motor Velocity");
-            pinMode(topLimitSwitchPin, INPUT);
+            addColumn("%0.3f", &voltage, "Battery Voltage");
         }
 
         bool init() override;
@@ -51,7 +54,7 @@ namespace astra
 
         float getPosition();
         float getVelocity();
-        float angleToPos(int angle);
+        float angleToPos(float angle);
         float posToAngle(float pos);
 
         void setPos(float pos);
