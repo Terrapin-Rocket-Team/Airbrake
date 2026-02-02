@@ -1,7 +1,7 @@
 #ifndef MD_H
 #define MD_H
 #include <ODriveUART.h>
-#include <SoftwareSerial.h>
+#include <Arduino.h>
 #include "Utils/CircBuffer.h"
 #include "Sensors/Sensor.h"
 
@@ -39,7 +39,7 @@ namespace astra
         
 
     public:
-        MotorDriver(const char *name = "MotorDriver") : Sensor("MotorDriver", name)
+        MotorDriver(const char *name = "MotorDriver") : Sensor(name)
         {
             setName(name);
             addColumn("%0.3f", &position, "Motor Position");

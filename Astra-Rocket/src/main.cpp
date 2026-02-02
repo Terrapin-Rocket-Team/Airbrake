@@ -25,54 +25,67 @@
 
 #include <Arduino.h>
 #include <AstraRocket.h>
-#include <Sensors/GPS/MAX_M10S.h>
+#include <Sensors/HW/GPS/SAM_M10Q.h>
+#include <Sensors/HW/IMU/BMI088.h>
+#include <Sensors/HW/Mag/MMC5603NJ.h>
+#include <Sensors/HW/Baro/MS5611.h>
 #include <Sensors/VoltageSensor/VoltageSensor.h>
+#include <Sensors/SensorManager/SensorManager.h>
 #include "md6.h"
 
 using namespace astra_rocket;
+using namespace astra;
 
-astra::MotorDriver mot("MotorDriver");
-astra::VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
-
-DataReporter *others[] = {&mot, &vs};
+MotorDriver mot("MotorDriver");
+VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
 
 // Handler for AIRBRAKE/XX commands
-void handleAirbrakeCommand(const char* message, const char* prefix, Stream* source) {
-    // message is just the angle value (e.g., "60" when sent as "AIRBRAKE/60")
-    int angle = atoi(message);
+void handleAirbrakeCommand(const char *message, const char *prefix, Stream *source)
+{
+  // message is just the angle value (e.g., "60" when sent as "AIRBRAKE/60")
+  int angle = atoi(message);
 
-    // Validate range (0-80 degrees based on motor specs)
-    if (angle < 0 || angle > 80) {
-        source->printf("ERROR: Angle %d out of range (0-80)\n", angle);
-        LOGW("Invalid airbrake angle command: %d", angle);
-        return;
-    }
+  // Validate range (0-80 degrees based on motor specs)
+  if (angle < 0 || angle > 80)
+  {
+    source->printf("ERROR: Angle %d out of range (0-80)\n", angle);
+    LOGW("Invalid airbrake angle command: %d", angle);
+    return;
+  }
 
-    // Convert to motor position and command
-    float pos = mot.angleToPos(angle);
-    mot.setPos(pos);
+  // Convert to motor position and command
+  float pos = mot.angleToPos(angle);
+  mot.setPos(pos);
 
-    // Send confirmation
-    source->printf("OK: Airbrake set to %d degrees (pos=%.2f)\n", angle, pos);
-    LOGI("Airbrake angle set to %d degrees", angle);
+  // Send confirmation
+  source->printf("OK: Airbrake set to %d degrees (pos=%.2f)\n", angle, pos);
+  LOGI("Airbrake angle set to %d degrees", angle);
 }
 
+// Create sensor instances
+SensorManager *sensorManager = new SensorManager();
+
 // Create a custom configuration with LED status pins
-AstraRocketConfig config = AstraRocketConfig()
-                              //  .withHITL(true)
-                               .withGPS(new MAX_M10S)
-                               .withSensorStatusLEDPin(32)
-                               .withFlightLogRate(4)
-                               .withPreflightLogRate(4)
-                               .withGPSStatusLEDPin(31);
+// NOTE: config must be static because AstraRocket stores a reference to it
+static AstraRocketConfig config;
 AstraRocket rocket(config);
 
 void setup()
 {
   // Initialize Serial for debug output
   Serial.begin(115200);
-  config.getAstraConfig()->withOtherDataReporters(others, sizeof(others) / sizeof(DataReporter*));
   delay(2000); // Wait for serial connection
+
+  // Configure sensors on SensorManager
+  BMI088 *imu = new BMI088();
+  sensorManager->setAccelSource(imu->getAccelSensor());
+  sensorManager->setGyroSource(imu->getGyroSensor());
+  sensorManager->setMagSource(new MMC5603NJ());
+  sensorManager->setBaroSource(new astra::MS5611());
+  sensorManager->setGPSSource(new SAM_M10Q());
+
+  config
+      .withSensorManager(sensorManager);
 
   if (!rocket.init())
   {
@@ -91,7 +104,8 @@ void setup()
   {
     mot.zeroMotor();
   }
-  else{
+  else
+  {
     LOGE("Motor Not Initialized");
   }
   vs.begin();
@@ -99,13 +113,13 @@ void setup()
 
 void loop()
 {
-  FlightStage f = rocket.getFlightStage();
+  FlightStage f = rocket.getRocketState()->getFlightStage();
   vs.update();
   mot.read();
   rocket.update(); // This also updates Astra's internal message router
-  if (f == rocket.getFlightStage())
+  if (f == rocket.getRocketState()->getFlightStage())
     return;
-  if (rocket.getFlightStage() == FlightStage::COAST)
+  if (rocket.getRocketState()->getFlightStage() == FlightStage::COAST)
   {
     mot.setPos(mot.angleToPos(60));
   }
