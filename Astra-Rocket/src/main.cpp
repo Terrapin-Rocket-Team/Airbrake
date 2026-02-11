@@ -1,130 +1,71 @@
-/**
- * Basic Teensy 4.1 Sensor Example using AstraRocket Library
- *
- * This example demonstrates the simplest possible use of AstraRocket:
- * - Auto-detects available sensors (Barometer, GPS, IMU, high-G accelerometer)
- * - Automatically initializes all hardware
- * - Sets up logging to both Serial and SD card
- * - Tracks flight stages (pad idle, boost, coast, apogee, descent, landing)
- * - Adjusts logging rates based on flight phase
- * - Uses LED status indicators for sensor and GPS status
- *
- * AstraRocket handles all the complexity of:
- * - Sensor detection and initialization
- * - State estimation and filtering
- * - Flight stage detection
- * - Logging management
- * - Status indicator management
- *
- * LED Status Indicators:
- * - Pin 25 (Sensor Status): Solid ON = all sensors good, 2 blinks = sensor failure
- * - Pin 26 (GPS Status): Solid ON = GPS fix, 1 blink = GPS init but no fix, OFF = no GPS
- *
- * For more advanced usage with custom configuration, see the ConfigurableExample.
- */
-
 #include <Arduino.h>
+
 #include <AstraRocket.h>
 #include <Sensors/HW/GPS/SAM_M10Q.h>
 #include <Sensors/HW/IMU/BMI088.h>
-#include <Sensors/HW/Mag/MMC5603NJ.h>
 #include <Sensors/HW/Baro/MS5611.h>
+#include <Sensors/HW/Mag/MMC5603NJ.h>
 #include <Sensors/VoltageSensor/VoltageSensor.h>
-#include <Sensors/SensorManager/SensorManager.h>
+
+#include "AirbrakeController.h"
 #include "md6.h"
 
-using namespace astra_rocket;
 using namespace astra;
+using namespace astra_rocket;
 
-MotorDriver mot("MotorDriver");
-VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
-
-// Handler for AIRBRAKE/XX commands
-void handleAirbrakeCommand(const char *message, const char *prefix, Stream *source)
-{
-  // message is just the angle value (e.g., "60" when sent as "AIRBRAKE/60")
-  int angle = atoi(message);
-
-  // Validate range (0-80 degrees based on motor specs)
-  if (angle < 0 || angle > 80)
-  {
-    source->printf("ERROR: Angle %d out of range (0-80)\n", angle);
-    LOGW("Invalid airbrake angle command: %d", angle);
-    return;
-  }
-
-  // Convert to motor position and command
-  float pos = mot.angleToPos(angle);
-  mot.setPos(pos);
-
-  // Send confirmation
-  source->printf("OK: Airbrake set to %d degrees (pos=%.2f)\n", angle, pos);
-  LOGI("Airbrake angle set to %d degrees", angle);
-}
-
-// Create sensor instances
-SensorManager *sensorManager = new SensorManager();
-
-// Create a custom configuration with LED status pins
-// NOTE: config must be static because AstraRocket stores a reference to it
 static AstraRocketConfig config;
 AstraRocket rocket(config);
 
+MotorDriver mot("MotorDriver");
+VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
+MS5611 rawBaro("MS5611");
+AirbrakeController airbrakeCtrl(&mot, nullptr, nullptr, "AirbrakeCtrl");
+
 void setup()
 {
-  // Initialize Serial for debug output
-  Serial.begin(115200);
-  delay(2000); // Wait for serial connection
+    Serial.begin(115200);
+    delay(2000);
 
-  // Configure sensors on SensorManager
-  BMI088 *imu = new BMI088();
-  sensorManager->setAccelSource(imu->getAccelSensor());
-  sensorManager->setGyroSource(imu->getGyroSensor());
-  sensorManager->setMagSource(new MMC5603NJ());
-  sensorManager->setBaroSource(new astra::MS5611());
-  sensorManager->setGPSSource(new SAM_M10Q());
+    BMI088 *imu = new BMI088();
 
-  config
-      .withSensorManager(sensorManager);
+    config.with6DoFIMU(imu)
+        .withMag(new MMC5603NJ())
+        .withBaro(&rawBaro)
+        .withGPS(new SAM_M10Q())
+        .withMiscSensor(&mot)
+        .withMiscSensor(&vs);
 
-  if (!rocket.init())
-  {
-    Serial.println("ERROR: AstraRocket initialization failed!");
-    LOGE("ASTRA FAILED TO INIT");
-  }
+    if (!rocket.init())
+    {
+        Serial.println("ERROR: AstraRocket initialization failed!");
+        LOGE("ASTRA FAILED TO INIT");
+    }
 
-  // Register AIRBRAKE handler with Astra's built-in message router
-  if (rocket.getAstraSystem() && rocket.getAstraSystem()->getMessageRouter())
-  {
-    rocket.getAstraSystem()->getMessageRouter()->withListener("AIRBRAKE/", handleAirbrakeCommand);
-    LOGI("AIRBRAKE command handler registered with Astra message router");
-  }
+    if (mot.isInitialized())
+    {
+        mot.zeroMotor();
+    }
+    else
+    {
+        LOGE("Motor Not Initialized");
+    }
 
-  if (mot.begin())
-  {
-    mot.zeroMotor();
-  }
-  else
-  {
-    LOGE("Motor Not Initialized");
-  }
-  vs.begin();
+    airbrakeCtrl.setRocketState(rocket.getRocketState());
+    airbrakeCtrl.installBaroWrapper(config.getSensorManager());
+    airbrakeCtrl.begin();
+    airbrakeCtrl.setTargetApogee(9144.0);
+    airbrakeCtrl.setBinarySearchParams(10, 10.0, 5.0);
+    airbrakeCtrl.setAngleLimits(0.0, 65.0);
+    airbrakeCtrl.setRocketParameters(43.5, 0.01168, 0.00987);
+    airbrakeCtrl.setGroundAltitude(884.0);
+    airbrakeCtrl.setSimulationParams(0.05, 45.0);
+    airbrakeCtrl.enableAdaptiveCdA(true, 0.2);
+    airbrakeCtrl.enableBaroCorrection(true, 0.052, 0.15);
+    airbrakeCtrl.enable();
 }
 
 void loop()
 {
-  FlightStage f = rocket.getRocketState()->getFlightStage();
-  vs.update();
-  mot.read();
-  rocket.update(); // This also updates Astra's internal message router
-  if (f == rocket.getRocketState()->getFlightStage())
-    return;
-  if (rocket.getRocketState()->getFlightStage() == FlightStage::COAST)
-  {
-    mot.setPos(mot.angleToPos(60));
-  }
-  else
-  {
-    mot.setPos(mot.angleToPos(0));
-  }
+    rocket.update();
+    airbrakeCtrl.update();
 }
