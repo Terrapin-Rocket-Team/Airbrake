@@ -189,12 +189,21 @@ void setup()
     }
 #else
     delay(2000);
+    new 
+    rocket.getRocketState()->getOrientationFilter().setKp(0.8);
+    rocket.getRocketState()->getOrientationFilter().setKi(0.001);
 
     BMI088 *imu = new BMI088();
+    
+    MMC5603NJ* mag = new MMC5603NJ();
+    mag->setMountingOrientation(MountingOrientation::ROTATE_90_Z); 
     config.with6DoFIMU(imu)
-        .withMag(new MMC5603NJ())
+        .withMag(mag)
         .withBaro(&rawBaro)
         .withGPS(new SAM_M10Q());
+
+    imu.setMountingOrientation(MountingOrientation::FLIP_XZ);  // Adjust based on your mounting
+  
 #endif
 
     config.withMiscSensor(&mot).withMiscSensor(&vs);
