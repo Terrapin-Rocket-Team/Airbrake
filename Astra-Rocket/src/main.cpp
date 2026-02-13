@@ -18,22 +18,30 @@ AstraRocket rocket(config);
 
 MotorDriver mot("MotorDriver");
 VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
-MS5611 rawBaro("MS5611");
+astra::MS5611 rawBaro("MS5611");
 AirbrakeController airbrakeCtrl(&mot, nullptr, nullptr, "AirbrakeCtrl");
 
 void setup()
 {
     Serial.begin(115200);
+#if defined(NATIVE)
+    config.withHITL(true);
+    Serial.println("SITL mode enabled");
+    if (!Serial.connectSITL("localhost", 5555))
+    {
+        Serial.println("ERROR: Failed to connect to SITL server");
+    }
+#else
     delay(2000);
 
     BMI088 *imu = new BMI088();
-
     config.with6DoFIMU(imu)
         .withMag(new MMC5603NJ())
         .withBaro(&rawBaro)
-        .withGPS(new SAM_M10Q())
-        .withMiscSensor(&mot)
-        .withMiscSensor(&vs);
+        .withGPS(new SAM_M10Q());
+#endif
+
+    config.withMiscSensor(&mot).withMiscSensor(&vs);
 
     if (!rocket.init())
     {

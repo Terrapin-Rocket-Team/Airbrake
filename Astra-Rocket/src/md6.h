@@ -32,10 +32,21 @@ namespace astra
         float initposition = 0; // position when zeroed
         float targetposition = 0; // target position
         float targetvelocity = 0; // target velocity
+        float targetAngle = 0; // commanded flap angle (deg)
         float voltage = 0;
 
         int topLimitSwitchPin = 35;
         StalledState stalledstate = STOPPED;
+
+#if defined(NATIVE)
+        uint64_t lastNativeUpdateMicros = 0;
+        bool nativeTimebaseReady = false;
+        double lastNativeUpdateSimTime = 0.0;
+        bool nativeSimTimebaseReady = false;
+        bool nativeUsingSimClock = false;
+        float nativeMaxPosPerSecond = 0;
+        void updateNativeSimulation();
+#endif
         
 
     public:
@@ -44,16 +55,19 @@ namespace astra
             setName(name);
             addColumn("%0.3f", &position, "Motor Position");
             addColumn("%0.1f", &angle, "Motor Angle");
+            addColumn("%0.1f", &targetAngle, "Motor Target Angle");
             addColumn("%0.3f", &velocity, "Motor Velocity");
             addColumn("%0.3f", &voltage, "Battery Voltage");
         }
 
-        bool init() override;
-        bool read() override;
+        int init() override;
+        int read() override;
         bool isInitialized() const { return initialized; }
 
         float getPosition();
         float getVelocity();
+        float getTargetPosition() const { return targetposition; }
+        float getTargetAngle() const { return targetAngle; }
         float angleToPos(float angle);
         float posToAngle(float pos);
 
