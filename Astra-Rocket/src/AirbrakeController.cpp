@@ -29,7 +29,9 @@ AirbrakeController::AirbrakeController(astra::MotorDriver *motorIn,
     addColumn("%0.3f", &estimatedApogee, "Pred Apogee (m)");
     addColumn("%0.3f", &targetApogee, "Target Apogee (m)");
     addColumn("%0.6f", &cdArocket, "CdA Rocket");
-    addColumn("%0.2f", &dynamicPressure, "Dyn Press (Pa)");
+    addColumn("%0.2f", &dynamicPressure, "Dyn Press (hPa)");
+    addColumn("%0.3f", &machNumber, "Mach");
+    addColumn("%0.0f", &transonicLockoutActive, "Transonic Lockout");
 }
 
 int AirbrakeController::begin() {
@@ -65,12 +67,19 @@ int AirbrakeController::update(double currentTime) {
     const double altitude = pos.z();
     const double speed = vel.magnitude();
     const double tiltDeg = state->getOffVerticalAngle();
+    const double altitudeASL = altitude + groundAltitude;
+    const double speedOfSound = getSpeedOfSound(altitudeASL);
+    machNumber = (speedOfSound > 1e-6) ? (speed / speedOfSound) : 0.0;
+    const bool transonicLockout = transonicLockoutEnabled && (machNumber >= transonicLockoutMach);
+    transonicLockoutActive = transonicLockout ? 1.0 : 0.0;
 
-    if (adaptiveCdAEnabled) {
+    // Keep CdA adaptation out of boost/transonic lockout where the simple drag
+    // inversion is least reliable and can bias apogee prediction.
+    if (adaptiveCdAEnabled && stage == astra_rocket::COAST && !transonicLockout) {
         updateCdAEstimate();
     }
 
-    if (stage == astra_rocket::COAST) {
+    if (stage == astra_rocket::COAST && !transonicLockout) {
         actuationAngle = calculateActuationAngle(altitude, speed, tiltDeg);
         if (actuationAngle < minAngle) {
             actuationAngle = minAngle;
@@ -86,14 +95,15 @@ int AirbrakeController::update(double currentTime) {
     actualAngle = motor->posToAngle(motor->getPosition());
 
     if (speed > 0.01) {
-        estimatedApogee = predictApogee(simTimeStep, tiltDeg, speed, altitude, actuationAngle);
+        // Report prediction based on the current physical flap state, not command.
+        estimatedApogee = predictApogee(simTimeStep, tiltDeg, speed, altitude, actualAngle);
     } else {
         estimatedApogee = altitude;
     }
 
     if (baro && baroCorrectionEnabled) {
-        const double rho = getDensity(altitude + groundAltitude);
-        dynamicPressure = 0.5 * rho * speed * speed;
+        const double rho = getDensity(altitudeASL);
+        dynamicPressure = 0.5 * rho * speed * speed / 100.0; // Pa -> hPa
         baro->setCorrectionInputs(actualAngle, dynamicPressure);
     }
 
@@ -164,6 +174,13 @@ void AirbrakeController::enableBaroCorrection(bool enable, double c, double tau)
 
 void AirbrakeController::setGroundAltitude(double altitudeM) {
     groundAltitude = altitudeM;
+}
+
+void AirbrakeController::setTransonicLockout(bool enable, double machThreshold) {
+    transonicLockoutEnabled = enable;
+    if (machThreshold > 0.0) {
+        transonicLockoutMach = machThreshold;
+    }
 }
 
 bool AirbrakeController::installBaroWrapper(astra::SensorManager *sensorManager) {
@@ -276,6 +293,15 @@ double AirbrakeController::getDensity(double h) {
     const double p0 = 101325.0;
     const double T0 = 288.15;
     return p0 * M / (R * T0) * pow((1.0 - L * h / T0), ((9.8 * M / (R * L)) - 1.0));
+}
+
+double AirbrakeController::getSpeedOfSound(double h) {
+    const double T0 = 288.15;
+    const double L = 0.0065;
+    const double gamma = 1.4;
+    const double R = 287.05;
+    const double T = fmax(216.65, T0 - L * h);
+    return sqrt(gamma * R * T);
 }
 
 void AirbrakeController::updateCdAEstimate() {

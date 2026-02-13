@@ -14,11 +14,11 @@ public:
 
     void setCorrectionEnabled(bool enabled);
     void setCorrectionParams(double c, double tau);
-    void setCorrectionInputs(double motorAngleDeg, double dynamicPressurePa);
+    void setCorrectionInputs(double motorAngleDeg, double dynamicPressureHpa);
     void setMaxCorrectionAngle(double angleDeg);
 
     double getAltitudeDelta() const { return altitudeDelta; }
-    double getDynamicPressure() const { return dynamicPressurePa; }
+    double getDynamicPressure() const { return dynamicPressureHpa; }
     double getCorrectionAngle() const { return correctionAngleDeg; }
 
     int update(double currentTime = -1) override;
@@ -39,7 +39,7 @@ private:
     double maxCorrectionAngleDeg = 45.0;
 
     double correctionAngleDeg = 0.0;
-    double dynamicPressurePa = 0.0;
+    double dynamicPressureHpa = 0.0;
     double altitudeDelta = 0.0;
 };
 

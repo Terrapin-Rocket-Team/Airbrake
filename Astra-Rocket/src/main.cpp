@@ -42,6 +42,7 @@ void setup()
 #endif
 
     config.withMiscSensor(&mot).withMiscSensor(&vs);
+    config.withBaroMachLockout(true, 0.75);
 
     if (!rocket.init())
     {
@@ -66,6 +67,7 @@ void setup()
     airbrakeCtrl.setAngleLimits(0.0, 65.0);
     airbrakeCtrl.setRocketParameters(43.5, 0.01168, 0.00987);
     airbrakeCtrl.setGroundAltitude(884.0);
+    airbrakeCtrl.setTransonicLockout(true, 0.7);
     airbrakeCtrl.setSimulationParams(0.05, 45.0);
     airbrakeCtrl.enableAdaptiveCdA(true, 0.2);
     airbrakeCtrl.enableBaroCorrection(true, 0.052, 0.15);

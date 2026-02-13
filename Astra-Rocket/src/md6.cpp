@@ -87,7 +87,7 @@ void MotorDriver::updateNativeSimulation()
         else if (step < -maxStep)
             step = -maxStep;
 
-        position += step;
+        // position += step;
         totalStep += step;
 
         if (position < 0.0f)

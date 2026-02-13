@@ -101,6 +101,10 @@ def Propagate(flapAngle):
         return
 
     atmosphere = Atmosphere(r[2]+ground_altitude)
+    # Atmosphere backends often expose 1-element numpy arrays; normalize to scalars.
+    density = float(np.asarray(atmosphere.density).reshape(-1)[0])
+    dyn_viscosity = float(np.asarray(atmosphere.dynamic_viscosity).reshape(-1)[0])
+    speed_of_sound = float(np.asarray(atmosphere.speed_of_sound).reshape(-1)[0])
 
     if t < burnTime + launchTime:
         m -= (wetMass - dryMass) / burnTime * timeStep
@@ -108,9 +112,9 @@ def Propagate(flapAngle):
         m = dryMass
 
     speed = np.linalg.norm(v[[0, 2]])
-    reynolds = (atmosphere.density * speed * rocket_diameter / atmosphere.dynamic_viscosity[0])
-    Cdr = total_drag_coefficient(reynolds, speed/atmosphere.speed_of_sound[0], surface_roughness, rocket_length)
-    drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + Cdr * rocket_area) * speed ** 2
+    reynolds = density * speed * rocket_diameter / dyn_viscosity
+    Cdr = total_drag_coefficient(reynolds, speed / speed_of_sound, surface_roughness, rocket_length)
+    drag_force = 0.5 * density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + Cdr * rocket_area) * speed ** 2
     drag_accel = drag_force / m
 
     if t < burnTime + launchTime:
@@ -125,13 +129,13 @@ def Propagate(flapAngle):
             main_deployed = True
             settling_timer = main_settling_time
         if settling_timer > 0:
-            a[2] = -0.5 / m * atmosphere.density * (main_Cd * main_area) * abs(v[2]) * v[2] * 0.5
+            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] * 0.5
             settling_timer -= timeStep
         else:
-            a[2] = -0.5 / m * atmosphere.density * (main_Cd * main_area) * abs(v[2]) * v[2] - 9.8
+            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] - 9.8
     elif v[2] < 0:
         # Drogue Deployment Phase
-        a[2] = -0.5 / m * atmosphere.density * (drogue_Cd * drogue_area) * abs(v[2]) * v[2] - 9.8
+        a[2] = -0.5 / m * density * (drogue_Cd * drogue_area) * abs(v[2]) * v[2] - 9.8
         a[0] = 0
     else:
         # Coasting Phase
