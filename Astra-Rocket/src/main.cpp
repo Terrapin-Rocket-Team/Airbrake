@@ -21,14 +21,14 @@ AstraRocket rocket(config);
 
 MotorDriver mot("MotorDriver");
 VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
-astra::MS5611 rawBaro("MS5611");
+astra::MS5611 rawBaro("MS5611", &Wire, 0x77);
 AirbrakeController airbrakeCtrl(&mot, nullptr, nullptr, "AirbrakeCtrl");
 
 static bool g_manualAirbrakeMode = false;
 static double g_manualAngleDeg = 0.0;
 
 static constexpr double kDefaultMinAngleDeg = 0.0;
-static constexpr double kDefaultMaxAngleDeg = 65.0;
+static constexpr double kDefaultMaxAngleDeg = 85.0;
 
 static double clampAirbrakeAngle(double angleDeg)
 {
@@ -67,7 +67,7 @@ static void printAirbrakeHelp(Stream *source)
     source->println("AB/HELP");
     source->println("AB/STATUS");
     source->println("AB/TARGET_APOGEE <meters>");
-    source->println("AB/ANGLE <deg>    (manual hold, 0..65)");
+    source->println("AB/ANGLE <deg>    (manual hold, 0..85)");
     source->println("AB/AUTO           (return to controller)");
     source->println("AB/ENABLE");
     source->println("AB/DISABLE");
@@ -198,7 +198,7 @@ void setup()
 #endif
 
     config.withMiscSensor(&mot).withMiscSensor(&vs);
-    config.withBaroMachLockout(true, 0.8);
+    config.withBaroMachLockout(true, 0.7);
 
     if (!rocket.init())
     {
@@ -223,7 +223,7 @@ void setup()
     airbrakeCtrl.setAngleLimits(kDefaultMinAngleDeg, kDefaultMaxAngleDeg);
     airbrakeCtrl.setRocketParameters(43.5, 0.01168, 0.00987);
     airbrakeCtrl.setGroundAltitude(884.0);
-    airbrakeCtrl.setTransonicLockout(true, 0.8);
+    airbrakeCtrl.setTransonicLockout(true, 0.7);
     airbrakeCtrl.setSimulationParams(0.05, 45.0);
     airbrakeCtrl.enableAdaptiveCdA(true, 0.2);
     airbrakeCtrl.enableBaroCorrection(true, 0.052, 0.15);

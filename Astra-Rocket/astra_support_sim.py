@@ -10,12 +10,16 @@ import numpy as np
 
 DEFAULT_AIRBRAKE_CSV = "HITL-Airbrake.csv"
 
-ANGLE_KEYS = (
+ACTUAL_ANGLE_KEYS = (
+    "AirbrakeCtrl - Actual Angle (deg)",
+    "State - Actual Angle (deg)",
+    "MotorDriver - Motor Angle",
+)
+
+COMMANDED_ANGLE_KEYS = (
     "AirbrakeCtrl - Actuation Angle (deg)",
     "State - Actuation Angle (deg)",
     "MotorDriver - Motor Target Angle",
-    "MotorDriver - Motor Angle",
-    "AirbrakeCtrl - Actual Angle (deg)",
 )
 
 
@@ -70,7 +74,9 @@ class FlightCodePropagatorSim:
         self._last_packet = None
 
     def on_fc_telemetry(self, fields: dict[str, str]) -> None:
-        for key in ANGLE_KEYS:
+        # Use physical flap angle when available so motor dynamics (speed/lag)
+        # actually influence propagation. Commanded angle is only a fallback.
+        for key in ACTUAL_ANGLE_KEYS:
             raw_value = fields.get(key)
             if raw_value is None:
                 continue
@@ -79,7 +85,19 @@ class FlightCodePropagatorSim:
             except (TypeError, ValueError):
                 continue
             if math.isfinite(value):
-                self._flap_angle_deg = min(65.0, max(0.0, value))
+                self._flap_angle_deg = min(85.0, max(0.0, value))
+                return
+
+        for key in COMMANDED_ANGLE_KEYS:
+            raw_value = fields.get(key)
+            if raw_value is None:
+                continue
+            try:
+                value = float(raw_value)
+            except (TypeError, ValueError):
+                continue
+            if math.isfinite(value):
+                self._flap_angle_deg = min(85.0, max(0.0, value))
                 return
 
     def is_finished(self) -> bool:

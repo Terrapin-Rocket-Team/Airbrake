@@ -48,8 +48,12 @@ public:
     double getTargetApogee() const { return targetApogee; }
 
 private:
-    int calculateActuationAngle(double altitude, double velocity, double tiltDeg);
-    double predictApogee(double timeStep, double tiltDeg, double curVelocity, double curHeight, double flapAngleDeg);
+    int calculateActuationAngle(double altitude, double horizontalVelocity, double verticalVelocity);
+    double predictApogee(double timeStep,
+                         double curHorizontalVelocity,
+                         double curVerticalVelocity,
+                         double curHeight,
+                         double flapAngleDeg);
     double getDensity(double altitudeASL);
     double getSpeedOfSound(double altitudeASL);
     void updateCdAEstimate();
@@ -74,7 +78,7 @@ private:
     double threshold = 10.0;
     double angleResolution = 5.0;
     double minAngle = 0.0;
-    double maxAngle = 65.0;
+    double maxAngle = 85.0;
 
     double rocketMass = 43.5;
     double predictedCdArocket = 0.01168;

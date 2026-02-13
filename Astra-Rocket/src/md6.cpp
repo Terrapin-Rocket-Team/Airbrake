@@ -4,7 +4,7 @@
 #if defined(NATIVE)
 #include <Sensors/HITL/HITLSensorBuffer.h>
 #ifndef MOTOR_SIM_MAX_DEG_PER_SEC
-#define MOTOR_SIM_MAX_DEG_PER_SEC 25.0f
+#define MOTOR_SIM_MAX_DEG_PER_SEC 50.0f
 #endif
 #endif
 
@@ -15,6 +15,12 @@ ODriveUART odrive(odrive_serial);
 #endif
 
 using namespace astra;
+
+namespace
+{
+constexpr float kMotorMaxPosition = 26.0f;
+constexpr float kMotorMaxAngleDeg = 85.0f;
+}
 
 #if defined(NATIVE)
 void MotorDriver::updateNativeSimulation()
@@ -92,8 +98,8 @@ void MotorDriver::updateNativeSimulation()
 
         if (position < 0.0f)
             position = 0.0f;
-        else if (position > 26.0f)
-            position = 26.0f;
+        else if (position > kMotorMaxPosition)
+            position = kMotorMaxPosition;
 
         if (std::fabs(targetposition - position) < 1e-4f)
         {
@@ -208,10 +214,15 @@ float MotorDriver::getVelocity() // since last read()
 
 void MotorDriver::setPos(float pos)
 {
-    if (pos < 0 || pos > 26)
-    { // limit to 0-65 degrees
-        LOGI("Position out of bounds");
-        return;
+    // Clamp to travel range. Float rounding can produce tiny overshoot at limits
+    // (e.g., angleToPos(85) -> 26.000002f), which should still map to full deploy.
+    if (pos < 0.0f)
+    {
+        pos = 0.0f;
+    }
+    else if (pos > kMotorMaxPosition)
+    {
+        pos = kMotorMaxPosition;
     }
     targetAngle = posToAngle(pos);
 #if defined(NATIVE)
@@ -251,8 +262,8 @@ void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
     targetposition += vel * 0.02f;
     if (targetposition < 0.0f)
         targetposition = 0.0f;
-    else if (targetposition > 26.0f)
-        targetposition = 26.0f;
+    else if (targetposition > kMotorMaxPosition)
+        targetposition = kMotorMaxPosition;
     targetAngle = posToAngle(targetposition);
     return;
 #else
@@ -277,15 +288,15 @@ void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
 
 float MotorDriver::angleToPos(float angle)
 {
-    // Convert angle in degrees to position in steps
-    float pos = 26 / 80.0 * angle; // 80 steps per degree
+    // Convert flap angle in degrees to motor position units.
+    float pos = (kMotorMaxPosition / kMotorMaxAngleDeg) * angle;
     return pos;
 }
 
 float MotorDriver::posToAngle(float pos)
 {
-    // Convert position in steps to angle in degrees
-    float angle = (pos * 80 / 26.0);
+    // Convert motor position units back to flap angle in degrees.
+    float angle = (pos * kMotorMaxAngleDeg / kMotorMaxPosition);
     return angle;
 }
 

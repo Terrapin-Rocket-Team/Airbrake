@@ -75,18 +75,28 @@ int AirbrakeController::update(double currentTime)
     const Vector<3> vel = state->getVelocity();
     const double altitude = pos.z();
     const double speed = vel.magnitude();
-    const double tiltDeg = state->getOffVerticalAngle();
+    const double horizontalSpeed = sqrt(vel.x() * vel.x() + vel.y() * vel.y());
+    const double verticalSpeed = vel.z();
     const double altitudeASL = altitude + groundAltitude;
     const double speedOfSound = getSpeedOfSound(altitudeASL);
     machNumber = (speedOfSound > 1e-6) ? (speed / speedOfSound) : 0.0;
     const bool transonicLockout = transonicLockoutEnabled && (machNumber >= transonicLockoutMach);
     transonicLockoutActive = transonicLockout ? 1.0 : 0.0;
+    const bool controlWindowOpen = (stage == astra_rocket::COAST) && !transonicLockout;
 
-    updateCdAEstimate();
-
-    if (stage == astra_rocket::COAST && !transonicLockout)
+    if (adaptiveCdAEnabled && controlWindowOpen)
     {
-        actuationAngle = calculateActuationAngle(altitude, speed, tiltDeg);
+        updateCdAEstimate();
+    }
+    else
+    {
+        // Keep predictor model stable before control window opens.
+        cdArocket = predictedCdArocket;
+    }
+
+    if (controlWindowOpen)
+    {
+        actuationAngle = calculateActuationAngle(altitude, horizontalSpeed, verticalSpeed);
         if (actuationAngle < minAngle)
         {
             actuationAngle = minAngle;
@@ -105,13 +115,15 @@ int AirbrakeController::update(double currentTime)
 
     actualAngle = motor->posToAngle(motor->getPosition());
 
-    if (speed > 0.01)
+    if (verticalSpeed > 0.01)
     {
-        // Report prediction based on the current physical flap state, not command.
-        estimatedApogee = predictApogee(simTimeStep, tiltDeg, speed, altitude, actualAngle);
+        // Before control is allowed, predict with locked flaps and baseline CdA.
+        const double predictionFlapAngle = controlWindowOpen ? actualAngle : minAngle;
+        estimatedApogee = predictApogee(simTimeStep, horizontalSpeed, verticalSpeed, altitude, predictionFlapAngle);
     }
     else
     {
+        // Once vertical velocity is no longer upward, apogee has been reached.
         estimatedApogee = altitude;
     }
 
@@ -246,7 +258,7 @@ bool AirbrakeController::installBaroWrapper(astra::SensorManager *sensorManager)
     return true;
 }
 
-int AirbrakeController::calculateActuationAngle(double altitude, double velocity, double tiltDeg)
+int AirbrakeController::calculateActuationAngle(double altitude, double horizontalVelocity, double verticalVelocity)
 {
     int i = 0;
     double low = minAngle;
@@ -255,7 +267,7 @@ int AirbrakeController::calculateActuationAngle(double altitude, double velocity
 
     while (i < maxGuesses)
     {
-        estimatedApogee = predictApogee(simTimeStep, tiltDeg, velocity, altitude, actuationAngle);
+        estimatedApogee = predictApogee(simTimeStep, horizontalVelocity, verticalVelocity, altitude, actuationAngle);
         const double diff = estimatedApogee - targetApogee;
 
         if (fabs(diff) < threshold)
@@ -280,16 +292,15 @@ int AirbrakeController::calculateActuationAngle(double altitude, double velocity
 }
 
 double AirbrakeController::predictApogee(double timeStep,
-                                         double tiltDeg,
-                                         double curVelocity,
+                                         double curHorizontalVelocity,
+                                         double curVerticalVelocity,
                                          double curHeight,
                                          double flapAngleDeg)
 {
-    const double tiltRad = tiltDeg * M_PI / 180.0;
     double timeIntegrating = 0.0;
-    double dx = sin(tiltRad) * curVelocity;
+    double dx = curHorizontalVelocity;
     double y = curHeight;
-    double dy = cos(tiltRad) * curVelocity;
+    double dy = curVerticalVelocity;
     double k1x = 0.0;
     double k1y = 0.0;
     double s1x = 0.0;
@@ -366,8 +377,14 @@ void AirbrakeController::updateCdAEstimate()
     const double cdAestimate = (2.0 * rocketMass * dragAccel.magnitude()) / (rho * speed * speed);
     cdArocket = (1.0 - adaptiveCdAAlpha) * cdArocket + adaptiveCdAAlpha * cdAestimate;
 
-    if (cdArocket > 2.0 * predictedCdArocket || cdArocket < 0.8 * predictedCdArocket)
+    const double minCdA = 0.8 * predictedCdArocket;
+    const double maxCdA = 2.0 * predictedCdArocket;
+    if (cdArocket < minCdA)
     {
-        cdArocket = predictedCdArocket;
+        cdArocket = minCdA;
+    }
+    else if (cdArocket > maxCdA)
+    {
+        cdArocket = maxCdA;
     }
 }
