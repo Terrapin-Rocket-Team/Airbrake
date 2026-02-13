@@ -21,7 +21,7 @@ AstraRocket rocket(config);
 
 MotorDriver mot("MotorDriver");
 VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
-astra::MS5611 rawBaro("MS5611", &Wire, 0x77);
+astra::MS5611 rawBaro("MS5611", Wire, 0x77);
 AirbrakeController airbrakeCtrl(&mot, nullptr, nullptr, "AirbrakeCtrl");
 
 static bool g_manualAirbrakeMode = false;
