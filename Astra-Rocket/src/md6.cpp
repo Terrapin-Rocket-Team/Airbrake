@@ -4,7 +4,7 @@
 #if defined(NATIVE)
 #include <Sensors/HITL/HITLSensorBuffer.h>
 #ifndef MOTOR_SIM_MAX_DEG_PER_SEC
-#define MOTOR_SIM_MAX_DEG_PER_SEC 5.0f
+#define MOTOR_SIM_MAX_DEG_PER_SEC 25.0f
 #endif
 #endif
 
@@ -87,7 +87,7 @@ void MotorDriver::updateNativeSimulation()
         else if (step < -maxStep)
             step = -maxStep;
 
-        // position += step;
+        position += step;
         totalStep += step;
 
         if (position < 0.0f)

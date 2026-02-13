@@ -204,3 +204,31 @@ SITL: Attempting to connect to simulator at localhost:5555...
 SITL: Connected to localhost:5555
 2.345 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
 6.155 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+2.389 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+6.073 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+6.097 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+2.362 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+6.044 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+6.068 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+DEBUG RocketState: High accel detected! Starting timer...
+SITL: Connection closed by simulator
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+5.967 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+6.001 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+5.921 [WARNING]: Baro 'ErrorCorrectedBaro' became unhealthy: stuck readings detected
+DEBUG RocketState: High accel detected! Starting timer...
+SITL: Connection closed by simulator

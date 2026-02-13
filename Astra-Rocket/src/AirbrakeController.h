@@ -45,6 +45,7 @@ public:
 
     double getPredictedApogee() const { return estimatedApogee; }
     double getCurrentDeployment() const { return actualAngle; }
+    double getTargetApogee() const { return targetApogee; }
 
 private:
     int calculateActuationAngle(double altitude, double velocity, double tiltDeg);
