@@ -21,8 +21,12 @@ AstraRocket rocket(config);
 
 MotorDriver mot("MotorDriver");
 VoltageSensor vs(A0, 787, 1000, "Bat Voltage");
-astra::MS5611 rawBaro("MS5611", Wire, 0x77);
+astra::MS5611 rawBaro("MS5611", &Wire, (uint8_t) 0x77);
 AirbrakeController airbrakeCtrl(&mot, nullptr, nullptr, "AirbrakeCtrl");
+
+static const uint32_t STATIONARY_CAL_TIME_MS = 3000;   // 3s still
+static const uint32_t MAG_CAL_TIME_MS        = 30000;  // 30s rotate
+
 
 static bool g_manualAirbrakeMode = false;
 static double g_manualAngleDeg = 0.0;
@@ -189,21 +193,21 @@ void setup()
     }
 #else
     delay(2000);
-    new 
-    rocket.getRocketState()->getOrientationFilter().setKp(0.8);
-    rocket.getRocketState()->getOrientationFilter().setKi(0.001);
+    
+    rocket.getRocketState()->getOrientationFilter()->setKp(0.8);
+    rocket.getRocketState()->getOrientationFilter()->setKi(0.001);
 
     BMI088 *imu = new BMI088();
     
-    MMC5603NJ* mag = new MMC5603NJ();
-    mag->setMountingOrientation(MountingOrientation::ROTATE_90_Z); 
+    MMC5603NJ* mag = new MMC5603NJ( "MMC5603NJ", &Wire, 48);
+
     config.with6DoFIMU(imu)
         .withMag(mag)
         .withBaro(&rawBaro)
         .withGPS(new SAM_M10Q());
 
-    imu.setMountingOrientation(MountingOrientation::FLIP_XZ);  // Adjust based on your mounting
-  
+    imu->setMountingOrientation(MountingOrientation::FLIP_XZ);  // Adjust based on your mounting
+    mag->setMountingOrientation(MountingOrientation::ROTATE_90_Z); 
 #endif
 
     config.withMiscSensor(&mot).withMiscSensor(&vs);
@@ -214,6 +218,85 @@ void setup()
         Serial.println("ERROR: AstraRocket initialization failed!");
         LOGE("ASTRA FAILED TO INIT");
     }
+
+    
+    Serial.println("# ==================================");
+    Serial.println("# Mahony Calibration Starting");
+    Serial.println("# Phase 1: KEEP STILL");
+    Serial.println("# ==================================");
+
+    auto* filter = rocket.getRocketState()->getOrientationFilter();
+    auto* sm = config.getSensorManager();
+
+    uint32_t startMs = millis();
+    uint32_t lastMs  = millis();
+
+    
+    // -------- PHASE 1: STATIONARY --------
+    while (millis() - startMs < STATIONARY_CAL_TIME_MS)
+    {
+        rocket.update();
+
+        uint32_t now = millis();
+        double dt = (now - lastMs) * 1e-3;
+        lastMs = now;
+
+        Vector<3> accel = sm->getAccelSource()->getAccel();
+        Vector<3> gyro  = sm->getGyroSource()->getAngVel();
+
+        filter->update(accel, gyro, dt);
+
+        delay(5);
+    }
+
+     Serial.println("# Phase 1 Complete");
+    Serial.println("# ==================================");
+    Serial.println("# Phase 2: ROTATE BOARD IN ALL AXES");
+    Serial.println("# 30 seconds...");
+    Serial.println("# ==================================");
+
+    startMs = millis();
+    lastMs  = millis();
+
+
+     // -------- PHASE 2: MAG CALIBRATION --------
+    while (millis() - startMs < MAG_CAL_TIME_MS)
+    {
+        rocket.update();
+
+        uint32_t now = millis();
+        double dt = (now - lastMs) * 1e-3;
+        lastMs = now;
+
+        Vector<3> accel = sm->getAccelSource()->getAccel();
+        Vector<3> gyro  = sm->getGyroSource()->getAngVel();
+        Vector<3> mag   = sm->getMagSource()->getMag();
+
+        // Continue updating filter
+        filter->update(accel, gyro, mag, dt);
+
+        // Collect calibration sample
+        filter->collectMagCalibrationSample(mag);
+
+        if ((millis() - startMs) % 1000 < 20)
+            Serial.print(".");
+
+        delay(5);
+    }
+
+     Serial.println();
+    Serial.println("# Finalizing mag calibration...");
+
+    filter->finalizeMagCalibration();
+
+    if (filter->isMagCalibrated())
+        Serial.println("# Mag calibration SUCCESS");
+    else
+        Serial.println("# Mag calibration FAILED");
+
+    Serial.println("# Calibration complete.");
+    Serial.println("# ==================================");
+
 
     if (mot.isInitialized())
     {
