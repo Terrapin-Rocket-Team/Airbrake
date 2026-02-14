@@ -15,13 +15,13 @@ lat, long = 0, 0
 
 updateRate = 10  # [Hz]
 timeStep = 1 / updateRate  # [s]
-totalImpulse = 39038 # [Ns]
-burnTime = 4.63 # [s]
+totalImpulse = 5224 # [Ns]
+burnTime = 3.5 # [s]
 rocketThrust = totalImpulse / burnTime  # [N]
 launchTime = 15  # time of launch [s]
 surface_roughness = 5e-6 # [m]
-dryMass = 43.5 # [kg]
-wetMass = 63.5; # [kg]
+dryMass = 21.40956 # [kg]
+wetMass = 26.3084; # [kg]
 m = wetMass
 
 CDr = 0.62
@@ -29,9 +29,9 @@ CDf = 0.95
 flapArea = 0.00987
 rocket_diameter = 0.15494 # [m] (6.1 in)
 rocket_area = np.pi * (rocket_diameter/2)**2
-rocket_length = 3.3528 # [m] (11 ft)
+rocket_length = 3.7338 # [m] (11 ft)
 tilt_angle = np.deg2rad(6)  # Launch tilt angle (entered in degrees)
-ground_altitude = 884 # [m]
+ground_altitude = 137.16 # [m]
 atmosphere = Atmosphere(ground_altitude)
 
 main_deployment = 304.8  # [m]
