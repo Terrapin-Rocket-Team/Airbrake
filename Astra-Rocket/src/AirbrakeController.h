@@ -83,6 +83,8 @@ private:
     double actualAngle = 0.0;
     double estimatedApogee = 0.0;
     double dynamicPressure = 0.0;
+
+    bool motorWasEnabled = false;
 };
 
 #endif // AIRBRAKE_CONTROLLER_H

@@ -67,6 +67,11 @@ void MotorDriver::setPos(float pos)
         LOGI("Position out of bounds");
         return;
     }
+    if (!motorEnabled) //if the motor is not enabled, gives error warning because input will not be read
+    {
+        LOGI("Motor disabled. Ignoring position command.")
+        return;
+    }
     targetposition = initposition - pos;
     if (!motorStall())
     {
@@ -91,6 +96,11 @@ void MotorDriver::setPos(float pos)
 
 void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
 {
+    if (!motorEnabled) //if the motor is not enabled, gives error warning because input will not be read
+    {
+        LOGI("Motor disabled. Ignoring velocity command.")
+        return;
+    }
     if (!motorStall())
     {
         targetvelocity = vel;
@@ -191,4 +201,46 @@ bool MotorDriver::motorStall() // TODO: make sure directions are correct
     }
 
     return stalled;
+}
+
+void MotorDriver::enableMotor() //function to enable motor 
+{
+    if (!initilized)
+    {
+        LOGE("Motor not initialized.");
+        return;
+    }
+
+    LOGI("Enabling motor (closed loop control)...");
+
+    odrive.clearErrors();
+    odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
+
+    while (odrive.getState() != AXIS_STATE_CLOSED_LOOP_CONTROL)
+    {
+        delay(100);
+    }
+
+    read(); // get actual motor position
+
+    // Hold current position instead of moving somewhere random
+    odrive.setPosition(initposition - feedback.pos);
+
+    motorEnabled=true;
+}
+
+void MotorDriver::disableMotor() //function to disable the motor
+{
+    if(!initialized)
+    {
+        LOGE("Motor not initialized.");
+        return;
+    }
+
+    LOGI("Disabling motor (idle)...");
+
+    odrive.setVelocity(0); //Stops all motion commands
+    odrive.setState(AXIS_STATE_IDLE);
+
+    motorEnabled = false;
 }

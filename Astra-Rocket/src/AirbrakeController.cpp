@@ -60,6 +60,19 @@ int AirbrakeController::update(double currentTime) {
 
     const astra_rocket::FlightStage stage = state->getFlightStage();
 
+    bool shouldEnableMotor = (stage != astra_rocket::PAD); //unless if on pad, shouldEnableMotor is true
+
+    if (shouldEnableMotor && !motorWasEnabled) //if motor should be enabled and is not already, this will enable the motor
+    {
+        motor->enableMotor(); 
+        motorWasEnabled = true;
+    }
+    else if (!shouldEnableMotor && motorWasEnabled) //if motor should not be enabled and it currently is on, this disables it making it idle
+    {
+        motor->disableMotor();
+        motorWasEnabled=false;
+    }
+
     const Vector<3> pos = state->getPosition();
     const Vector<3> vel = state->getVelocity();
     const double altitude = pos.z();
