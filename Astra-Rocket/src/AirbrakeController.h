@@ -40,15 +40,19 @@ public:
     void enableAdaptiveCdA(bool enable, double alpha = 0.2);
     void enableBaroCorrection(bool enable, double c = 0.052, double tau = 0.15);
     void setGroundAltitude(double altitudeM);
+    void setTransonicLockout(bool enable, double machThreshold = 0.7);
     bool installBaroWrapper(astra::SensorManager *sensorManager);
 
     double getPredictedApogee() const { return estimatedApogee; }
+    double getCommandedDeployment() const { return actuationAngle; }
     double getCurrentDeployment() const { return actualAngle; }
+    double getTargetApogee() const { return targetApogee; }
 
 private:
     int calculateActuationAngle(double altitude, double velocity, double tiltDeg);
     double predictApogee(double timeStep, double tiltDeg, double curVelocity, double curHeight, double flapAngleDeg);
     double getDensity(double altitudeASL);
+    double getSpeedOfSound(double altitudeASL);
     void updateCdAEstimate();
 
     astra::MotorDriver *motor = nullptr;
@@ -71,7 +75,7 @@ private:
     double threshold = 10.0;
     double angleResolution = 5.0;
     double minAngle = 0.0;
-    double maxAngle = 65.0;
+    double maxAngle = 73.0;
 
     double rocketMass = 43.5;
     double predictedCdArocket = 0.01168;
@@ -85,6 +89,11 @@ private:
     double dynamicPressure = 0.0;
 
     bool motorWasEnabled = false;
+
+    double machNumber = 0.0;
+    bool transonicLockoutEnabled = true;
+    double transonicLockoutMach = 0.7;
+    double transonicLockoutActive = 0.0;
 };
 
 #endif // AIRBRAKE_CONTROLLER_H

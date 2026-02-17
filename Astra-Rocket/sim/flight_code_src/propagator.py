@@ -2,8 +2,45 @@ import numpy as np
 import matplotlib.pyplot as plt
 from drag import total_drag_coefficient
 import csv
-from ambiance import Atmosphere
 import time
+
+try:
+    from ambiance import Atmosphere
+except ImportError:
+    class Atmosphere:
+        """Minimal ISA fallback used when `ambiance` is unavailable."""
+
+        def __init__(self, altitude_m):
+            h = float(np.asarray(altitude_m).reshape(-1)[0])
+            if h < 0.0:
+                h = 0.0
+
+            # ISA troposphere approximation
+            T0 = 288.15          # K
+            P0 = 101325.0        # Pa
+            L = 0.0065           # K/m
+            R = 287.05           # J/(kg*K)
+            g = 9.80665          # m/s^2
+            gamma = 1.4
+
+            T = max(216.65, T0 - L * h)
+            P = P0 * (T / T0) ** (g / (R * L))
+            rho = P / (R * T)
+
+            # Sutherland viscosity model
+            mu0 = 1.716e-5       # Pa*s at T_ref
+            T_ref = 273.15       # K
+            S = 110.4            # K
+            mu = mu0 * (T / T_ref) ** 1.5 * (T_ref + S) / (T + S)
+
+            self.temperature = np.array([T])
+            self.pressure = np.array([P])
+            self.density = np.array([rho])
+            self.dynamic_viscosity = np.array([mu])
+            self.speed_of_sound = np.array([np.sqrt(gamma * R * T)])
+
+        def T2t(self, temperature_k):
+            return np.array([float(temperature_k) - 273.15])
 
 a = np.array([0.0, 0.0, -9.8])  # inertial acceleration [m/s^2]
 v = np.array([0.0, 0.0, 0.0])  # inertial velocity [m/s]
@@ -64,6 +101,10 @@ def Propagate(flapAngle):
         return
 
     atmosphere = Atmosphere(r[2]+ground_altitude)
+    # Atmosphere backends often expose 1-element numpy arrays; normalize to scalars.
+    density = float(np.asarray(atmosphere.density).reshape(-1)[0])
+    dyn_viscosity = float(np.asarray(atmosphere.dynamic_viscosity).reshape(-1)[0])
+    speed_of_sound = float(np.asarray(atmosphere.speed_of_sound).reshape(-1)[0])
 
     if t < burnTime + launchTime:
         m -= (wetMass - dryMass) / burnTime * timeStep
@@ -71,9 +112,9 @@ def Propagate(flapAngle):
         m = dryMass
 
     speed = np.linalg.norm(v[[0, 2]])
-    reynolds = (atmosphere.density * speed * rocket_diameter / atmosphere.dynamic_viscosity[0])
-    Cdr = total_drag_coefficient(reynolds, speed/atmosphere.speed_of_sound[0], surface_roughness, rocket_length)
-    drag_force = 0.5 * atmosphere.density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + Cdr * rocket_area) * speed ** 2
+    reynolds = density * speed * rocket_diameter / dyn_viscosity
+    Cdr = total_drag_coefficient(reynolds, speed / speed_of_sound, surface_roughness, rocket_length)
+    drag_force = 0.5 * density * (4 * CDf * flapArea * np.sin(np.deg2rad(flapAngle)) + Cdr * rocket_area) * speed ** 2
     drag_accel = drag_force / m
 
     if t < burnTime + launchTime:
@@ -88,13 +129,13 @@ def Propagate(flapAngle):
             main_deployed = True
             settling_timer = main_settling_time
         if settling_timer > 0:
-            a[2] = -0.5 / m * atmosphere.density * (main_Cd * main_area) * abs(v[2]) * v[2] * 0.5
+            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] * 0.5
             settling_timer -= timeStep
         else:
-            a[2] = -0.5 / m * atmosphere.density * (main_Cd * main_area) * abs(v[2]) * v[2] - 9.8
+            a[2] = -0.5 / m * density * (main_Cd * main_area) * abs(v[2]) * v[2] - 9.8
     elif v[2] < 0:
         # Drogue Deployment Phase
-        a[2] = -0.5 / m * atmosphere.density * (drogue_Cd * drogue_area) * abs(v[2]) * v[2] - 9.8
+        a[2] = -0.5 / m * density * (drogue_Cd * drogue_area) * abs(v[2]) * v[2] - 9.8
         a[0] = 0
     else:
         # Coasting Phase

@@ -22,37 +22,44 @@ AirbrakeController::AirbrakeController(astra::MotorDriver *motorIn,
     : DataReporter(name),
       motor(motorIn),
       state(stateIn),
-      baro(baroIn) {
+      baro(baroIn)
+{
     setAutoUpdate(false);
     addColumn("%0.3f", &actuationAngle, "Actuation Angle (deg)");
     addColumn("%0.3f", &actualAngle, "Actual Angle (deg)");
     addColumn("%0.3f", &estimatedApogee, "Pred Apogee (m)");
     addColumn("%0.3f", &targetApogee, "Target Apogee (m)");
     addColumn("%0.6f", &cdArocket, "CdA Rocket");
-    addColumn("%0.2f", &dynamicPressure, "Dyn Press (Pa)");
+    addColumn("%0.2f", &dynamicPressure, "Dyn Press (hPa)");
+    addColumn("%0.3f", &machNumber, "Mach");
+    addColumn("%0.0f", &transonicLockoutActive, "Transonic Lockout");
 }
 
-int AirbrakeController::begin() {
-    if (!motor || !state) {
+int AirbrakeController::begin()
+{
+    if (!motor || !state)
+    {
         return -1;
     }
     return 0;
 }
 
-int AirbrakeController::update(double currentTime) {
+int AirbrakeController::update(double currentTime)
+{
     (void)currentTime;
 
-    if (!enabled || !motor || !state) {
-        if (motor) {
-            motor->setPos(motor->angleToPos(minAngle));
-        }
-        if (baro && baroCorrectionEnabled) {
+    if (!enabled || !motor || !state)
+    {
+        if (baro && baroCorrectionEnabled)
+        {
             baro->setCorrectionInputs(0.0, 0.0);
         }
         return -1;
     }
-    if (!motor->isInitialized()) {
-        if (baro && baroCorrectionEnabled) {
+    if (!motor->isInitialized())
+    {
+        if (baro && baroCorrectionEnabled)
+        {
             baro->setCorrectionInputs(0.0, 0.0);
         }
         return -1;
@@ -73,121 +80,180 @@ int AirbrakeController::update(double currentTime) {
         motorWasEnabled=false;
     }
 
+    if (state->getFlightStage() == astra_rocket::PAD_IDLE)
+    {
+        return -1;
+    }
+
     const Vector<3> pos = state->getPosition();
     const Vector<3> vel = state->getVelocity();
     const double altitude = pos.z();
     const double speed = vel.magnitude();
-    const double tiltDeg = state->getOffVerticalAngle();
+    const double horizontalSpeed = sqrt(vel.x() * vel.x() + vel.y() * vel.y());
+    const double verticalSpeed = vel.z();
+    const double altitudeASL = altitude + groundAltitude;
+    const double speedOfSound = getSpeedOfSound(altitudeASL);
+    machNumber = (speedOfSound > 1e-6) ? (speed / speedOfSound) : 0.0;
+    const bool transonicLockout = transonicLockoutEnabled && (machNumber >= transonicLockoutMach);
+    transonicLockoutActive = transonicLockout ? 1.0 : 0.0;
+    const bool ascending = (verticalSpeed > 0.2);
+    const bool controlWindowOpen = (stage == astra_rocket::COAST) && ascending && !transonicLockout;
 
-    if (adaptiveCdAEnabled) {
+    if (adaptiveCdAEnabled && controlWindowOpen)
+    {
         updateCdAEstimate();
     }
+    else
+    {
+        // Keep predictor model stable before control window opens.
+        cdArocket = predictedCdArocket;
+    }
 
-    if (stage == astra_rocket::COAST) {
-        actuationAngle = calculateActuationAngle(altitude, speed, tiltDeg);
-        if (actuationAngle < minAngle) {
+    if (controlWindowOpen)
+    {
+        actuationAngle = calculateActuationAngle(altitude, horizontalSpeed, verticalSpeed);
+        if (actuationAngle < minAngle)
+        {
             actuationAngle = minAngle;
-        } else if (actuationAngle > maxAngle) {
+        }
+        else if (actuationAngle > maxAngle)
+        {
             actuationAngle = maxAngle;
         }
         motor->setPos(motor->angleToPos(actuationAngle));
-    } else {
+    }
+    else
+    {
         actuationAngle = minAngle;
-        motor->setPos(motor->angleToPos(minAngle));
+        motor->setPos(motor->angleToPos(actuationAngle));
     }
 
     actualAngle = motor->posToAngle(motor->getPosition());
 
-    if (speed > 0.01) {
-        estimatedApogee = predictApogee(simTimeStep, tiltDeg, speed, altitude, actuationAngle);
-    } else {
+    if (verticalSpeed > 0.01)
+    {
+        // Before control is allowed, predict with locked flaps and baseline CdA.
+        const double predictionFlapAngle = controlWindowOpen ? actualAngle : minAngle;
+        estimatedApogee = predictApogee(simTimeStep, horizontalSpeed, verticalSpeed, altitude, predictionFlapAngle);
+    }
+    else
+    {
+        // Once vertical velocity is no longer upward, apogee has been reached.
         estimatedApogee = altitude;
     }
 
-    if (baro && baroCorrectionEnabled) {
-        const double rho = getDensity(altitude + groundAltitude);
-        dynamicPressure = 0.5 * rho * speed * speed;
+    if (baro && baroCorrectionEnabled)
+    {
+        const double rho = getDensity(altitudeASL);
+        dynamicPressure = 0.5 * rho * speed * speed / 100.0; // Pa -> hPa
         baro->setCorrectionInputs(actualAngle, dynamicPressure);
     }
 
     return 0;
 }
 
-void AirbrakeController::setRocketState(astra_rocket::RocketState *stateIn) {
+void AirbrakeController::setRocketState(astra_rocket::RocketState *stateIn)
+{
     state = stateIn;
 }
 
-void AirbrakeController::setMotor(astra::MotorDriver *motorIn) {
+void AirbrakeController::setMotor(astra::MotorDriver *motorIn)
+{
     motor = motorIn;
 }
 
-void AirbrakeController::setBarometer(astra::ErrorCorrectedBaro *baroIn) {
+void AirbrakeController::setBarometer(astra::ErrorCorrectedBaro *baroIn)
+{
     baro = baroIn;
 }
 
-void AirbrakeController::enable() {
+void AirbrakeController::enable()
+{
     enabled = true;
 }
 
-void AirbrakeController::disable() {
+void AirbrakeController::disable()
+{
     enabled = false;
 }
 
-void AirbrakeController::setTargetApogee(double targetM) {
+void AirbrakeController::setTargetApogee(double targetM)
+{
     targetApogee = targetM;
 }
 
-void AirbrakeController::setRocketParameters(double massKg, double cdArocketIn, double flapAreaM2) {
+void AirbrakeController::setRocketParameters(double massKg, double cdArocketIn, double flapAreaM2)
+{
     rocketMass = massKg;
     predictedCdArocket = cdArocketIn;
     cdArocket = cdArocketIn;
     flapArea = flapAreaM2;
 }
 
-void AirbrakeController::setBinarySearchParams(int maxIter, double thresholdM, double angleResolutionDeg) {
+void AirbrakeController::setBinarySearchParams(int maxIter, double thresholdM, double angleResolutionDeg)
+{
     maxGuesses = maxIter;
     threshold = thresholdM;
     angleResolution = angleResolutionDeg;
 }
 
-void AirbrakeController::setAngleLimits(double minDeg, double maxDeg) {
+void AirbrakeController::setAngleLimits(double minDeg, double maxDeg)
+{
     minAngle = minDeg;
     maxAngle = maxDeg;
 }
 
-void AirbrakeController::setSimulationParams(double timeStepS, double maxTimeS) {
+void AirbrakeController::setSimulationParams(double timeStepS, double maxTimeS)
+{
     simTimeStep = timeStepS;
     simTimeMax = maxTimeS;
 }
 
-void AirbrakeController::enableAdaptiveCdA(bool enable, double alpha) {
+void AirbrakeController::enableAdaptiveCdA(bool enable, double alpha)
+{
     adaptiveCdAEnabled = enable;
     adaptiveCdAAlpha = alpha;
 }
 
-void AirbrakeController::enableBaroCorrection(bool enable, double c, double tau) {
+void AirbrakeController::enableBaroCorrection(bool enable, double c, double tau)
+{
     baroCorrectionEnabled = enable;
     baroCorrectionC = c;
     baroCorrectionTau = tau;
-    if (baro) {
+    if (baro)
+    {
         baro->setCorrectionEnabled(enable);
         baro->setCorrectionParams(c, tau);
     }
 }
 
-void AirbrakeController::setGroundAltitude(double altitudeM) {
+void AirbrakeController::setGroundAltitude(double altitudeM)
+{
     groundAltitude = altitudeM;
 }
 
-bool AirbrakeController::installBaroWrapper(astra::SensorManager *sensorManager) {
-    if (!sensorManager) {
+void AirbrakeController::setTransonicLockout(bool enable, double machThreshold)
+{
+    transonicLockoutEnabled = enable;
+    if (machThreshold > 0.0)
+    {
+        transonicLockoutMach = machThreshold;
+    }
+}
+
+bool AirbrakeController::installBaroWrapper(astra::SensorManager *sensorManager)
+{
+    if (!sensorManager)
+    {
         return false;
     }
     astra::Barometer *inner = sensorManager->getBaroSource();
-    if (!inner) {
+    if (!inner)
+    {
         return false;
     }
-    if (inner == &correctedBaro) {
+    if (inner == &correctedBaro)
+    {
         baro = &correctedBaro;
         return true;
     }
@@ -199,29 +265,36 @@ bool AirbrakeController::installBaroWrapper(astra::SensorManager *sensorManager)
     sensorManager->setBaroSource(&correctedBaro);
     baro = &correctedBaro;
 
-    if (!baro->isInitialized()) {
+    if (!baro->isInitialized())
+    {
         baro->begin();
     }
 
     return true;
 }
 
-int AirbrakeController::calculateActuationAngle(double altitude, double velocity, double tiltDeg) {
+int AirbrakeController::calculateActuationAngle(double altitude, double horizontalVelocity, double verticalVelocity)
+{
     int i = 0;
     double low = minAngle;
     double high = maxAngle;
     actuationAngle = 0.5 * (low + high);
 
-    while (i < maxGuesses) {
-        estimatedApogee = predictApogee(simTimeStep, tiltDeg, velocity, altitude, actuationAngle);
+    while (i < maxGuesses)
+    {
+        estimatedApogee = predictApogee(simTimeStep, horizontalVelocity, verticalVelocity, altitude, actuationAngle);
         const double diff = estimatedApogee - targetApogee;
 
-        if (fabs(diff) < threshold) {
+        if (fabs(diff) < threshold)
+        {
             break;
         }
-        if (diff > 0) {
+        if (diff > 0)
+        {
             low = actuationAngle;
-        } else {
+        }
+        else
+        {
             high = actuationAngle;
         }
 
@@ -234,15 +307,15 @@ int AirbrakeController::calculateActuationAngle(double altitude, double velocity
 }
 
 double AirbrakeController::predictApogee(double timeStep,
-                                         double tiltDeg,
-                                         double curVelocity,
+                                         double curHorizontalVelocity,
+                                         double curVerticalVelocity,
                                          double curHeight,
-                                         double flapAngleDeg) {
-    const double tiltRad = tiltDeg * M_PI / 180.0;
+                                         double flapAngleDeg)
+{
     double timeIntegrating = 0.0;
-    double dx = sin(tiltRad) * curVelocity;
+    double dx = curHorizontalVelocity;
     double y = curHeight;
-    double dy = cos(tiltRad) * curVelocity;
+    double dy = curVerticalVelocity;
     double k1x = 0.0;
     double k1y = 0.0;
     double s1x = 0.0;
@@ -253,7 +326,8 @@ double AirbrakeController::predictApogee(double timeStep,
     const double flapAngleRad = flapAngleDeg * M_PI / 180.0;
     const double cdAflaps = 4.0 * flapEfficiency * flapArea * sin(flapAngleRad);
 
-    while (timeIntegrating < simTimeMax) {
+    while (timeIntegrating < simTimeMax)
+    {
         const double rho = getDensity(y + groundAltitude);
         const double speed = sqrt(dx * dx + dy * dy);
         k1x = -0.5 * rho * (cdArocket + cdAflaps) * speed * dx / rocketMass;
@@ -274,7 +348,8 @@ double AirbrakeController::predictApogee(double timeStep,
         y += timeStep * dy;
         timeIntegrating += timeStep;
 
-        if (dy <= 0) {
+        if (dy <= 0)
+        {
             return y;
         }
     }
@@ -282,7 +357,8 @@ double AirbrakeController::predictApogee(double timeStep,
     return y;
 }
 
-double AirbrakeController::getDensity(double h) {
+double AirbrakeController::getDensity(double h)
+{
     const double R = 8.31446;
     const double M = 0.0289652;
     const double L = 0.0065;
@@ -291,20 +367,39 @@ double AirbrakeController::getDensity(double h) {
     return p0 * M / (R * T0) * pow((1.0 - L * h / T0), ((9.8 * M / (R * L)) - 1.0));
 }
 
-void AirbrakeController::updateCdAEstimate() {
+double AirbrakeController::getSpeedOfSound(double h)
+{
+    const double T0 = 288.15;
+    const double L = 0.0065;
+    const double gamma = 1.4;
+    const double R = 287.05;
+    const double T = fmax(216.65, T0 - L * h);
+    return sqrt(gamma * R * T);
+}
+
+void AirbrakeController::updateCdAEstimate()
+{
     const Vector<3> vel = state->getVelocity();
     const Vector<3> acc = state->getAcceleration();
     const double speed = vel.magnitude();
-    if (speed < 0.1) {
+    if (speed < 0.1)
+    {
         return;
     }
 
-    Vector<3> dragAccel(acc.x(), acc.y(), acc.z() + 9.81);
+    Vector<3> dragAccel(acc.x(), acc.y(), acc.z());
     const double rho = getDensity(state->getPosition().z() + groundAltitude);
-    const double cdAestimate = (2.0 * rocketMass * fabs(dragAccel.magnitude())) / (rho * speed * speed);
+    const double cdAestimate = (2.0 * rocketMass * dragAccel.magnitude()) / (rho * speed * speed);
     cdArocket = (1.0 - adaptiveCdAAlpha) * cdArocket + adaptiveCdAAlpha * cdAestimate;
 
-    if (cdArocket > 2.0 * predictedCdArocket || cdArocket < 0.8 * predictedCdArocket) {
-        cdArocket = predictedCdArocket;
+    const double minCdA = 0.8 * predictedCdArocket;
+    const double maxCdA = 2.0 * predictedCdArocket;
+    if (cdArocket < minCdA)
+    {
+        cdArocket = minCdA;
+    }
+    else if (cdArocket > maxCdA)
+    {
+        cdArocket = maxCdA;
     }
 }
