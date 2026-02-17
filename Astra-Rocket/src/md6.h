@@ -44,8 +44,10 @@ namespace astra
         double lastNativeUpdateSimTime = 0.0;
         bool nativeSimTimebaseReady = false;
         bool nativeUsingSimClock = false;
-        float nativeMaxPosPerSecond = 0;
+        float nativeMaxDegPerSecond = 0;
         void updateNativeSimulation();
+#else
+        bool odrivePositionControlConfigured = false;
 #endif
         
 
@@ -68,6 +70,7 @@ namespace astra
         float getVelocity();
         float getTargetPosition() const { return targetposition; }
         float getTargetAngle() const { return targetAngle; }
+        float getBatteryVoltage() const { return voltage; }
         float angleToPos(float angle);
         float posToAngle(float pos);
 

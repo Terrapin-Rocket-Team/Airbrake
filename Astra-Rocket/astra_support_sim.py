@@ -85,7 +85,7 @@ class FlightCodePropagatorSim:
             except (TypeError, ValueError):
                 continue
             if math.isfinite(value):
-                self._flap_angle_deg = min(85.0, max(0.0, value))
+                self._flap_angle_deg = min(105.0, max(0.0, value))
                 return
 
         for key in COMMANDED_ANGLE_KEYS:
@@ -97,7 +97,7 @@ class FlightCodePropagatorSim:
             except (TypeError, ValueError):
                 continue
             if math.isfinite(value):
-                self._flap_angle_deg = min(85.0, max(0.0, value))
+                self._flap_angle_deg = min(105.0, max(0.0, value))
                 return
 
     def is_finished(self) -> bool:

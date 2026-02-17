@@ -355,3 +355,31 @@ SITL: Connected to localhost:5555
 DEBUG RocketState: High accel detected! Starting timer...
 SITL: Connection closed by simulator
 Signal handlers installed
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+DEBUG RocketState: High accel detected! Starting timer...
+SITL: Connection closed by simulator
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+DEBUG RocketState: High accel detected! Starting timer...
+SITL: Send error: 10054
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+DEBUG RocketState: High accel detected! Starting timer...
+SITL: Send error: 10054

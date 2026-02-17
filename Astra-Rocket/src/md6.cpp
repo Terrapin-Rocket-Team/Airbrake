@@ -18,8 +18,25 @@ using namespace astra;
 
 namespace
 {
-constexpr float kMotorMaxPosition = 26.0f;
-constexpr float kMotorMaxAngleDeg = 85.0f;
+constexpr float kMotorMaxAngleDeg = 73.0f;
+constexpr float kMotorPositionEpsilon = 0.02f;
+#if !defined(NATIVE)
+// Real ODrive axis speed cap in turns/s (motor-side units reported by ODrive).
+constexpr float kOdriveVelLimitTurnsPerSec = 200.0f;
+#endif
+
+    // Calibrated cubic map:
+    // y (motor position units) = 0.127 + 0.625x - 0.0101x^2 + 9.41e-5x^3
+    // where x = flap angle (deg)
+    inline float angleToPosPoly(float angleDeg)
+    {
+        const float x = angleDeg;
+        const float x2 = x * x;
+        const float x3 = x2 * x;
+        return 1.9f + (0.461f * x) - (5.92e-3f * x2) + (6.28e-5f * x3);
+    }
+
+    constexpr float kMotorMaxPosition = 28.5f;
 }
 
 #if defined(NATIVE)
@@ -79,22 +96,22 @@ void MotorDriver::updateNativeSimulation()
 
     // Integrate in smaller chunks so simulated speed remains stable even if
     // read() calls are sporadic.
+    const float startPos = position;
     float remaining = dt;
-    float totalStep = 0.0f;
     while (remaining > 0.0f)
     {
         const float chunkDt = (remaining > 0.02f) ? 0.02f : remaining;
-        const float positionError = targetposition - position;
-        const float maxStep = nativeMaxPosPerSecond * chunkDt;
+        const float currentAngle = posToAngle(position);
+        const float desiredAngle = posToAngle(targetposition);
+        const float maxAngleStep = nativeMaxDegPerSecond * chunkDt;
 
-        float step = positionError;
-        if (step > maxStep)
-            step = maxStep;
-        else if (step < -maxStep)
-            step = -maxStep;
+        float angleStep = desiredAngle - currentAngle;
+        if (angleStep > maxAngleStep)
+            angleStep = maxAngleStep;
+        else if (angleStep < -maxAngleStep)
+            angleStep = -maxAngleStep;
 
-        position += step;
-        totalStep += step;
+        position = angleToPos(currentAngle + angleStep);
 
         if (position < 0.0f)
             position = 0.0f;
@@ -110,7 +127,7 @@ void MotorDriver::updateNativeSimulation()
         remaining -= chunkDt;
     }
 
-    velocity = totalStep / dt;
+    velocity = (position - startPos) / dt;
     angle = posToAngle(position);
     targetAngle = posToAngle(targetposition);
 
@@ -133,7 +150,7 @@ int MotorDriver::init()
     targetposition = 0;
     targetvelocity = 0;
     targetAngle = 0;
-    nativeMaxPosPerSecond = angleToPos(MOTOR_SIM_MAX_DEG_PER_SEC);
+    nativeMaxDegPerSecond = MOTOR_SIM_MAX_DEG_PER_SEC;
     lastNativeUpdateMicros = 0;
     nativeTimebaseReady = false;
     lastNativeUpdateSimTime = 0.0;
@@ -168,6 +185,14 @@ int MotorDriver::init()
     }
 
     LOGI("ODrive running!");
+
+    // Configure control/input modes once at init to avoid repeated String
+    // allocations and serial parameter writes in the high-rate setPos path.
+    odrive.setParameter("axis0.controller.config.vel_limit", String(kOdriveVelLimitTurnsPerSec, 3));
+    odrive.setParameter("axis0.controller.config.control_mode", String((long)CONTROL_MODE_POSITION_CONTROL));
+    odrive.setParameter("axis0.controller.config.input_mode", String((long)INPUT_MODE_PASSTHROUGH));
+    LOGI("ODrive vel_limit (turn/s): %0.2f", odrive.getParameterAsFloat("axis0.controller.config.vel_limit"));
+    odrivePositionControlConfigured = true;
 
     pinMode(topLimitSwitchPin, INPUT_PULLUP);
     initialized = true;
@@ -215,7 +240,7 @@ float MotorDriver::getVelocity() // since last read()
 void MotorDriver::setPos(float pos)
 {
     // Clamp to travel range. Float rounding can produce tiny overshoot at limits
-    // (e.g., angleToPos(85) -> 26.000002f), which should still map to full deploy.
+    // (e.g., angleToPos(90) -> 26.000002f), which should still map to full deploy.
     if (pos < 0.0f)
     {
         pos = 0.0f;
@@ -231,12 +256,27 @@ void MotorDriver::setPos(float pos)
     targetvelocity = 0;
     return;
 #else
+    if (!odrivePositionControlConfigured)
+    {
+        odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
+        odrive.setParameter("axis0.controller.config.control_mode", String((long)CONTROL_MODE_POSITION_CONTROL));
+        odrive.setParameter("axis0.controller.config.input_mode", String((long)INPUT_MODE_PASSTHROUGH));
+        odrivePositionControlConfigured = true;
+    }
+
     targetposition = initposition - pos;
+    const bool atTarget = std::fabs(pos - position) <= kMotorPositionEpsilon;
+    if (atTarget)
+    {
+        // Already at the requested position; avoid repeated stall warnings.
+        return;
+    }
+
     if (!motorStall())
     {
         odrive.setPosition(targetposition);
     }
-    else if ((stalledstate == TOP || stalledstate == STOPPED) && pos > position)
+    else if (stalledstate == TOP && pos > position)
     {
         odrive.setPosition(targetposition);
     }
@@ -244,12 +284,17 @@ void MotorDriver::setPos(float pos)
     {
         odrive.setPosition(targetposition);
     }
+    else if (stalledstate == STOPPED)
+    {
+        // STOPPED just means no recent movement; allow re-targeting in either direction.
+        odrive.setPosition(targetposition);
+    }
     else
     {
         LOGI("cant move");
-        LOGI("Stalled State: %s", String(stalledstate).c_str());
-        LOGI("Current Position: %s", String(position).c_str());
-        LOGI("Target Position: %s", String(pos).c_str());
+        LOGI("Stalled State: %d", (int)stalledstate);
+        LOGI("Current Position: %0.3f", position);
+        LOGI("Target Position: %0.3f", pos);
     }
 #endif
 }
@@ -288,16 +333,40 @@ void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
 
 float MotorDriver::angleToPos(float angle)
 {
-    // Convert flap angle in degrees to motor position units.
-    float pos = (kMotorMaxPosition / kMotorMaxAngleDeg) * angle;
+    // Convert flap angle in degrees to motor position units using calibrated cubic.
+    if (angle < 0.0f)
+        angle = 0.0f;
+    else if (angle > kMotorMaxAngleDeg)
+        angle = kMotorMaxAngleDeg;
+
+    float pos = angleToPosPoly(angle);
+    if (pos < 0.0f)
+        pos = 0.0f;
+    else if (pos > kMotorMaxPosition)
+        pos = kMotorMaxPosition;
     return pos;
 }
 
 float MotorDriver::posToAngle(float pos)
 {
-    // Convert motor position units back to flap angle in degrees.
-    float angle = (pos * kMotorMaxAngleDeg / kMotorMaxPosition);
-    return angle;
+    // Invert calibrated cubic with monotonic bisection on [0, kMotorMaxAngleDeg].
+    if (pos < 0.0f)
+        pos = 0.0f;
+    else if (pos > kMotorMaxPosition)
+        pos = kMotorMaxPosition;
+
+    float low = 0.0f;
+    float high = kMotorMaxAngleDeg;
+    for (int i = 0; i < 24; i++)
+    {
+        const float mid = 0.5f * (low + high);
+        const float pMid = angleToPosPoly(mid);
+        if (pMid < pos)
+            low = mid;
+        else
+            high = mid;
+    }
+    return 0.5f * (low + high);
 }
 
 bool MotorDriver::zeroMotor()
@@ -327,6 +396,7 @@ bool MotorDriver::zeroMotor()
     // Move the motor towards the bottom limit switch until it is triggered
     LOGI("Zeroing motor...");
     odrive.setVelocity(0); // Move up at a constant speed
+    read();
 
     while (!motorStall()) // Assuming HIGH means not triggered
     {
@@ -337,6 +407,7 @@ bool MotorDriver::zeroMotor()
 
     odrive.setVelocity(0); // Stop the motor
     delay(500);            // Wait for a moment to ensure the motor has stopped
+    read();
 
     initposition = -getPosition(); // Update internal position variable
     // odrive.setState(AXIS_STATE_IDLE); turns off constant power usage, but must be undone before it can move
@@ -350,43 +421,34 @@ bool MotorDriver::motorStall() // TODO: make sure directions are correct
 #if defined(NATIVE)
     return false;
 #else
-    bool stalled = false;
-
     // Read limit switches
     bool topLimitSwitchState = digitalRead(topLimitSwitchPin) == LOW;
-    // position doesnt change
-    for (int i = 0; i < motorstallcounter; i++)
+
+    positionHistory.push(position);
+
+    if (topLimitSwitchState)
     {
-        if (positionHistory[i] != position)
+        stalledstate = TOP;
+        return true;
+    }
+
+    if (positionHistory.getCount() < motorstallcounter)
+    {
+        stalledstate = MOVING;
+        return false;
+    }
+
+    const float newestPos = positionHistory[positionHistory.getCount() - 1];
+    for (int i = 0; i < positionHistory.getCount(); i++)
+    {
+        if (std::fabs(positionHistory[i] - newestPos) > kMotorPositionEpsilon)
         {
             stalledstate = MOVING;
-            stalled = false;
-            break;
-        }
-        else
-        {
-            stalled = true;
+            return false;
         }
     }
 
-    if (!stalled)
-    {
-        if (topLimitSwitchState)
-        {
-            stalledstate = TOP;
-            stalled = true;
-        }
-        else
-        {
-            stalledstate = MOVING;
-            stalled = false;
-        }
-    }
-    else
-    {
-        stalledstate = STOPPED;
-    }
-
-    return stalled;
+    stalledstate = STOPPED;
+    return true;
 #endif
 }

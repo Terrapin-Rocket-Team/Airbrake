@@ -50,10 +50,6 @@ int AirbrakeController::update(double currentTime)
 
     if (!enabled || !motor || !state)
     {
-        if (motor)
-        {
-            motor->setPos(motor->angleToPos(minAngle));
-        }
         if (baro && baroCorrectionEnabled)
         {
             baro->setCorrectionInputs(0.0, 0.0);
@@ -70,7 +66,10 @@ int AirbrakeController::update(double currentTime)
     }
 
     const astra_rocket::FlightStage stage = state->getFlightStage();
-
+    if (state->getFlightStage() == astra_rocket::PAD_IDLE)
+    {
+        return -1;
+    }
     const Vector<3> pos = state->getPosition();
     const Vector<3> vel = state->getVelocity();
     const double altitude = pos.z();
@@ -82,7 +81,8 @@ int AirbrakeController::update(double currentTime)
     machNumber = (speedOfSound > 1e-6) ? (speed / speedOfSound) : 0.0;
     const bool transonicLockout = transonicLockoutEnabled && (machNumber >= transonicLockoutMach);
     transonicLockoutActive = transonicLockout ? 1.0 : 0.0;
-    const bool controlWindowOpen = (stage == astra_rocket::COAST) && !transonicLockout;
+    const bool ascending = (verticalSpeed > 0.2);
+    const bool controlWindowOpen = (stage == astra_rocket::COAST) && ascending && !transonicLockout;
 
     if (adaptiveCdAEnabled && controlWindowOpen)
     {
@@ -110,7 +110,7 @@ int AirbrakeController::update(double currentTime)
     else
     {
         actuationAngle = minAngle;
-        motor->setPos(motor->angleToPos(minAngle));
+        motor->setPos(motor->angleToPos(actuationAngle));
     }
 
     actualAngle = motor->posToAngle(motor->getPosition());
