@@ -88,7 +88,7 @@ private:
     double estimatedApogee = 0.0;
     double dynamicPressure = 0.0;
 
-    bool motorWasEnabled = false;
+    bool motorEnabled = false;
 
     double machNumber = 0.0;
     bool transonicLockoutEnabled = true;
