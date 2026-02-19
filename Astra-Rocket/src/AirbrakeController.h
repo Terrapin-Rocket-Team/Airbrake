@@ -89,6 +89,7 @@ private:
     double dynamicPressure = 0.0;
 
     bool motorEnabled = false;
+    bool motorZeroed = false;
 
     double machNumber = 0.0;
     bool transonicLockoutEnabled = true;

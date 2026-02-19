@@ -65,27 +65,43 @@ int AirbrakeController::update(double currentTime)
         return -1;
     }
 
-    const astra_rocket::FlightStage stage = state->getFlightStage();
+    const astra_rocket::FlightStage stage = state->getFlightStage(); 
 
-    bool shouldEnableMotor = (stage != astra_rocket::PAD_IDLE); //unless if on pad, shouldEnableMotor is true
-
-    if (shouldEnableMotor && !motorEnabled) //if motor should be enabled and is not already, this will enable the motor
-    {
-        if (motor->enableMotor())
-        {
-            motorEnabled = true;
-        }
-    }
-    else if (!shouldEnableMotor && motorEnabled) //if motor should not be enabled and it currently is on, this disables it making it idle
-    {
-       if (motor->disableMotor())
-       {
-            motorEnabled=false;
-       }
+    bool firstBoost = (stage == astra_rocket::BOOST && !motorZeroed);
 
     if (state->getFlightStage() == astra_rocket::PAD_IDLE)
     {
+        if (motorEnabled)
+        {
+            motor->disableMotor();
+            motorEnabled = false;
+        }
         return -1;
+    }
+
+    else if (firstBoost) // enables and zeroes the motor once boost is first detected
+    {
+        LOGI("Boost detected - enabling motor and zeroing");
+
+        if (!motorEnabled)
+        {
+            if (!motor->enableMotor())
+            {
+                LOGE("Motor failed to enable on boost");
+                return -1; // try again next loop
+            }
+            motorEnabled = true;
+        }
+
+        delay(50);
+
+        if(!motor->zeroMotor())
+        {
+            LOGE("Motor failed to zero");
+            return -1; // keep trying during boost
+        }
+
+        motorZeroed = true;
     }
 
     const Vector<3> pos = state->getPosition();
