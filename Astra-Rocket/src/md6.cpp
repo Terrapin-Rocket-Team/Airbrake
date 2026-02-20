@@ -30,6 +30,8 @@ constexpr float kOdriveVelLimitTurnsPerSec = 200.0f;
     // where x = flap angle (deg)
     inline float angleToPosPoly(float angleDeg)
     {
+        if(angleDeg == 0.0f)
+            return 0.0f; // Avoid unnecessary computation and ensure exact zero-angle position
         const float x = angleDeg;
         const float x2 = x * x;
         const float x3 = x2 * x;

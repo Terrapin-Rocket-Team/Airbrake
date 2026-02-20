@@ -36,6 +36,7 @@ namespace astra
         float voltage = 0;
 
         int topLimitSwitchPin = 35;
+        int botLimitSwitchPin = 36;
         StalledState stalledstate = STOPPED;
 
 #if defined(NATIVE)
