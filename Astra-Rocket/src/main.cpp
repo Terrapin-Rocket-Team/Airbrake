@@ -133,6 +133,16 @@ static void handleAirbrakeMessage(const char *message, const char *prefix, Strea
             angleDeg = kDefaultMinAngleDeg;
         else if (angleDeg > kDefaultMaxAngleDeg)
             angleDeg = kDefaultMaxAngleDeg;
+        
+        if (!g_mot->isMotorEnabled())
+        {
+            source->println("AB INFO enabling motor...");
+            if (!g_mot->enableMotor())
+            {
+                source->println("AB ERR failed to enable motor");
+                return;
+            }
+        } 
 
         const float targetPos = g_mot->angleToPos(static_cast<float>(angleDeg));
         g_mot->setPos(targetPos);
