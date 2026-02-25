@@ -271,9 +271,13 @@ void MotorDriver::setPos(float pos)
         // Already at the requested position; avoid repeated stall warnings.
         return;
     }
-    if (!motorEnabled) //if the motor is not enabled, gives error warning because input will not be read
+    if (!motorEnabled) //if the motor is not enabled, enables the motor so position can be changed
     {
-        LOGW("Motor disabled. Ignoring position command.");
+        LOGI("Motor disabled. Enabling motor to complete movement.");
+        if(!enableMotor())
+        {
+            LOGE("Failed to enable the motor for movement.");
+        }
         return;
     }
     targetposition = initposition - pos;
@@ -307,11 +311,6 @@ void MotorDriver::setPos(float pos)
 
 void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
 {
-    if (!motorEnabled) //if the motor is not enabled, gives error warning because input will not be read
-    {
-        LOGW("Motor disabled. Ignoring velocity command.");
-        return;
-    }
 #if defined(NATIVE)
     updateNativeSimulation();
     targetvelocity = vel;
@@ -324,7 +323,15 @@ void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
     return;
 
 #else
-
+    if (!motorEnabled) //if the motor is not enabled, enables the motor for movement
+    {
+        LOGI("Motor disabled. Enabling to complete movement.");
+        if(!enableMotor())
+        {
+            LOGE("Failed to enable motor for movement.");
+        }
+        return;
+    }
     if (!motorStall())
     {
         targetvelocity = vel;
