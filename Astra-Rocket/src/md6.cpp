@@ -197,6 +197,8 @@ int MotorDriver::init()
     odrivePositionControlConfigured = true;
 
     pinMode(topLimitSwitchPin, INPUT_PULLUP);
+    pinMode(botLimitSwitchPin, INPUT_PULLUP);
+
     initialized = true;
     return 0;
 #endif
@@ -425,12 +427,19 @@ bool MotorDriver::motorStall() // TODO: make sure directions are correct
 #else
     // Read limit switches
     bool topLimitSwitchState = digitalRead(topLimitSwitchPin) == LOW;
-
+    bool botLimitSwitchState = digitalRead(botLimitSwitchPin) == LOW;
+    
     positionHistory.push(position);
 
     if (topLimitSwitchState)
     {
         stalledstate = TOP;
+        return true;
+    }
+
+    if (botLimitSwitchState)
+    {
+        stalledstate = BOTTOM;
         return true;
     }
 
