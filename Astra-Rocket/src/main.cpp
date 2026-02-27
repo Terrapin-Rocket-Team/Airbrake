@@ -233,8 +233,8 @@ void setup()
         .withBaro(rawBaro)
         .withGPS(new SAM_M10Q());
 
-    imu->setMountingOrientation(MountingOrientation::FLIP_XZ); // Adjust based on your mounting
-    mag->setMountingOrientation(MountingOrientation::ROTATE_90_Z);
+    //imu->setMountingOrientation(MountingOrientation::FLIP_XZ); // Adjust based on your mounting
+    mag->setMountingOrientation(MountingOrientation::ROTATE_180_Z);
     // Poll mag below its default ODR to avoid repeated identical samples tripping stuck-reading health checks.
     mag->setUpdateRate(20);
 #endif
