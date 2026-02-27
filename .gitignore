@@ -9,3 +9,5 @@
 
 **/__pycache__/
 **/sim_log_**
+
+.direnv

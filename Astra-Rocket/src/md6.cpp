@@ -275,6 +275,12 @@ void MotorDriver::setPos(float pos)
         // Already at the requested position; avoid repeated stall warnings.
         return;
     }
+    if (!motorEnabled) //if the motor is not enabled, gives error warning because input will not be read
+    {
+        LOGW("Motor disabled. Ignoring position command.");
+        return;
+    }
+    targetposition = initposition - pos;
 
     if (!motorStall())
     {
@@ -305,6 +311,11 @@ void MotorDriver::setPos(float pos)
 
 void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
 {
+    if (!motorEnabled) //if the motor is not enabled, gives error warning because input will not be read
+    {
+        LOGW("Motor disabled. Ignoring velocity command.");
+        return;
+    }
 #if defined(NATIVE)
     updateNativeSimulation();
     targetvelocity = vel;
@@ -315,7 +326,9 @@ void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
         targetposition = kMotorMaxPosition;
     targetAngle = posToAngle(targetposition);
     return;
+
 #else
+
     if (!motorStall())
     {
         targetvelocity = vel;
@@ -332,6 +345,7 @@ void MotorDriver::setVel(float vel) // TODO: make sure directions are correct
     {
         targetvelocity = 0;
     }
+
 #endif
 }
 
@@ -420,15 +434,23 @@ bool MotorDriver::zeroMotor()
 #endif
 }
 
+bool MotorDriver::isLimitSwitchPressed(int pin)
+{
+#if defined(NATIVE)
+    return false;
+#else
+    return digitalRead(pin) == HIGH;
+#endif
+}
+
 bool MotorDriver::motorStall() // TODO: make sure directions are correct
 {
 #if defined(NATIVE)
     return false;
 #else
     // Read limit switches
-    bool topLimitSwitchState = digitalRead(topLimitSwitchPin) == LOW;
-    bool botLimitSwitchState = digitalRead(botLimitSwitchPin) == LOW;
-    
+    bool topLimitSwitchState = isLimitSwitchPressed(topLimitSwitchPin);
+
     positionHistory.push(position);
 
     if (topLimitSwitchState)
@@ -462,4 +484,96 @@ bool MotorDriver::motorStall() // TODO: make sure directions are correct
     stalledstate = STOPPED;
     return true;
 #endif
+}
+
+bool MotorDriver::enableMotor() //function to enable motor 
+{
+    if (!initialized)
+    {
+        LOGE("Motor not initialized.");
+        return false;
+    }
+
+    const int maximumRetries = 5;
+    const long retryTimeout = 1000;
+
+    for (int attempt = 0; attempt < maximumRetries; attempt++)
+    {
+        LOGI("Enabling motor (closed loop control)...");
+
+        odrive.clearErrors();
+        odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
+
+        long start = millis();
+
+        // waiting until motor is enabled or timeout
+        while (millis() - start < retryTimeout)
+        {
+            if (odrive.getState() == AXIS_STATE_CLOSED_LOOP_CONTROL)
+            {
+                LOGI("Motor enabled!");
+
+                read(); // get actual position
+                odrive.setPosition(initposition - feedback.pos); // holds current position rather than moving somewhere unwanted
+
+                motorEnabled = true;
+                return true;
+            }
+
+            delay(50); // if ODRIVE is no enabled, waits 50 ms then starts loop again
+        }
+        
+        LOGW("ODrive enable timeout, retrying...");
+
+    }
+
+    LOGE("Failed to enable motor after 5 retries.");
+    motorEnabled = false;
+
+    return false;
+}
+
+bool MotorDriver::disableMotor() //function to disable the motor
+{
+    if(!initialized)
+    {
+        LOGE("Motor not initialized.");
+        return false;
+    }
+
+    odrive.setVelocity(0); //Stops all motion commands
+
+    const int maximumRetries = 5;
+    const long retryTimeout = 1000;
+
+    for (int attempt = 0; attempt < maximumRetries; attempt++)
+    {
+        LOGI("Disabling motor (idle)...");
+
+        odrive.clearErrors();
+        odrive.setState(AXIS_STATE_IDLE);
+
+        long start = millis();
+
+        // waiting until motor is enabled or timeout
+        while (millis() - start < retryTimeout)
+        {
+            if (odrive.getState() == AXIS_STATE_IDLE)
+            {
+                LOGI("Motor disabled!");
+
+                motorEnabled = false;
+                return true;
+            }
+
+            delay(50); // if ODRIVE is no enabled, waits 50 ms then starts loop again
+        }
+        
+        LOGW("ODrive idle timeout, retrying...");
+
+    }
+
+    LOGE("Failed to disable motor after 5 retries.");
+
+    return false;
 }

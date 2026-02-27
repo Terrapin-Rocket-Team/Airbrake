@@ -4,7 +4,6 @@
 #include <Sensors/HW/GPS/SAM_M10Q.h>
 #include <Sensors/HW/IMU/BMI088.h>
 #include <Sensors/HW/Baro/DPS368.h>
-#include <Sensors/HW/Mag/LIS3MDL.h>
 #include <Sensors/VoltageSensor/VoltageSensor.h>
 #include <RecordData/Logging/DataLogger.h>
 #include <RecordData/Logging/LoggingBackend/ILogSink.h>
@@ -15,6 +14,7 @@
 #include "AirbrakeController.h"
 #include "md6.h"
 #include "RuntimeHelpers.h"
+#include <Sensors/HW/Mag/LIS3MDL.h>
 
 using namespace astra;
 using namespace astra_rocket;
@@ -132,6 +132,16 @@ static void handleAirbrakeMessage(const char *message, const char *prefix, Strea
             angleDeg = kDefaultMinAngleDeg;
         else if (angleDeg > kDefaultMaxAngleDeg)
             angleDeg = kDefaultMaxAngleDeg;
+        
+        if (!g_mot->isMotorEnabled())
+        {
+            source->println("AB INFO enabling motor...");
+            if (!g_mot->enableMotor())
+            {
+                source->println("AB ERR failed to enable motor");
+                return;
+            }
+        } 
 
         const float targetPos = g_mot->angleToPos(static_cast<float>(angleDeg));
         g_mot->setPos(targetPos);
@@ -216,7 +226,7 @@ void setup()
 
     BMI088 *imu = new BMI088();
     DPS368 *rawBaro = new DPS368();
-    astra::LIS3MDL *mag = new astra::LIS3MDL();
+  astra::LIS3MDL *mag = new astra::LIS3MDL();
 
     config.with6DoFIMU(imu)
         .withMag(mag)
@@ -225,6 +235,8 @@ void setup()
 
     //imu->setMountingOrientation(MountingOrientation::FLIP_XZ); // Adjust based on your mounting
     mag->setMountingOrientation(MountingOrientation::ROTATE_180_Z);
+    // Poll mag below its default ODR to avoid repeated identical samples tripping stuck-reading health checks.
+    mag->setUpdateRate(20);
 #endif
 
     g_emitCompactMain = !usingHitlSensors;

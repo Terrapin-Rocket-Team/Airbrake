@@ -4,3 +4,6 @@
 .vscode/launch.json
 .vscode/ipch
 **/sim_log_**
+
+.cache
+compile_commands.json

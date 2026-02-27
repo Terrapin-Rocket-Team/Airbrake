@@ -22,6 +22,8 @@ namespace astra
         int motorstallcounter = 10;
         ODriveFeedback feedback;
         CircBuffer<float> positionHistory = CircBuffer<float>(motorstallcounter);
+
+        bool motorEnabled = false;
                
 
     protected:
@@ -67,6 +69,10 @@ namespace astra
         int read() override;
         bool isInitialized() const { return initialized; }
 
+        bool enableMotor();
+        bool disableMotor();
+        bool isMotorEnabled() const { return motorEnabled; }
+
         float getPosition();
         float getVelocity();
         float getTargetPosition() const { return targetposition; }
@@ -80,6 +86,7 @@ namespace astra
 
         bool zeroMotor();
         bool motorStall();
+        bool isLimitSwitchPressed(int pin);
     };
 }
 
