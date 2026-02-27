@@ -23,6 +23,8 @@ protected:
 
     bool odrivePositionControlConfigured = false;
 
+    bool motorEnabled = false;
+
 public:
     MDODrive(const char *name = "MotorDriver", HardwareSerial &serial = Serial2, int topLimitSwitchPin = -1, int botLimitSwitchPin = -1) : MotorDriver(name), odrive_serial(serial), odrive(serial), topLimitSwitchPin(topLimitSwitchPin), botLimitSwitchPin(botLimitSwitchPin)
     {
@@ -42,6 +44,8 @@ public:
 
     bool zeroMotor() override;
     bool isAtLimit() override;
+
+    void setEnabled(bool enable) override;
 };
 
 #endif // MD_H

@@ -95,7 +95,7 @@ void setup()
         .withGPS(&gps);
 
     //imu.setMountingOrientation(MountingOrientation::FLIP_XZ); // Adjust based on your mounting
-    mag.setMountingOrientation(MountingOrientation::ROTATE_180_Z);
+    mag.setMountingOrientation(MountingOrientation::FLIP_XY);
     // Poll mag below its default ODR to avoid repeated identical samples tripping stuck-reading health checks.
     mag.setUpdateRate(20);
 #endif
@@ -127,6 +127,7 @@ void setup()
     if (motorDriver.isInitialized())
     {
         motorDriver.zeroMotor();
+        motorDriver.setEnabled(false);
     }
     else
     {

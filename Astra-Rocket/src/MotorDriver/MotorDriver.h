@@ -37,6 +37,8 @@ public:
     virtual bool zeroMotor() = 0;
     virtual bool isAtLimit() = 0;
 
+    virtual void setEnabled(bool enable) = 0;
+
     virtual float getMaxAngle() const { return kMotorMaxAngleDeg; }
 };
 // Calibrated cubic map:

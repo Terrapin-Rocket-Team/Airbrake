@@ -88,7 +88,36 @@ void handleAirbrakeMessage(const char *message, const char *prefix, Stream *sour
         return;
     }
 
-    source->println("AB ERR unknown command (use TARGET_APOGEE or ANGLE)");
+    if (strcmp(command, "ENABLE_MOTOR") == 0)
+    {
+        const char *arg = strtok(nullptr, " \t\r\n");
+        if (!arg)
+        {
+            source->println("AB ERR ENABLE_MOTOR requires an argument (0 or 1)");
+            return;
+        }
+
+        bool enable = false;
+        if (strcmp(arg, "1") == 0 || strcmp(arg, "true") == 0 || strcmp(arg, "TRUE") == 0)
+        {
+            enable = true;
+        }
+        else if (strcmp(arg, "0") == 0 || strcmp(arg, "false") == 0 || strcmp(arg, "FALSE") == 0)
+        {
+            enable = false;
+        }
+        else
+        {
+            source->println("AB ERR ENABLE_MOTOR argument must be 0, 1, true, or false");
+            return;
+        }
+
+        motorDriver.setEnabled(enable);
+        source->printf("AB OK motor_enabled=%d\n", enable ? 1 : 0);
+        return;
+    }
+
+    source->println("AB ERR unknown command (use TARGET_APOGEE, ANGLE, or ENABLE_MOTOR)");
 }
 
 void handleHitlMessage(const char *message, const char *prefix, Stream *source, bool hitlRuntimeReady)

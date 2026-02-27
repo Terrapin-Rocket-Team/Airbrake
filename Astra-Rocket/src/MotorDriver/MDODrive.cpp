@@ -82,6 +82,7 @@ float MDODrive::getVelocity() // since last read()
 
 void MDODrive::setPos(float pos)
 {
+    setEnabled(true);
     // Clamp to travel range. Float rounding can produce tiny overshoot at limits
     // (e.g., angleToPos(90) -> 26.000002f), which should still map to full deploy.
     if (pos < 0.0f)
@@ -144,6 +145,7 @@ float MDODrive::posToAngle(float pos)
 
 bool MDODrive::zeroMotor()
 {
+    setEnabled(true);
     if (!initialized)
     {
         LOGE("Motor Driver not initialized. Cannot zero motor.");
@@ -189,4 +191,26 @@ void MDODrive::setAngle(float angleDeg)
 float MDODrive::getBatVoltage()
 {
     return voltage;
+}
+
+void MDODrive::setEnabled(bool enable)
+{
+    if(enable == motorEnabled)
+    {
+        return; // No change
+    }
+    if (enable)
+    {
+        LOGI("Enabling motor...");
+        odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
+        setPos(position); // Hold current position rather than moving somewhere unwanted
+        motorEnabled = true;
+    }
+    else
+    {
+        LOGI("Disabling motor...");
+        odrive.setVelocity(0); //Stops all motion commands
+        odrive.setState(AXIS_STATE_IDLE);
+        motorEnabled = false;
+    }
 }

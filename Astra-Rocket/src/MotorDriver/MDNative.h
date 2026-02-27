@@ -36,6 +36,8 @@ public:
 
     bool zeroMotor();
     bool isAtLimit();
+
+    void setEnabled(bool enable) override { (void)enable; } // No-op for native simulation
 };
 
 #endif // MD_H
