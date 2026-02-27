@@ -88,6 +88,10 @@ private:
     double actualAngle = 0.0;
     double estimatedApogee = 0.0;
     double dynamicPressure = 0.0;
+
+    bool motorEnabled = false;
+    bool motorZeroed = false;
+
     double machNumber = 0.0;
     bool transonicLockoutEnabled = true;
     double transonicLockoutMach = 0.7;

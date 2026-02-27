@@ -65,11 +65,32 @@ int AirbrakeController::update(double currentTime)
         return -1;
     }
 
-    const astra_rocket::FlightStage stage = state->getFlightStage();
+    const astra_rocket::FlightStage stage = state->getFlightStage(); 
+
+    bool firstBoost = (stage == astra_rocket::BOOST && !motorEnabled); //variable to store if rocket has boosted yet and motor still disabled
+
     if (state->getFlightStage() == astra_rocket::PAD_IDLE)
     {
+        if (motorEnabled)
+        {
+            motor->disableMotor();
+            motorEnabled = false;
+        }
         return -1;
     }
+
+    else if (firstBoost) // enables the motor once boost is first detected
+    {
+        LOGI("Boost detected - enabling motor.");
+
+        if (!motor->enableMotor())
+        {
+            LOGE("Motor failed to enable on boost");
+            return -1; // try again next loop
+        }
+        motorEnabled = true;
+    }
+
     const Vector<3> pos = state->getPosition();
     const Vector<3> vel = state->getVelocity();
     const double altitude = pos.z();
