@@ -11,11 +11,11 @@
 #include <Sensors/SensorManager/SensorManager.h>
 
 #include "ErrorCorrectedBaro.h"
-#include "md6.h"
+#include "MotorDriver/MotorDriver.h"
 
 using astra::Vector;
 
-AirbrakeController::AirbrakeController(astra::MotorDriver *motorIn,
+AirbrakeController::AirbrakeController(MotorDriver *motorIn,
                                        astra_rocket::RocketState *stateIn,
                                        astra::ErrorCorrectedBaro *baroIn,
                                        const char *name)
@@ -142,7 +142,7 @@ void AirbrakeController::setRocketState(astra_rocket::RocketState *stateIn)
     state = stateIn;
 }
 
-void AirbrakeController::setMotor(astra::MotorDriver *motorIn)
+void AirbrakeController::setMotor(MotorDriver *motorIn)
 {
     motor = motorIn;
 }

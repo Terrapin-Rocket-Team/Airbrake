@@ -5,9 +5,10 @@
 
 #include "ErrorCorrectedBaro.h"
 
-namespace astra {
 class MotorDriver;
-class SensorManager;
+
+namespace astra {
+    class SensorManager;
 }
 
 namespace astra_rocket {
@@ -16,7 +17,7 @@ class RocketState;
 
 class AirbrakeController : public astra::DataReporter {
 public:
-    AirbrakeController(astra::MotorDriver *motor,
+    AirbrakeController(MotorDriver *motor,
                        astra_rocket::RocketState *state,
                        astra::ErrorCorrectedBaro *baro = nullptr,
                        const char *name = "AirbrakeCtrl");
@@ -25,7 +26,7 @@ public:
     int update(double currentTime = -1) override;
 
     void setRocketState(astra_rocket::RocketState *state);
-    void setMotor(astra::MotorDriver *motor);
+    void setMotor(MotorDriver *motor);
     void setBarometer(astra::ErrorCorrectedBaro *baro);
 
     void enable();
@@ -55,7 +56,7 @@ private:
     double getSpeedOfSound(double altitudeASL);
     void updateCdAEstimate();
 
-    astra::MotorDriver *motor = nullptr;
+    MotorDriver *motor = nullptr;
     astra_rocket::RocketState *state = nullptr;
     astra::ErrorCorrectedBaro *baro = nullptr;
     astra::ErrorCorrectedBaro correctedBaro;

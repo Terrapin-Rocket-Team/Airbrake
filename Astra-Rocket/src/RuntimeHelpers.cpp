@@ -7,7 +7,7 @@
 #include <Sensors/VoltageSensor/VoltageSensor.h>
 
 #include "AirbrakeController.h"
-#include "md6.h"
+#include "MotorDriver/MotorDriver.h"
 
 using namespace astra;
 using namespace astra_rocket;
@@ -210,7 +210,7 @@ void emitCompactData(Stream &out,
     }
     if (motorDriver)
     {
-        abBatV = motorDriver->getBatteryVoltage();
+        abBatV = motorDriver->getBatVoltage();
     }
 
     const double tSec = millis() / 1000.0;

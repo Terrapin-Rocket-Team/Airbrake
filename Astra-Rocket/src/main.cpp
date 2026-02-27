@@ -12,8 +12,15 @@
 #include <cstring>
 
 #include "AirbrakeController.h"
-#include "md6.h"
+
+#ifdef NATIVE
+#include <MotorDriver/MDNative.h>
+#else
+#include <MotorDriver/MDODrive.h>
+#endif
+
 #include "RuntimeHelpers.h"
+#include "MessageHandlers.h"
 #include <Sensors/HW/Mag/LIS3MDL.h>
 
 using namespace astra;
@@ -22,27 +29,26 @@ using namespace astra_rocket;
 static AstraRocketConfig config;
 AstraRocket rocket(config);
 
-static MotorDriver *g_mot = nullptr;
-static VoltageSensor *g_vs = nullptr;
-static AirbrakeController *g_airbrakeCtrl = nullptr;
-static bool g_hitlReadySent = false;
-static bool g_hitlRuntimeReady = false;
-static bool g_emitCompactMain = false;
-static bool g_emitCompactRadio = false;
-static bool g_compactHeaderSentMain = false;
-static bool g_compactHeaderSentRadio = false;
-static uint32_t g_lastCompactTelemetryMs = 0;
-static PrintLog g_fullMainTelemSink(Serial, true);
-static ILogSink *g_hitlMainDataSinks[1] = {&g_fullMainTelemSink};
+#ifdef NATIVE
+static MDNative motorDriver("MotorDriver");
+#else
+static MDODrive motorDriver("MotorDriver", Serial1, 35, 36);
+#endif
+
+static AirbrakeController airbrakeCtrl(&motorDriver, nullptr, nullptr, "AirbrakeCtrl");
+
+static VoltageSensor voltageSens(A0, 787, 1000, "Bat Voltage");
+static BMI088 imu;
+static DPS368 baro;
+static astra::LIS3MDL mag;
+static SAM_M10Q gps;
+
+static bool hitlReadyForData = false;
 
 static const uint32_t STATIONARY_CAL_TIME_MS = 3000; // 3s still
 static const uint32_t MAG_CAL_TIME_MS = 30000;       // 30s rotate
 
-static constexpr double kDefaultMinAngleDeg = 0.0;
-static constexpr double kDefaultMaxAngleDeg = 73.0;
-static constexpr uint32_t kCompactTelemetryIntervalMs = 500; // 2 Hz
-
-#if defined(CORE_TEENSY) && !defined(NATIVE)
+#ifdef ENV_TEENSY
 static void printTeensyCrashReport()
 {
     if (CrashReport)
@@ -54,119 +60,6 @@ static void printTeensyCrashReport()
     }
 }
 #endif
-
-static bool parseDoubleArg(const char *text, double &outValue)
-{
-    if (!text)
-        return false;
-
-    char *endPtr = nullptr;
-    const double value = strtod(text, &endPtr);
-    if (endPtr == text)
-        return false;
-
-    while (*endPtr == ' ' || *endPtr == '\t' || *endPtr == '\r' || *endPtr == '\n')
-        endPtr++;
-
-    if (*endPtr != '\0')
-        return false;
-
-    outValue = value;
-    return true;
-}
-
-static void handleAirbrakeMessage(const char *message, const char *prefix, Stream *source)
-{
-    (void)prefix;
-
-    if (!message || !source)
-        return;
-
-    char buffer[128];
-    strncpy(buffer, message, sizeof(buffer) - 1);
-    buffer[sizeof(buffer) - 1] = '\0';
-
-    char *command = strtok(buffer, " \t\r\n");
-    if (!command)
-    {
-        source->println("AB ERR empty command");
-        return;
-    }
-
-    if (strcmp(command, "TARGET_APOGEE") == 0)
-    {
-        if (!g_airbrakeCtrl)
-        {
-            source->println("AB ERR controller not ready");
-            return;
-        }
-        const char *arg = strtok(nullptr, " \t\r\n");
-        double apogeeM = 0.0;
-        if (!parseDoubleArg(arg, apogeeM))
-        {
-            source->println("AB ERR TARGET_APOGEE requires a numeric value");
-            return;
-        }
-
-        g_airbrakeCtrl->setTargetApogee(apogeeM);
-        source->printf("AB OK target_apogee=%.2f\n", apogeeM);
-        return;
-    }
-
-    if (strcmp(command, "ANGLE") == 0)
-    {
-        if (!g_mot)
-        {
-            source->println("AB ERR motor not ready");
-            return;
-        }
-        const char *arg = strtok(nullptr, " \t\r\n");
-        double angleDeg = 0.0;
-        if (!parseDoubleArg(arg, angleDeg))
-        {
-            source->println("AB ERR ANGLE requires a numeric value");
-            return;
-        }
-
-        if (angleDeg < kDefaultMinAngleDeg)
-            angleDeg = kDefaultMinAngleDeg;
-        else if (angleDeg > kDefaultMaxAngleDeg)
-            angleDeg = kDefaultMaxAngleDeg;
-
-        const float targetPos = g_mot->angleToPos(static_cast<float>(angleDeg));
-        g_mot->setPos(targetPos);
-        source->printf("AB OK angle=%.2f pos=%.4f\n", angleDeg, targetPos);
-        return;
-    }
-
-    source->println("AB ERR unknown command (use TARGET_APOGEE or ANGLE)");
-}
-
-static void handleHitlMessage(const char *message, const char *prefix, Stream *source)
-{
-    (void)prefix;
-    if (!message || !source)
-        return;
-
-    char buffer[64];
-    strncpy(buffer, message, sizeof(buffer) - 1);
-    buffer[sizeof(buffer) - 1] = '\0';
-
-    char *command = strtok(buffer, " \t\r\n");
-    if (!command)
-    {
-        source->println("HITL WAIT");
-        return;
-    }
-
-    if ((strcmp(command, "READY?") == 0) || (strcmp(command, "PING") == 0))
-    {
-        source->println(g_hitlRuntimeReady ? "HITL READY" : "HITL WAIT");
-        return;
-    }
-
-    source->println("HITL WAIT");
-}
 
 static void emitFullTelemHeader(Stream &out)
 {
@@ -183,143 +76,89 @@ static void emitFullTelemHeader(Stream &out)
 void setup()
 {
     Serial.begin(115200);
-#if defined(ENV_TEENSY) && !defined(NATIVE)
-    Serial2.begin(115200);
-#endif
-#if defined(CORE_TEENSY) && !defined(NATIVE)
-    printTeensyCrashReport();
-#endif
-    // Construct reporters at runtime so they are reliably registered in DataLogger.
-    static MotorDriver motInst("MotorDriver");
-    static VoltageSensor vsInst(A0, 787, 1000, "Bat Voltage");
-    static AirbrakeController airbrakeCtrlInst(&motInst, nullptr, nullptr, "AirbrakeCtrl");
-    g_mot = &motInst;
-    g_vs = &vsInst;
-    g_airbrakeCtrl = &airbrakeCtrlInst;
-
-    bool usingHitlSensors = false;
 #if defined(NATIVE)
     config.withHITL(true);
-    usingHitlSensors = true;
     Serial.println("SITL mode enabled");
-    if (!Serial.connectSITL("localhost", 5555))
-    {
-        Serial.println("ERROR: Failed to connect to SITL server");
-    }
 #else
     delay(2000);
-    // Hardware build running with astra-support HITL: use HITL sensors only.
-    // If real sensors are configured here, Astra will keep using them and ignore HITL injections.
+
+    Serial2.begin(115200); // Radio/Radxa serial port
+    printTeensyCrashReport();
+
+    //
     // config.withHITL(true);
-    // usingHitlSensors = true;
-    // Serial.println("HITL mode enabled (hardware build): using HITL sensors");
+    //
 
-    BMI088 *imu = new BMI088();
-    DPS368 *rawBaro = new DPS368();
-  astra::LIS3MDL *mag = new astra::LIS3MDL();
+    config.with6DoFIMU(&imu)
+        .withMag(&mag)
+        .withBaro(&baro)
+        .withGPS(&gps);
 
-    config.with6DoFIMU(imu)
-        .withMag(mag)
-        .withBaro(rawBaro)
-        .withGPS(new SAM_M10Q());
-
-    imu->setMountingOrientation(MountingOrientation::FLIP_XZ); // Adjust based on your mounting
-    mag->setMountingOrientation(MountingOrientation::ROTATE_90_Z);
+    imu.setMountingOrientation(MountingOrientation::FLIP_XZ); // Adjust based on your mounting
+    mag.setMountingOrientation(MountingOrientation::ROTATE_90_Z);
     // Poll mag below its default ODR to avoid repeated identical samples tripping stuck-reading health checks.
-    mag->setUpdateRate(20);
+    mag.setUpdateRate(20);
 #endif
 
-    g_emitCompactMain = !usingHitlSensors;
-#if defined(NATIVE)
-    g_emitCompactMain = false;
-#endif
-#if defined(ENV_TEENSY) && !defined(NATIVE)
-    g_emitCompactRadio = true;
-#else
-    g_emitCompactRadio = false;
-#endif
-
-    config.withMiscSensor(g_mot).withMiscSensor(g_vs);
+    config.withMiscSensor(&motorDriver).withMiscSensor(&voltageSens);
     config.withBaroMachLockout(true, 0.7);
 
     if (!rocket.init())
     {
-        Serial.println("ERROR: AstraRocket initialization failed!");
         LOGE("ASTRA FAILED TO INIT");
     }
 
     // Configure Mahony gains only after state/filter exist.
     auto *rocketState = rocket.getRocketState();
-    auto *filter = rocketState ? rocketState->getOrientationFilter() : nullptr;
-#if !defined(NATIVE)
-    if (filter)
+    auto *orifilter = rocketState ? rocketState->getOrientationFilter() : nullptr;
+    if (orifilter)
     {
-        filter->setKp(0.8);
-        filter->setKi(0.001);
+        orifilter->setKp(0.8);
+        orifilter->setKi(0.001);
     }
-#else
-    (void)filter;
-#endif
 
-    runtime_helpers::runOrientationCalibration(rocket,
-                                               config,
-                                               usingHitlSensors,
-                                               Serial,
-                                               STATIONARY_CAL_TIME_MS,
-                                               MAG_CAL_TIME_MS);
+    // runtime_helpers::runOrientationCalibration(rocket,
+    //                                            config,
+    //                                            usingHitlSensors,
+    //                                            Serial,
+    //                                            STATIONARY_CAL_TIME_MS,
+    //                                            MAG_CAL_TIME_MS);
 
-    if (g_mot && g_mot->isInitialized())
+    if (motorDriver.isInitialized())
     {
-        g_mot->zeroMotor();
+        motorDriver.zeroMotor();
     }
     else
     {
-        LOGE("Motor Not Initialized");
+        LOGE("Motor Not Initialized!");
     }
 
-    if (g_airbrakeCtrl)
-    {
-        g_airbrakeCtrl->setRocketState(rocket.getRocketState());
-        g_airbrakeCtrl->installBaroWrapper(config.getSensorManager());
-        g_airbrakeCtrl->begin();
-        g_airbrakeCtrl->setTargetApogee(1300.0);
-        g_airbrakeCtrl->setBinarySearchParams(10, 10.0, 5.0);
-        g_airbrakeCtrl->setAngleLimits(kDefaultMinAngleDeg, kDefaultMaxAngleDeg);
-        g_airbrakeCtrl->setRocketParameters(21.0, 0.01168, 0.00987);
-        g_airbrakeCtrl->setGroundAltitude(137.0);
-        g_airbrakeCtrl->setTransonicLockout(true, 0.7);
-        g_airbrakeCtrl->setSimulationParams(0.05, 45.0);
-        g_airbrakeCtrl->enableAdaptiveCdA(true, 0.2);
-        g_airbrakeCtrl->enableBaroCorrection(true, 0.052, 0.15);
-        g_airbrakeCtrl->enable();
-    }
+    airbrakeCtrl.setRocketState(rocket.getRocketState());
+    airbrakeCtrl.installBaroWrapper(config.getSensorManager());
+    airbrakeCtrl.begin();
+    airbrakeCtrl.setTargetApogee(1300.0);
+    airbrakeCtrl.setBinarySearchParams(10, 10.0, 5.0);
+    airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
+    airbrakeCtrl.setRocketParameters(21.0, 0.01168, 0.00987); // mass kg, CdA of rocket m^2 , flap area m^2
+    airbrakeCtrl.setGroundAltitude(137.0);                    // m
+    airbrakeCtrl.setTransonicLockout(true, 0.7);
+    airbrakeCtrl.setSimulationParams(0.05, 45.0);         // sim for apogee prediction
+    airbrakeCtrl.enableAdaptiveCdA(true, 0.2);            // ??
+    airbrakeCtrl.enableBaroCorrection(true, 0.052, 0.15); // correction c, tau
+    airbrakeCtrl.enable();
 
     Astra *astraSys = rocket.getAstraSystem();
     if (astraSys && astraSys->getMessageRouter())
     {
-        astraSys->getMessageRouter()->withListener("AB/", handleAirbrakeMessage);
-        astraSys->getMessageRouter()->withListener("HITL/", handleHitlMessage);
+        astraSys->getMessageRouter()->withListener("AB/", [](const char *msg, const char *prefix, Stream *src)
+                                                   { handleAirbrakeMessage(msg, prefix, src, airbrakeCtrl, motorDriver); });
+        astraSys->getMessageRouter()->withListener("HITL/", [](const char *msg, const char *prefix, Stream *src)
+                                                   { handleHitlMessage(msg, prefix, src, hitlReadyForData); });
         Serial.println("AB commands enabled: AB/TARGET_APOGEE <m>, AB/ANGLE <deg>");
     }
     else
     {
         Serial.println("AB router unavailable");
-    }
-
-    // SITL and HITL tooling expect the full DataLogger header on main serial.
-    if (usingHitlSensors)
-    {
-        // AstraRocket config has no native/USB data sink by default.
-        // Rebind DataLogger to main serial in HITL/SITL so TELEM/ full schema is available.
-        DataLogger::configure(g_hitlMainDataSinks, 1);
-        Astra *hitlAstra = rocket.getAstraSystem();
-        if (hitlAstra)
-        {
-            // Prime one event-driven update so HITL reporters are populated
-            // before we emit the startup header expected by sim tooling.
-            hitlAstra->update(0.0);
-        }
-        emitFullTelemHeader(Serial);
     }
 }
 
@@ -327,67 +166,15 @@ void loop()
 {
     rocket.update();
 
-    RocketState *state = rocket.getRocketState();
-    if (!state)
+    if (!hitlReadyForData && motorDriver.isInitialized())
     {
-        return;
-    }
-
-    if (!g_hitlRuntimeReady && g_mot && g_mot->isInitialized() && g_airbrakeCtrl)
-    {
-        g_hitlRuntimeReady = true;
-    }
-
-    if (!g_hitlReadySent)
-    {
-        // Emit readiness only once the main runtime loop is actively executing.
+        hitlReadyForData = true;
         Serial.println("HITL READY");
-        g_hitlReadySent = true;
     }
-
-    const uint32_t nowMs = millis();
-    if (nowMs - g_lastCompactTelemetryMs >= kCompactTelemetryIntervalMs)
-    {
-        if (g_emitCompactMain)
-        {
-            if (!g_compactHeaderSentMain)
-            {
-                runtime_helpers::emitCompactHeader(Serial);
-                g_compactHeaderSentMain = true;
-            }
-            else
-            {
-                runtime_helpers::emitCompactData(Serial, state, config, g_airbrakeCtrl, g_vs, g_mot);
-            }
-        }
-#if defined(ENV_TEENSY) && !defined(NATIVE)
-        if (g_emitCompactRadio)
-        {
-            if (!g_compactHeaderSentRadio)
-            {
-                runtime_helpers::emitCompactHeader(Serial2);
-                g_compactHeaderSentRadio = true;
-            }
-            else
-            {
-                runtime_helpers::emitCompactData(Serial2, state, config, g_airbrakeCtrl, g_vs, g_mot);
-            }
-        }
-#endif
-        g_lastCompactTelemetryMs = nowMs;
-    }
-
-    const FlightStage stage = state->getFlightStage();
-    const bool inPadIdle = (stage == PAD_IDLE);
-
     // In PAD_IDLE, do nothing.
-    if (inPadIdle)
+    if (rocket.getRocketState()->getFlightStage() == PAD_IDLE)
     {
         return;
     }
-
-    if (g_airbrakeCtrl)
-    {
-        g_airbrakeCtrl->update();
-    }
+    airbrakeCtrl.update();
 }

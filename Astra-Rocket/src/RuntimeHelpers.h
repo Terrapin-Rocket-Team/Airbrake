@@ -4,9 +4,9 @@
 #include <Arduino.h>
 #include <stdint.h>
 
+class MotorDriver;
 namespace astra
 {
-class MotorDriver;
 class VoltageSensor;
 } // namespace astra
 
@@ -35,7 +35,7 @@ void emitCompactData(Stream &out,
                      astra_rocket::AstraRocketConfig &config,
                      AirbrakeController *airbrakeCtrl,
                      astra::VoltageSensor *voltageSensor,
-                     astra::MotorDriver *motorDriver);
+                     MotorDriver *motorDriver);
 } // namespace runtime_helpers
 
 #endif // RUNTIME_HELPERS_H
