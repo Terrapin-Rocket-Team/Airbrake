@@ -418,13 +418,22 @@ bool MotorDriver::zeroMotor()
 #endif
 }
 
+bool MotorDriver::isLimitSwitchPressed(int pin)
+{
+#if defined(NATIVE)
+    return false;
+#else
+    return digitalRead(pin) == HIGH;
+#endif
+}
+
 bool MotorDriver::motorStall() // TODO: make sure directions are correct
 {
 #if defined(NATIVE)
     return false;
 #else
     // Read limit switches
-    bool topLimitSwitchState = digitalRead(topLimitSwitchPin) == LOW;
+    bool topLimitSwitchState = isLimitSwitchPressed(topLimitSwitchPin);
 
     positionHistory.push(position);
 

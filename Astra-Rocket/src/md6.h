@@ -80,6 +80,7 @@ namespace astra
 
         bool zeroMotor();
         bool motorStall();
+        bool isLimitSwitchPressed(int pin);
     };
 }
 

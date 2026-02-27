@@ -21,6 +21,7 @@ void runOrientationCalibration(AstraRocket &rocket,
                                uint32_t stationaryCalTimeMs,
                                uint32_t magCalTimeMs)
 {
+    return;
     auto *rocketState = rocket.getRocketState();
     auto *filter = rocketState ? rocketState->getOrientationFilter() : nullptr;
     auto *sm = config.getSensorManager();
