@@ -383,3 +383,35 @@ SITL: Attempting to connect to simulator at localhost:5555...
 SITL: Connected to localhost:5555
 DEBUG RocketState: High accel detected! Starting timer...
 SITL: Send error: 10054
+test\test_airbrake_suite\test_airbrake_suite.cpp:128:test_begin_fails_without_inner_barometer:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:129:test_set_inner_barometer_disables_inner_auto_update:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:130:test_update_propagates_inner_sensor_readings:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:131:test_update_propagates_inner_sensor_error:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:132:test_correction_disabled_forces_zero_delta:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:133:test_correction_uses_first_order_filter:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:134:test_correction_clamps_angle_to_max_limit:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:244:test_begin_requires_motor_and_state:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:245:test_enable_disable_state_tracking:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:246:test_update_when_disabled_returns_error_and_clears_baro_inputs:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:247:test_update_when_motor_uninitialized_returns_error:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:248:test_update_with_zero_speed_sets_predicted_apogee_to_altitude:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:249:test_update_in_coast_computes_dynamic_pressure:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:250:test_install_baro_wrapper_behavior:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:59:test_motor_moves_toward_target_with_rate_limit:PASS
+test\test_airbrake_suite\test_airbrake_suite.cpp:60:test_motor_reports_target_angle_and_can_retract:PASS
+
+-----------------------
+16 Tests 0 Failures 0 Ignored 
+OK
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555
+DEBUG RocketState: High accel detected! Starting timer...
+SITL: Connection closed by simulator
+Signal handlers installed
+SITL: Attempting to connect to simulator at localhost:5555...
+SITL: Connected to localhost:5555

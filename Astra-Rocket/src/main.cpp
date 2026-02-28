@@ -78,6 +78,7 @@ void setup()
     Serial.begin(115200);
 #if defined(NATIVE)
     config.withHITL(true);
+    Serial.connectSITL("localhost", 5555);
     Serial.println("SITL mode enabled");
 #else
     delay(2000);
@@ -102,11 +103,19 @@ void setup()
 
     config.withMiscSensor(&motorDriver).withMiscSensor(&voltageSens);
     config.withBaroMachLockout(true, 0.7);
+#if defined(NATIVE)
+    static PrintLog sitlTelemLog(Serial, true);
+    static ILogSink *nativeDataSinks[] = {&sitlTelemLog};
+    config.withDataLogs(nativeDataSinks, 1);
+#endif
 
     if (!rocket.init())
     {
         LOGE("ASTRA FAILED TO INIT");
     }
+#if defined(NATIVE)
+    DataLogger::configure(nativeDataSinks, 1);
+#endif
 
     // Configure Mahony gains only after state/filter exist.
     auto *rocketState = rocket.getRocketState();
@@ -139,7 +148,7 @@ void setup()
     airbrakeCtrl.begin();
     airbrakeCtrl.setTargetApogee(1300.0);
     airbrakeCtrl.setBinarySearchParams(10, 10.0, 5.0);
-    airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
+    airbrakeCtrl.setAngleLimits(0.0f, 0.0f);
     airbrakeCtrl.setRocketParameters(21.0, 0.01168, 0.00987); // mass kg, CdA of rocket m^2 , flap area m^2
     airbrakeCtrl.setGroundAltitude(137.0);                    // m
     airbrakeCtrl.setTransonicLockout(true, 0.7);

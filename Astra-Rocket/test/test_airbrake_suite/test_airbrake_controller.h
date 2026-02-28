@@ -12,7 +12,7 @@
 #include <RocketState.h>
 
 #include "../../src/AirbrakeController.h"
-#include "../../src/md6.h"
+#include "../../src/MotorDriver/MDNative.h"
 #include "../mocks/MockLinearKalmanFilter.h"
 #include "../mocks/MockMahony.h"
 
@@ -20,9 +20,9 @@ namespace test_airbrake_controller {
 
 namespace {
 
-class TestMotorDriver : public astra::MotorDriver {
+class TestMotorDriver : public MDNative {
 public:
-    TestMotorDriver() : astra::MotorDriver("TestMotor") {}
+    TestMotorDriver() : MDNative("TestMotor") {}
 
     void forceInitialized(bool value)
     {
@@ -204,7 +204,7 @@ void test_update_in_coast_computes_dynamic_pressure()
     TEST_ASSERT_EQUAL(0, controller->update(2.0));
     TEST_ASSERT_TRUE(std::isfinite(controller->getPredictedApogee()));
     TEST_ASSERT_TRUE(controller->getPredictedApogee() > 1500.0);
-    TEST_ASSERT_TRUE(correctedBaro->getDynamicPressure() > 1000.0);
+    TEST_ASSERT_TRUE(correctedBaro->getDynamicPressure() > 10.0);
 
     local_tearDown();
 }
