@@ -76,7 +76,7 @@ private:
     double threshold = 10.0;
     double angleResolution = 5.0;
     double minAngle = 0.0;
-    double maxAngle = 73.0;
+    double maxAngle = 80.0;
 
     double rocketMass = 43.5;
     double predictedCdArocket = 0.01168;

@@ -55,13 +55,13 @@ int MDODrive::read()
     voltage = odrive.getParameterAsFloat("vbus_voltage");
     angle = posToAngle(position);
 
-    //check every loop if limit switch is pressed. If so, stop motor.
-    if (isLimitSwitchPressed(topLimitSwitchPin))
+    // check every loop if limit switch is pressed. If so, stop motor.
+    if (isLimitSwitchPressed(topLimitSwitchPin) && velocity > 0.5) // Only stop if moving towards the limit
     {
         LOGW("Top limit switch pressed, stopping motor at position %0.2f (%0.2f deg)", position, angle);
         odrive.setVelocity(0);
     }
-    else if (isLimitSwitchPressed(botLimitSwitchPin))
+    else if (isLimitSwitchPressed(botLimitSwitchPin) && velocity < -0.5) // Only stop if moving towards the limit
     {
         LOGW("Bottom limit switch pressed, stopping motor at position %0.2f (%0.2f deg)", position, angle);
         odrive.setVelocity(0);
@@ -156,11 +156,11 @@ bool MDODrive::zeroMotor()
     odrive.setVelocity(0); // Move up at a constant speed
     read();
 
-    while (isLimitSwitchPressed(topLimitSwitchPin))
+    while (!isLimitSwitchPressed(topLimitSwitchPin))
     {
         read();
         odrive.setVelocity(1); // Move up at a constant speed
-        delay(50);            // Small delay to allow movement
+        delay(50);             // Small delay to allow movement
     }
 
     odrive.setVelocity(0); // Stop the motor
@@ -175,7 +175,7 @@ bool MDODrive::zeroMotor()
 
 bool MDODrive::isLimitSwitchPressed(int pin)
 {
-    return digitalRead(pin) == HIGH;
+        return digitalRead(pin) == HIGH;
 }
 
 bool MDODrive::isAtLimit()
@@ -195,21 +195,21 @@ float MDODrive::getBatVoltage()
 
 void MDODrive::setEnabled(bool enable)
 {
-    if(enable == motorEnabled)
+    if (enable == motorEnabled)
     {
         return; // No change
     }
     if (enable)
     {
         LOGI("Enabling motor...");
+        motorEnabled = true;
         odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
         setPos(position); // Hold current position rather than moving somewhere unwanted
-        motorEnabled = true;
     }
     else
     {
         LOGI("Disabling motor...");
-        odrive.setVelocity(0); //Stops all motion commands
+        odrive.setVelocity(0); // Stops all motion commands
         odrive.setState(AXIS_STATE_IDLE);
         motorEnabled = false;
     }

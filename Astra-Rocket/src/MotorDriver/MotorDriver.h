@@ -11,10 +11,10 @@ protected:
     float velocity = 0; // current velocity
     float voltage = 0;
 
-    const float kMotorMaxAngleDeg = 73.0f;
+    const float kMotorMaxAngleDeg = 80.0f;
     const float kMotorPositionEpsilon = 0.02f;
     float kLimitTurnsPerSec = 100.0f;
-    const float kMotorMaxPosition = 28.5f;
+    const float kMotorMaxPosition = 35.5f;
 
 public:
     MotorDriver(const char *name = "MotorDriver") : Sensor(name)

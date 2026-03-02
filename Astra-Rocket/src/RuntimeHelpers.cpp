@@ -141,7 +141,7 @@ void runOrientationCalibration(AstraRocket &rocket,
 
 void emitCompactHeader(Stream &out)
 {
-    out.println("CTLM/t_s,stage,bat_v,ab_bat_v,pz_m,vz_mps,az_mps2,lat_deg,lon_deg,ab_cmd_deg,ab_act_deg,q_re_w,q_re_x,q_re_y,q_re_z");
+    out.println("CTLM/t_s,stage,bat_v,ab_bat_v,pz_m,vz_mps,az_mps2,lat_deg,lon_deg,ab_cmd_deg,ab_act_deg,q_re_w,q_re_x,q_re_y,q_re_z,baro_alt_m");
 }
 
 void emitCompactData(Stream &out,
@@ -165,6 +165,7 @@ void emitCompactData(Stream &out,
     double qx = 0.0;
     double qy = 0.0;
     double qz = 0.0;
+    double baroAltM = 0.0;
 
     if (state)
     {
@@ -197,6 +198,12 @@ void emitCompactData(Stream &out,
             lat = gpsPos.x();
             lon = gpsPos.y();
         }
+
+        Barometer *baroSrc = sm->getBaroSource();
+        if (baroSrc && baroSrc->isInitialized())
+        {
+            baroAltM = baroSrc->getASLAltM();
+        }
     }
 
     if (airbrakeCtrl)
@@ -214,7 +221,7 @@ void emitCompactData(Stream &out,
     }
 
     const double tSec = millis() / 1000.0;
-
+// CTLM/728.936,0,0.000,20.868,0.000,0.000,0.160,0.0000000,0.0000000,0.000,0.000,0.851221,0.063020,-0.047859,-0.518808,137.250
     out.print("CTLM/");
     out.print(tSec, 3);
     out.write(',');
@@ -244,6 +251,8 @@ void emitCompactData(Stream &out,
     out.write(',');
     out.print(qy, 6);
     out.write(',');
-    out.println(qz, 6);
+    out.print(qz, 6);
+    out.write(',');
+    out.println(baroAltM, 3);
 }
 } // namespace runtime_helpers

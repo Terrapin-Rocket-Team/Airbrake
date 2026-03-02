@@ -57,8 +57,8 @@ burnTime = 3.5 # [s]
 rocketThrust = totalImpulse / burnTime  # [N]
 launchTime = 15  # time of launch [s]
 surface_roughness = 5e-6 # [m]
-dryMass = 21.40956 # [kg]
-wetMass = 26.3084; # [kg]
+dryMass = 23.9 # [kg]
+wetMass = 28.8; # [kg]
 m = wetMass
 
 CDr = 0.62

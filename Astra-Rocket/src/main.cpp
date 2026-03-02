@@ -32,21 +32,45 @@ AstraRocket rocket(config);
 #ifdef NATIVE
 static MDNative motorDriver("MotorDriver");
 #else
-static MDODrive motorDriver("MotorDriver", Serial1, 35, 36);
+static MDODrive motorDriver("MotorDriver", Serial1, 35, 34);
 #endif
 
 static AirbrakeController airbrakeCtrl(&motorDriver, nullptr, nullptr, "AirbrakeCtrl");
 
-static VoltageSensor voltageSens(A0, 787, 1000, "Bat Voltage");
+static VoltageSensor voltageSens(A1, 22000, 33000, "Bat Voltage");
 static BMI088 imu;
 static DPS368 baro;
 static astra::LIS3MDL mag;
 static SAM_M10Q gps;
+static PrintLog hitlTelemLog(Serial, true);
+static ILogSink *hitlTelemSinks[] = {&hitlTelemLog};
 
 static bool hitlReadyForData = false;
+static uint32_t lastCtlmEmitMs = 0;
 
 static const uint32_t STATIONARY_CAL_TIME_MS = 3000; // 3s still
 static const uint32_t MAG_CAL_TIME_MS = 30000;       // 30s rotate
+
+static Stream &getCtlmStream()
+{
+#if defined(NATIVE)
+    return Serial;
+#else
+    return Serial2;
+#endif
+}
+
+static void restoreTelemetryReporters()
+{
+    DataLogger::registerReporter(rocket.getRocketState());
+    DataLogger::registerReporter(&imu);
+    DataLogger::registerReporter(&baro);
+    DataLogger::registerReporter(&mag);
+    DataLogger::registerReporter(&gps);
+    DataLogger::registerReporter(&motorDriver);
+    DataLogger::registerReporter(&voltageSens);
+    DataLogger::registerReporter(&airbrakeCtrl);
+}
 
 #ifdef ENV_TEENSY
 static void printTeensyCrashReport()
@@ -60,18 +84,6 @@ static void printTeensyCrashReport()
     }
 }
 #endif
-
-static void emitFullTelemHeader(Stream &out)
-{
-    PrintLog tempLog(out, true);
-    if (!tempLog.begin())
-        return;
-    if (DataLogger::available())
-    {
-        DataLogger::instance().printHeaderTo(&tempLog);
-    }
-    tempLog.end();
-}
 
 void setup()
 {
@@ -103,19 +115,17 @@ void setup()
 
     config.withMiscSensor(&motorDriver).withMiscSensor(&voltageSens);
     config.withBaroMachLockout(true, 0.7);
-#if defined(NATIVE)
-    static PrintLog sitlTelemLog(Serial, true);
-    static ILogSink *nativeDataSinks[] = {&sitlTelemLog};
-    config.withDataLogs(nativeDataSinks, 1);
-#endif
 
     if (!rocket.init())
     {
         LOGE("ASTRA FAILED TO INIT");
     }
-#if defined(NATIVE)
-    DataLogger::configure(nativeDataSinks, 1);
-#endif
+    restoreTelemetryReporters();
+    if (config.getHITLEnabled())
+    {
+        // Route TELEM/ to USB serial so astra-support can receive CMD/HEADER responses.
+        DataLogger::configure(hitlTelemSinks, 1);
+    }
 
     // Configure Mahony gains only after state/filter exist.
     auto *rocketState = rocket.getRocketState();
@@ -146,10 +156,10 @@ void setup()
     airbrakeCtrl.setRocketState(rocket.getRocketState());
     airbrakeCtrl.installBaroWrapper(config.getSensorManager());
     airbrakeCtrl.begin();
-    airbrakeCtrl.setTargetApogee(1300.0);
+    airbrakeCtrl.setTargetApogee(3500.0/3.28);
     airbrakeCtrl.setBinarySearchParams(10, 10.0, 5.0);
-    airbrakeCtrl.setAngleLimits(0.0f, 0.0f);
-    airbrakeCtrl.setRocketParameters(21.0, 0.01168, 0.00987); // mass kg, CdA of rocket m^2 , flap area m^2
+    airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
+    airbrakeCtrl.setRocketParameters(23.9, 0.01168, 0.00987); // mass kg, CdA of rocket m^2 , flap area m^2
     airbrakeCtrl.setGroundAltitude(137.0);                    // m
     airbrakeCtrl.setTransonicLockout(true, 0.7);
     airbrakeCtrl.setSimulationParams(0.05, 45.0);         // sim for apogee prediction
@@ -162,8 +172,6 @@ void setup()
     {
         astraSys->getMessageRouter()->withListener("AB/", [](const char *msg, const char *prefix, Stream *src)
                                                    { handleAirbrakeMessage(msg, prefix, src, airbrakeCtrl, motorDriver); });
-        astraSys->getMessageRouter()->withListener("HITL/", [](const char *msg, const char *prefix, Stream *src)
-                                                   { handleHitlMessage(msg, prefix, src, hitlReadyForData); });
         Serial.println("AB commands enabled: AB/TARGET_APOGEE <m>, AB/ANGLE <deg>");
     }
     else
@@ -175,16 +183,24 @@ void setup()
 void loop()
 {
     rocket.update();
+    const uint32_t nowMs = millis();
 
-    if (!hitlReadyForData && motorDriver.isInitialized())
+    if (nowMs - lastCtlmEmitMs >= 500)
+    {
+        lastCtlmEmitMs = nowMs;
+        runtime_helpers::emitCompactData(getCtlmStream(),
+                                         rocket.getRocketState(),
+                                         config,
+                                         &airbrakeCtrl,
+                                         &voltageSens,
+                                         &motorDriver);
+        Serial.println(voltageSens.getVoltage());
+    }
+
+    if (!hitlReadyForData && motorDriver.isInitialized() && config.getHITLEnabled())
     {
         hitlReadyForData = true;
         Serial.println("HITL READY");
-    }
-    // In PAD_IDLE, do nothing.
-    if (rocket.getRocketState()->getFlightStage() == PAD_IDLE)
-    {
-        return;
     }
     airbrakeCtrl.update();
 }

@@ -5,9 +5,6 @@
 #include "MotorDriver/MotorDriver.h"
 #include "AirbrakeController.h"
 
-static constexpr double kDefaultMinAngleDeg = 0.0;
-static constexpr double kDefaultMaxAngleDeg = 73.0;
-
 static bool parseDoubleArg(const char *text, double &outValue)
 {
     if (!text)
@@ -76,11 +73,6 @@ void handleAirbrakeMessage(const char *message, const char *prefix, Stream *sour
             source->println("AB ERR ANGLE requires a numeric value");
             return;
         }
-
-        if (angleDeg < kDefaultMinAngleDeg)
-            angleDeg = kDefaultMinAngleDeg;
-        else if (angleDeg > kDefaultMaxAngleDeg)
-            angleDeg = kDefaultMaxAngleDeg;
 
         const float targetPos = motorDriver.angleToPos(static_cast<float>(angleDeg));
         motorDriver.setPos(targetPos);
