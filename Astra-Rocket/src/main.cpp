@@ -1,15 +1,14 @@
 #include <Arduino.h>
 
-#include <AstraRocket.h>
-#include <Sensors/HW/GPS/SAM_M10Q.h>
+#include <Utils/Astra.h>
 #include <Sensors/HW/IMU/BMI088.h>
+#include <Sensors/HW/Mag/LIS3MDL.h>
 #include <Sensors/HW/Baro/DPS368.h>
 #include <Sensors/VoltageSensor/VoltageSensor.h>
+#include <RecordData/DataReporter/SimpleDataReporter.h>
 #include <RecordData/Logging/DataLogger.h>
 #include <RecordData/Logging/LoggingBackend/ILogSink.h>
-
-#include <cstdlib>
-#include <cstring>
+#include <State/DefaultState.h>
 
 #include "AirbrakeController.h"
 
@@ -21,13 +20,13 @@
 
 #include "RuntimeHelpers.h"
 #include "MessageHandlers.h"
-#include <Sensors/HW/Mag/LIS3MDL.h>
 
 using namespace astra;
-using namespace astra_rocket;
 
-static AstraRocketConfig config;
-AstraRocket rocket(config);
+DefaultState rocketState;
+
+static AstraConfig config;
+Astra rocket(&config);
 
 #ifdef NATIVE
 static MDNative motorDriver("MotorDriver");
@@ -35,42 +34,37 @@ static MDNative motorDriver("MotorDriver");
 static MDODrive motorDriver("MotorDriver", Serial1, 35, 34);
 #endif
 
-static AirbrakeController airbrakeCtrl(&motorDriver, nullptr, nullptr, "AirbrakeCtrl");
-
-static VoltageSensor voltageSens(A1, 22000, 33000, "Bat Voltage");
 static BMI088 imu;
 static DPS368 baro;
 static astra::LIS3MDL mag;
-static SAM_M10Q gps;
-static PrintLog hitlTelemLog(Serial, true);
-static ILogSink *hitlTelemSinks[] = {&hitlTelemLog};
 
-static bool hitlReadyForData = false;
-static uint32_t lastCtlmEmitMs = 0;
 
-static const uint32_t STATIONARY_CAL_TIME_MS = 3000; // 3s still
-static const uint32_t MAG_CAL_TIME_MS = 30000;       // 30s rotate
+static PrintLog serialLog(Serial, true);
+static PrintLog radioLog(Serial2, true);
 
-static Stream &getCtlmStream()
+static FileLogSink fileDLog("data_log.txt", StorageBackend::SD_CARD, false);
+static FileLogSink fileELog("event_log.txt", StorageBackend::SD_CARD, false);
+
+static ILogSink *logSinks[] = { &serialLog, &radioLog, &fileDLog };
+static ILogSink *eventSinks[] = { &serialLog, &radioLog, &fileELog };
+
+static bool beginMillisReporter()
 {
-#if defined(NATIVE)
-    return Serial;
-#else
-    return Serial2;
-#endif
+    return true;
 }
 
-static void restoreTelemetryReporters()
+static float updateMillisReporter()
 {
-    DataLogger::registerReporter(rocket.getRocketState());
-    DataLogger::registerReporter(&imu);
-    DataLogger::registerReporter(&baro);
-    DataLogger::registerReporter(&mag);
-    DataLogger::registerReporter(&gps);
-    DataLogger::registerReporter(&motorDriver);
-    DataLogger::registerReporter(&voltageSens);
-    DataLogger::registerReporter(&airbrakeCtrl);
+    return millis() / 1000.0;
 }
+
+static SimpleDataReporter<float> millisReporter(
+    "Time",
+    "%0.3f",
+    "Seconds",
+    beginMillisReporter,
+    updateMillisReporter,
+    0u);
 
 #ifdef ENV_TEENSY
 static void printTeensyCrashReport()
@@ -88,61 +82,47 @@ static void printTeensyCrashReport()
 void setup()
 {
     Serial.begin(115200);
-#if defined(NATIVE)
-    config.withHITL(true);
-    Serial.connectSITL("localhost", 5555);
-    Serial.println("SITL mode enabled");
-#else
-    delay(2000);
+    Serial2.begin(115200);
 
-    Serial2.begin(115200); // Radio/Radxa serial port
+    // serialLog.begin();
+    // radioLog.begin();
+    // fileDLog.begin();
+    // fileELog.begin();
+    millisReporter.begin();
+    
+    delay(2000);
     printTeensyCrashReport();
 
-    //
-    // config.withHITL(true);
-    //
+    DataLogger::unregisterReporter(&imu);
+    DataLogger::unregisterReporter(&mag);
+    DataLogger::unregisterReporter(&rocketState);
+    DataLogger::registerReporter(&millisReporter);
+    DataLogger::registerReporter(&baro);
+    DataLogger::registerReporter(&motorDriver);
+    Serial.printf("DL reporters pre-init: %u\n", DataLogger::instance().getNumReporters());
 
     config.with6DoFIMU(&imu)
         .withMag(&mag)
         .withBaro(&baro)
-        .withGPS(&gps);
+        .withState(&rocketState)
+        .withEventLogs(eventSinks, sizeof(eventSinks) / sizeof(eventSinks[0]))
+        .withDataLogs(logSinks, sizeof(logSinks) / sizeof(logSinks[0]))
+        .withLoggingRate(2);
+        ;
 
-    //imu.setMountingOrientation(MountingOrientation::FLIP_XZ); // Adjust based on your mounting
     mag.setMountingOrientation(MountingOrientation::FLIP_XY);
-    // Poll mag below its default ODR to avoid repeated identical samples tripping stuck-reading health checks.
     mag.setUpdateRate(20);
-#endif
 
-    config.withMiscSensor(&motorDriver).withMiscSensor(&voltageSens);
+    config.withMiscSensor(&motorDriver);
     config.withBaroMachLockout(true, 0.7);
 
     if (!rocket.init())
     {
         LOGE("ASTRA FAILED TO INIT");
     }
-    restoreTelemetryReporters();
-    if (config.getHITLEnabled())
-    {
-        // Route TELEM/ to USB serial so astra-support can receive CMD/HEADER responses.
-        DataLogger::configure(hitlTelemSinks, 1);
-    }
-
-    // Configure Mahony gains only after state/filter exist.
-    auto *rocketState = rocket.getRocketState();
-    auto *orifilter = rocketState ? rocketState->getOrientationFilter() : nullptr;
-    if (orifilter)
-    {
-        orifilter->setKp(0.8);
-        orifilter->setKi(0.001);
-    }
-
-    // runtime_helpers::runOrientationCalibration(rocket,
-    //                                            config,
-    //                                            usingHitlSensors,
-    //                                            Serial,
-    //                                            STATIONARY_CAL_TIME_MS,
-    //                                            MAG_CAL_TIME_MS);
-
+    Serial.printf("DL reporters post-init: %u (available=%d)\n",
+                  DataLogger::instance().getNumReporters(),
+                  DataLogger::available() ? 1 : 0);
     if (motorDriver.isInitialized())
     {
         motorDriver.zeroMotor();
@@ -153,26 +133,12 @@ void setup()
         LOGE("Motor Not Initialized!");
     }
 
-    airbrakeCtrl.setRocketState(rocket.getRocketState());
-    airbrakeCtrl.installBaroWrapper(config.getSensorManager());
-    airbrakeCtrl.begin();
-    airbrakeCtrl.setTargetApogee(3500.0/3.28);
-    airbrakeCtrl.setBinarySearchParams(10, 10.0, 5.0);
-    airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
-    airbrakeCtrl.setRocketParameters(23.9, 0.01168, 0.00987); // mass kg, CdA of rocket m^2 , flap area m^2
-    airbrakeCtrl.setGroundAltitude(137.0);                    // m
-    airbrakeCtrl.setTransonicLockout(true, 0.7);
-    airbrakeCtrl.setSimulationParams(0.05, 45.0);         // sim for apogee prediction
-    airbrakeCtrl.enableAdaptiveCdA(true, 0.2);            // ??
-    airbrakeCtrl.enableBaroCorrection(true, 0.052, 0.15); // correction c, tau
-    airbrakeCtrl.enable();
-
-    Astra *astraSys = rocket.getAstraSystem();
-    if (astraSys && astraSys->getMessageRouter())
+    if (rocket.getMessageRouter())
     {
-        astraSys->getMessageRouter()->withListener("AB/", [](const char *msg, const char *prefix, Stream *src)
-                                                   { handleAirbrakeMessage(msg, prefix, src, airbrakeCtrl, motorDriver); });
-        Serial.println("AB commands enabled: AB/TARGET_APOGEE <m>, AB/ANGLE <deg>");
+        rocket.getMessageRouter()->withInterface(&Serial2);
+        rocket.getMessageRouter()->withListener("AB/", [](const char *msg, const char *prefix, Stream *src)
+                                                   { handleAirbrakeMessage(msg, prefix, src, motorDriver); });
+        Serial.println("AB commands enabled: AB/ANGLE <deg>, AB/SWEEP <seconds>, AB/SWEEP_STOP, AB/CRASH");
     }
     else
     {
@@ -183,24 +149,5 @@ void setup()
 void loop()
 {
     rocket.update();
-    const uint32_t nowMs = millis();
-
-    if (nowMs - lastCtlmEmitMs >= 500)
-    {
-        lastCtlmEmitMs = nowMs;
-        runtime_helpers::emitCompactData(getCtlmStream(),
-                                         rocket.getRocketState(),
-                                         config,
-                                         &airbrakeCtrl,
-                                         &voltageSens,
-                                         &motorDriver);
-        Serial.println(voltageSens.getVoltage());
-    }
-
-    if (!hitlReadyForData && motorDriver.isInitialized() && config.getHITLEnabled())
-    {
-        hitlReadyForData = true;
-        Serial.println("HITL READY");
-    }
-    airbrakeCtrl.update();
+    updateAirbrakeSweep(motorDriver);
 }
