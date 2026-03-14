@@ -44,11 +44,8 @@ int AirbrakeController::begin()
     return 0;
 }
 
-int AirbrakeController::update(double currentTime)
+int AirbrakeController::update()
 {
-
-
-    (void)currentTime;
     if (!enabled || !motor || !state)
     {
         if (baro && baroCorrectionEnabled)

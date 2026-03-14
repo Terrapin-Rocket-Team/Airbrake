@@ -77,8 +77,8 @@ int ErrorCorrectedBaro::read() {
     return 0;
 }
 
-int ErrorCorrectedBaro::update(double currentTime) {
-    int err = Barometer::update(currentTime);
+int ErrorCorrectedBaro::update() {
+    int err = Barometer::update();
     if (err != 0) {
         return err;
     }
