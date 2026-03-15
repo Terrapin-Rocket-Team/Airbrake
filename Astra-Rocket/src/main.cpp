@@ -129,15 +129,15 @@ void setup()
     airbrakeCtrl.setAutoUpdate(false);
     // airbrakeCtrl.installBaroWrapper(config.getSensorManager());
     airbrakeCtrl.begin();
-    airbrakeCtrl.setTargetApogee(1500.0);
-    airbrakeCtrl.setBinarySearchParams(10, 10.0, 5.0);
+    airbrakeCtrl.setTargetApogee(1144.0);
+    airbrakeCtrl.setBinarySearchParams(10, .1, 5.0);
     airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
-    airbrakeCtrl.setRocketParameters(23.9, 0.01168, 0.00987);
+    airbrakeCtrl.setRocketParameters(75 / 2.2, 0.01168, 0.00987);
     airbrakeCtrl.setGroundAltitude(137.0);
     airbrakeCtrl.setTransonicLockout(true, 0.7);
     airbrakeCtrl.setSimulationParams(0.05, 45.0);
     airbrakeCtrl.enableAdaptiveCdA(false, 0.2);
-    airbrakeCtrl.enableBaroCorrection(true, 0.052, 0.15);
+    airbrakeCtrl.enableBaroCorrection(false, 0.052, 0.15);
     airbrakeCtrl.enable();
 
     if (rocket.getMessageRouter())

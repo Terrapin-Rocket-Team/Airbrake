@@ -6,22 +6,12 @@ int MDODrive::init()
 
     LOGI("Initializing Motor Driver...");
     odrive_serial.begin(115200);
-    // Keep ODrive command reads bounded so missing hardware cannot lock init.
-    odrive_serial.setTimeout(75);
     delay(250); // Give some time for the serial connection to establish
     // Implement initialization logic for MD6 sensor
 
     LOGI("Waiting for ODrive...");
-    const uint32_t detectTimeoutMs = 6000;
-    const uint32_t detectStartMs = millis();
     while (odrive.getState() == AXIS_STATE_UNDEFINED)
     {
-        if ((millis() - detectStartMs) >= detectTimeoutMs)
-        {
-            LOGE("Timed out waiting for ODrive (%lu ms).", (unsigned long)detectTimeoutMs);
-            initialized = false;
-            return -1;
-        }
         delay(100);
     }
 
@@ -32,16 +22,8 @@ int MDODrive::init()
     LOGI("Enabling closed loop control...");
     odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
     delay(100);
-    const uint32_t closedLoopTimeoutMs = 6000;
-    const uint32_t closedLoopStartMs = millis();
     while (odrive.getState() != AXIS_STATE_CLOSED_LOOP_CONTROL)
     {
-        if ((millis() - closedLoopStartMs) >= closedLoopTimeoutMs)
-        {
-            LOGE("Timed out enabling ODrive closed-loop mode (%lu ms).", (unsigned long)closedLoopTimeoutMs);
-            initialized = false;
-            return -2;
-        }
         LOGI("still enabling...");
         odrive.clearErrors();
         odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);

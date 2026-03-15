@@ -73,8 +73,8 @@ private:
     double simTimeStep = 0.05;
     double simTimeMax = 45.0;
     int maxGuesses = 10;
-    double threshold = 10.0;
-    double angleResolution = 5.0;
+    double threshold = 0.1;
+    double angleResolution = 2.5;
     double minAngle = 0.0;
     double maxAngle = 80.0;
 
