@@ -1,0 +1,94 @@
+2026-03-03T13:50:02.060 SESSION START reason=AB/CRASH delimiter
+2026-03-03T13:50:02.060 FORCE RECONNECT reason=AB/CRASH sent
+2026-03-03T13:50:02.060 RX AB OK forcing crash via nullptr dereference
+2026-03-03T13:50:02.060 SERIAL RECONNECT requested
+2026-03-03T13:50:02.064 SERIAL CONNECTED port=COM27 baud=115200
+2026-03-03T13:50:10.080 SERIAL READ ERROR reason=ClearCommError failed (PermissionError(13, 'The device does not recognize the command.', None, 22))
+2026-03-03T13:50:11.084 SERIAL CONNECTED port=COM27 baud=115200
+2026-03-03T13:50:13.101 RX === Previous Crash Report ===
+2026-03-03T13:50:13.124 RX CrashReport:
+2026-03-03T13:50:13.128 RX A problem occurred at (system time) 1:21:15
+2026-03-03T13:50:13.136 RX Code was executing from address 0x3A2
+2026-03-03T13:50:13.137 RX CFSR: 82
+2026-03-03T13:50:13.140 RX (DACCVIOL) Data Access Violation
+2026-03-03T13:50:13.144 RX (MMARVALID) Accessed Address: 0x0 (nullptr)
+2026-03-03T13:50:13.145 RX Check code at 0x3A2 - very likely a bug!
+2026-03-03T13:50:13.147 RX Run "addr2line -e mysketch.ino.elf 0x3A2" for filename & line number.
+2026-03-03T13:50:13.149 RX Temperature inside the chip was 37.78 °C
+2026-03-03T13:50:13.151 RX Startup CPU clock speed is 600MHz
+2026-03-03T13:50:13.151 RX Reboot was caused by auto reboot after fault or bad interrupt detected
+2026-03-03T13:50:13.152 RX === End Crash Report ===
+2026-03-03T13:50:13.152 RX DL reporters pre-init: 3
+2026-03-03T13:50:13.399 RX LOG/3.207 [INFO]: Initializing Astra version 0.2-f474dbf
+2026-03-03T13:50:13.405 TELEM HEADER Time - Seconds,DPS368 - Pres (hPa),DPS368 - Temp (C),DPS368 - Alt ASL (m),MotorDriver - Motor Position,MotorDriver - Motor Angle,MotorDriver - Motor Velocity,MotorDriver - Battery Voltage
+2026-03-03T13:50:13.726 RX LOG/3.535 [INFO]: Added misc sensor 'BMI088' at index 0.
+2026-03-03T13:50:13.733 RX LOG/3.541 [INFO]: Added misc sensor 'MotorDriver' at index 1.
+2026-03-03T13:50:13.739 RX LOG/3.544 [INFO]: SensorManager populated with 4 primary sensors and 2 misc sensors.
+2026-03-03T13:50:13.746 RX LOG/3.552 [INFO]: Accelerometer (BMI088) initialized successfully.
+2026-03-03T13:50:13.751 RX LOG/3.557 [INFO]: Gyroscope (BMI088) initialized successfully.
+2026-03-03T13:50:13.756 RX LOG/3.565 [INFO]: Magnetometer (LIS3MDL) initialized successfully.
+2026-03-03T13:50:14.041 RX LOG/3.849 [INFO]: Barometer (DPS368) initialized successfully.
+2026-03-03T13:50:14.048 RX LOG/3.856 [WARNING]: No GPS sensor defined.
+2026-03-03T13:50:14.051 RX LOG/3.858 [INFO]: Initializing 2 miscellaneous sensors...
+2026-03-03T13:50:14.491 RX LOG/4.300 [INFO]: Misc sensor [0] (BMI088) initialized.
+2026-03-03T13:50:14.495 RX LOG/4.304 [INFO]: Initializing Motor Driver...
+2026-03-03T13:50:14.751 RX LOG/4.557 [INFO]: Waiting for ODrive...
+2026-03-03T13:50:14.757 RX LOG/4.562 [INFO]: found ODrive
+2026-03-03T13:50:14.764 RX LOG/4.570 [INFO]: ODrive Voltage: 22.86
+2026-03-03T13:50:14.766 RX LOG/4.572 [INFO]: Enabling closed loop control...
+2026-03-03T13:50:14.871 RX LOG/4.678 [INFO]: ODrive running!
+2026-03-03T13:50:14.888 RX LOG/4.696 [INFO]: ODrive vel_limit (turn/s): 100.00
+2026-03-03T13:50:14.891 RX LOG/4.699 [INFO]: Misc sensor [1] (MotorDriver) initialized.
+2026-03-03T13:50:14.895 RX LOG/4.704 [INFO]: All sensors initialized successfully.
+2026-03-03T13:50:14.914 RX LOG/4.722 [INFO]: DefaultKalmanFilter initialized with 6-state position/velocity model
+2026-03-03T13:50:14.920 RX LOG/4.729 [INFO]: State initialized. Ready for data.
+2026-03-03T13:50:14.924 RX LOG/4.732 [INFO]: Baro origin set to -1617.50 m ASL
+2026-03-03T13:50:14.946 RX LOG/4.737 [INFO]: Astra initialized successfully.
+2026-03-03T13:50:14.951 RX LOG/4.741 [ERROR]: ASTRA FAILED TO INIT
+2026-03-03T13:50:14.962 RX DL reporters post-init: 3 (available=1)
+2026-03-03T13:50:14.965 RX LOG/4.745 [INFO]: Enabling motor...
+2026-03-03T13:50:14.968 RX LOG/4.751 [INFO]: Zeroing motor...
+2026-03-03T13:50:15.455 RX LOG/5.264 [INFO]: Motor zeroed successfully.
+2026-03-03T13:50:15.462 RX LOG/5.271 [INFO]: Disabling motor...
+2026-03-03T13:50:15.465 RX AB commands enabled: AB/ANGLE <deg>, AB/SWEEP <seconds>, AB/SWEEP_STOP, AB/CRASH
+2026-03-03T13:50:15.486 RX LOG/5.296 [WARNING]: Accel 'BMI088' became unhealthy: stuck readings detected
+2026-03-03T13:50:15.492 RX LOG/5.301 [WARNING]: Gyro 'BMI088' became unhealthy: stuck readings detected
+2026-03-03T13:50:16.935 RX LOG/6.743 [INFO]: Baro 'DPS368' recovered: readings varying normally
+2026-03-03T13:53:14.274 TX AB/ANGLE 5
+2026-03-03T13:53:14.275 RX LOG/184.086 [INFO]: Enabling motor...
+2026-03-03T13:53:14.281 RX AB OK angle=5.00 pos=4.0649 sweep_stopped=0
+2026-03-03T13:53:29.240 TX AB/ANGLE 10
+2026-03-03T13:53:29.242 RX AB OK angle=10.00 pos=5.9808 sweep_stopped=0
+2026-03-03T13:53:44.356 TX AB/ANGLE 15
+2026-03-03T13:53:44.362 RX AB OK angle=15.00 pos=7.6949 sweep_stopped=0
+2026-03-03T13:53:58.805 TX AB/ANGLE 20
+2026-03-03T13:53:58.806 RX AB OK angle=20.00 pos=9.2544 sweep_stopped=0
+2026-03-03T13:54:14.356 TX AB/ANGLE 25
+2026-03-03T13:54:14.370 RX AB OK angle=25.00 pos=10.7063 sweep_stopped=0
+2026-03-03T13:54:30.089 TX AB/ANGLE 30
+2026-03-03T13:54:30.107 RX AB OK angle=30.00 pos=12.0976 sweep_stopped=0
+2026-03-03T13:54:45.416 TX AB/ANGLE 35
+2026-03-03T13:54:45.417 RX AB OK angle=35.00 pos=13.4755 sweep_stopped=0
+2026-03-03T13:55:00.537 TX AB/ANGLE 40
+2026-03-03T13:55:00.539 RX AB OK angle=40.00 pos=14.8872 sweep_stopped=0
+2026-03-03T13:55:15.419 TX AB/ANGLE 45
+2026-03-03T13:55:15.420 RX AB OK angle=45.00 pos=16.3797 sweep_stopped=0
+2026-03-03T13:55:31.121 TX AB/ANGLE 50
+2026-03-03T13:55:31.123 RX AB OK angle=50.00 pos=18.0000 sweep_stopped=0
+2026-03-03T13:55:46.023 TX AB/ANGLE 55
+2026-03-03T13:55:46.024 RX AB OK angle=55.00 pos=19.7953 sweep_stopped=0
+2026-03-03T13:56:02.489 TX AB/ANGLE 60
+2026-03-03T13:56:02.491 RX AB OK angle=60.00 pos=21.8128 sweep_stopped=0
+2026-03-03T13:56:21.589 TX AB/ANGLE 65
+2026-03-03T13:56:21.590 RX AB OK angle=65.00 pos=24.0994 sweep_stopped=0
+2026-03-03T13:56:36.450 TX AB/ANGLE 70
+2026-03-03T13:56:36.452 RX AB OK angle=70.00 pos=26.7024 sweep_stopped=0
+2026-03-03T13:56:51.055 TX AB/ANGLE 75
+2026-03-03T13:56:51.056 RX AB OK angle=75.00 pos=29.6687 sweep_stopped=0
+2026-03-03T13:57:06.927 TX AB/ANGLE 80
+2026-03-03T13:57:06.937 RX AB OK angle=80.00 pos=33.0456 sweep_stopped=0
+2026-03-03T13:57:25.800 TX AB/ANGLE 10
+2026-03-03T13:57:25.802 RX AB OK angle=10.00 pos=5.9808 sweep_stopped=0
+2026-03-03T13:57:27.399 TX AB/ANGLE 0
+2026-03-03T13:57:27.400 RX AB OK angle=0.00 pos=0.0000 sweep_stopped=0
+2026-03-03T13:57:55.276 TX AB/CRASH

@@ -21,7 +21,7 @@ public:
     double getDynamicPressure() const { return dynamicPressureHpa; }
     double getCorrectionAngle() const { return correctionAngleDeg; }
 
-    int update(double currentTime = -1) override;
+    int update() override;
 
 protected:
     int init() override;

@@ -14,9 +14,8 @@ namespace {
 
 class FailingBarometer : public FakeBarometer {
 public:
-    int update(double currentTime = -1) override
+    int update() override
     {
-        (void)currentTime;
         return -7;
     }
 };

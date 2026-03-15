@@ -44,11 +44,8 @@ int AirbrakeController::begin()
     return 0;
 }
 
-int AirbrakeController::update(double currentTime)
+int AirbrakeController::update()
 {
-
-
-    (void)currentTime;
     if (!enabled || !motor || !state)
     {
         if (baro && baroCorrectionEnabled)
@@ -373,9 +370,17 @@ void AirbrakeController::updateCdAEstimate()
         return;
     }
 
-    Vector<3> dragAccel(acc.x(), acc.y(), acc.z());
+    // RocketState acceleration is inertial linear acceleration, so add gravity
+    // back here to isolate the drag-only deceleration during coast.
+    Vector<3> dragAccel(acc.x(), acc.y(), acc.z() + 9.81);
+    const double dragAccelMag = dragAccel.magnitude();
+    if (dragAccelMag < 1e-6)
+    {
+        return;
+    }
+
     const double rho = getDensity(state->getPosition().z() + groundAltitude);
-    const double cdAestimate = (2.0 * rocketMass * dragAccel.magnitude()) / (rho * speed * speed);
+    const double cdAestimate = (2.0 * rocketMass * dragAccelMag) / (rho * speed * speed);
     cdArocket = (1.0 - adaptiveCdAAlpha) * cdArocket + adaptiveCdAAlpha * cdAestimate;
 
     const double minCdA = 0.8 * predictedCdArocket;

@@ -12,8 +12,16 @@ int MDODrive::init()
     // Implement initialization logic for MD6 sensor
 
     LOGI("Waiting for ODrive...");
+    const uint32_t detectTimeoutMs = 6000;
+    const uint32_t detectStartMs = millis();
     while (odrive.getState() == AXIS_STATE_UNDEFINED)
     {
+        if ((millis() - detectStartMs) >= detectTimeoutMs)
+        {
+            LOGE("Timed out waiting for ODrive (%lu ms).", (unsigned long)detectTimeoutMs);
+            initialized = false;
+            return -1;
+        }
         delay(100);
     }
 
@@ -29,7 +37,7 @@ int MDODrive::init()
         LOGI("still enabling...");
         odrive.clearErrors();
         odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
-        delay(1000);
+        delay(250);
     }
 
     LOGI("ODrive running!");

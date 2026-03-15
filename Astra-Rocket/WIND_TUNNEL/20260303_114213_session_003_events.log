@@ -1,0 +1,87 @@
+2026-03-03T11:42:13.130 SESSION START reason=AB/CRASH delimiter
+2026-03-03T11:42:13.131 FORCE RECONNECT reason=AB/CRASH sent
+2026-03-03T11:42:13.131 RX AB OK forcing crash via nullptr dereference
+2026-03-03T11:42:13.131 SERIAL RECONNECT requested
+2026-03-03T11:42:13.134 SERIAL CONNECTED port=COM27 baud=115200
+2026-03-03T11:42:21.153 SERIAL READ ERROR reason=ClearCommError failed (PermissionError(13, 'The device does not recognize the command.', None, 22))
+2026-03-03T11:42:22.157 SERIAL CONNECTED port=COM27 baud=115200
+2026-03-03T11:42:24.171 RX === Previous Crash Report ===
+2026-03-03T11:42:24.182 RX CrashReport:
+2026-03-03T11:42:24.183 RX A problem occurred at (system time) 0:33:49
+2026-03-03T11:42:24.183 RX Code was executing from address 0x3A2
+2026-03-03T11:42:24.183 RX CFSR: 82
+2026-03-03T11:42:24.184 RX (DACCVIOL) Data Access Violation
+2026-03-03T11:42:24.184 RX (MMARVALID) Accessed Address: 0x0 (nullptr)
+2026-03-03T11:42:24.185 RX Check code at 0x3A2 - very likely a bug!
+2026-03-03T11:42:24.186 RX Run "addr2line -e mysketch.ino.elf 0x3A2" for filename & line number.
+2026-03-03T11:42:24.186 RX Temperature inside the chip was 42.65 °C
+2026-03-03T11:42:24.187 RX Startup CPU clock speed is 600MHz
+2026-03-03T11:42:24.187 RX Reboot was caused by auto reboot after fault or bad interrupt detected
+2026-03-03T11:42:24.188 RX === End Crash Report ===
+2026-03-03T11:42:24.188 RX DL reporters pre-init: 3
+2026-03-03T11:42:24.463 RX LOG/3.199 [INFO]: Initializing Astra version 0.2-f474dbf
+2026-03-03T11:42:24.470 TELEM HEADER Time - Seconds,DPS368 - Pres (hPa),DPS368 - Temp (C),DPS368 - Alt ASL (m),MotorDriver - Motor Position,MotorDriver - Motor Angle,MotorDriver - Motor Velocity,MotorDriver - Battery Voltage
+2026-03-03T11:42:24.779 RX LOG/3.516 [INFO]: Added misc sensor 'BMI088' at index 0.
+2026-03-03T11:42:24.782 RX LOG/3.519 [INFO]: Added misc sensor 'MotorDriver' at index 1.
+2026-03-03T11:42:24.791 RX LOG/3.528 [INFO]: SensorManager populated with 4 primary sensors and 2 misc sensors.
+2026-03-03T11:42:24.797 RX LOG/3.533 [INFO]: Accelerometer (BMI088) initialized successfully.
+2026-03-03T11:42:24.802 RX LOG/3.539 [INFO]: Gyroscope (BMI088) initialized successfully.
+2026-03-03T11:42:24.809 RX LOG/3.546 [INFO]: Magnetometer (LIS3MDL) initialized successfully.
+2026-03-03T11:42:25.117 RX LOG/3.830 [INFO]: Barometer (DPS368) initialized successfully.
+2026-03-03T11:42:25.128 RX LOG/3.834 [WARNING]: No GPS sensor defined.
+2026-03-03T11:42:25.130 RX LOG/3.840 [INFO]: Initializing 2 miscellaneous sensors...
+2026-03-03T11:42:25.543 RX LOG/4.281 [INFO]: Misc sensor [0] (BMI088) initialized.
+2026-03-03T11:42:25.548 RX LOG/4.284 [INFO]: Initializing Motor Driver...
+2026-03-03T11:42:25.800 RX LOG/4.538 [INFO]: Waiting for ODrive...
+2026-03-03T11:42:25.806 RX LOG/4.543 [INFO]: found ODrive
+2026-03-03T11:42:25.810 RX LOG/4.547 [INFO]: ODrive Voltage: 23.08
+2026-03-03T11:42:25.816 RX LOG/4.552 [INFO]: Enabling closed loop control...
+2026-03-03T11:42:25.927 RX LOG/4.657 [INFO]: ODrive running!
+2026-03-03T11:42:25.946 RX LOG/4.675 [INFO]: ODrive vel_limit (turn/s): 100.00
+2026-03-03T11:42:25.948 RX LOG/4.678 [INFO]: Misc sensor [1] (MotorDriver) initialized.
+2026-03-03T11:42:25.953 RX LOG/4.683 [INFO]: All sensors initialized successfully.
+2026-03-03T11:42:25.961 RX LOG/4.698 [INFO]: DefaultKalmanFilter initialized with 6-state position/velocity model
+2026-03-03T11:42:25.970 RX LOG/4.707 [INFO]: State initialized. Ready for data.
+2026-03-03T11:42:25.973 RX LOG/4.710 [INFO]: Baro origin set to -1639.01 m ASL
+2026-03-03T11:42:25.978 RX LOG/4.715 [INFO]: Astra initialized successfully.
+2026-03-03T11:42:25.982 RX LOG/4.719 [ERROR]: ASTRA FAILED TO INIT
+2026-03-03T11:42:25.986 RX DL reporters post-init: 3 (available=1)
+2026-03-03T11:42:25.986 RX LOG/4.722 [INFO]: Enabling motor...
+2026-03-03T11:42:25.989 RX LOG/4.725 [INFO]: Zeroing motor...
+2026-03-03T11:42:27.160 RX LOG/5.897 [INFO]: Motor zeroed successfully.
+2026-03-03T11:42:27.163 RX LOG/5.900 [INFO]: Disabling motor...
+2026-03-03T11:42:27.166 RX AB commands enabled: AB/ANGLE <deg>, AB/SWEEP <seconds>, AB/SWEEP_STOP, AB/CRASH
+2026-03-03T11:42:27.187 RX LOG/5.924 [WARNING]: Accel 'BMI088' became unhealthy: stuck readings detected
+2026-03-03T11:42:27.193 RX LOG/5.929 [WARNING]: Gyro 'BMI088' became unhealthy: stuck readings detected
+2026-03-03T11:42:28.637 RX LOG/7.374 [INFO]: Baro 'DPS368' recovered: readings varying normally
+2026-03-03T12:04:25.351 SERIAL READ ERROR reason=ClearCommError failed (OSError(22, 'The I/O operation has been aborted because of either a thread exit or an application request.', None, 995))
+2026-03-03T12:28:48.029 SERIAL CONNECTED port=COM27 baud=115200
+2026-03-03T12:28:50.043 RX DL reporters pre-init: 3
+2026-03-03T12:28:50.525 RX LOG/4.141 [INFO]: Initializing Astra version 0.2-f474dbf
+2026-03-03T12:28:50.531 TELEM HEADER Time - Seconds,DPS368 - Pres (hPa),DPS368 - Temp (C),DPS368 - Alt ASL (m),MotorDriver - Motor Position,MotorDriver - Motor Angle,MotorDriver - Motor Velocity,MotorDriver - Battery Voltage
+2026-03-03T12:28:50.842 RX LOG/4.459 [INFO]: Added misc sensor 'BMI088' at index 0.
+2026-03-03T12:28:50.849 RX LOG/4.465 [INFO]: Added misc sensor 'MotorDriver' at index 1.
+2026-03-03T12:28:50.852 RX LOG/4.469 [INFO]: SensorManager populated with 4 primary sensors and 2 misc sensors.
+2026-03-03T12:28:50.860 RX LOG/4.477 [INFO]: Accelerometer (BMI088) initialized successfully.
+2026-03-03T12:28:50.865 RX LOG/4.482 [INFO]: Gyroscope (BMI088) initialized successfully.
+2026-03-03T12:28:50.873 RX LOG/4.490 [INFO]: Magnetometer (LIS3MDL) initialized successfully.
+2026-03-03T12:28:51.174 RX LOG/4.780 [INFO]: Barometer (DPS368) initialized successfully.
+2026-03-03T12:28:51.180 RX LOG/4.792 [WARNING]: No GPS sensor defined.
+2026-03-03T12:28:51.194 RX LOG/4.798 [INFO]: Initializing 2 miscellaneous sensors...
+2026-03-03T12:28:51.621 RX LOG/5.238 [INFO]: Misc sensor [0] (BMI088) initialized.
+2026-03-03T12:28:51.625 RX LOG/5.242 [INFO]: Initializing Motor Driver...
+2026-03-03T12:28:51.879 RX LOG/5.495 [INFO]: Waiting for ODrive...
+2026-03-03T12:28:57.950 RX LOG/11.558 [ERROR]: Timed out waiting for ODrive (6000 ms).
+2026-03-03T12:28:57.954 RX LOG/11.565 [ERROR]: Misc sensor [1] (MotorDriver) FAILED with error code: -1
+2026-03-03T12:28:57.959 RX LOG/11.570 [ERROR]: Sensor initialization completed with 1 ERROR(S).
+2026-03-03T12:28:57.969 RX LOG/11.586 [INFO]: DefaultKalmanFilter initialized with 6-state position/velocity model
+2026-03-03T12:28:57.976 RX LOG/11.592 [INFO]: State initialized. Ready for data.
+2026-03-03T12:28:57.980 RX LOG/11.596 [INFO]: Baro origin set to -1636.50 m ASL
+2026-03-03T12:28:57.984 RX LOG/11.601 [WARNING]: Astra initialized with 1 sensor error(s).
+2026-03-03T12:28:57.993 RX DL reporters post-init: 3 (available=1)
+2026-03-03T12:28:57.994 RX LOG/11.609 [ERROR]: Motor Not Initialized!
+2026-03-03T12:28:57.996 RX AB commands enabled: AB/ANGLE <deg>, AB/SWEEP <seconds>, AB/SWEEP_STOP, AB/CRASH
+2026-03-03T12:28:58.017 RX LOG/11.633 [WARNING]: Accel 'BMI088' became unhealthy: stuck readings detected
+2026-03-03T12:28:58.022 RX LOG/11.638 [WARNING]: Gyro 'BMI088' became unhealthy: stuck readings detected
+2026-03-03T12:28:59.460 RX LOG/13.077 [INFO]: Baro 'DPS368' recovered: readings varying normally
+2026-03-03T12:29:41.174 TX AB/CRASH

@@ -117,7 +117,8 @@ void set_state_and_update(double altitudeM, double velocityMps, double accelZMps
 
     const double tSec = static_cast<double>(timeMs) / 1000.0;
     state->predictState(tSec);
-    state->update(tSec);
+    state->setCurrentTime(tSec);
+    state->update();
 }
 
 } // namespace
@@ -158,7 +159,7 @@ void test_update_when_disabled_returns_error_and_clears_baro_inputs()
     correctedBaro->setCorrectionInputs(25.0, 800.0);
     TEST_ASSERT_TRUE(correctedBaro->getDynamicPressure() > 0.0);
 
-    TEST_ASSERT_EQUAL(-1, controller->update(0.1));
+    TEST_ASSERT_EQUAL(-1, controller->update());
     TEST_ASSERT_DOUBLE_WITHIN(1e-9, 0.0, correctedBaro->getCorrectionAngle());
     TEST_ASSERT_DOUBLE_WITHIN(1e-9, 0.0, correctedBaro->getDynamicPressure());
 
@@ -172,7 +173,7 @@ void test_update_when_motor_uninitialized_returns_error()
     motor->forceInitialized(false);
     correctedBaro->setCorrectionInputs(10.0, 500.0);
 
-    TEST_ASSERT_EQUAL(-1, controller->update(0.2));
+    TEST_ASSERT_EQUAL(-1, controller->update());
     TEST_ASSERT_DOUBLE_WITHIN(1e-9, 0.0, correctedBaro->getCorrectionAngle());
     TEST_ASSERT_DOUBLE_WITHIN(1e-9, 0.0, correctedBaro->getDynamicPressure());
 
@@ -187,7 +188,7 @@ void test_update_with_zero_speed_sets_predicted_apogee_to_altitude()
     set_state_and_update(1234.5, 0.0, -9.81, 1000);
     state->setFlightStage(astra_rocket::BOOST);
 
-    TEST_ASSERT_EQUAL(0, controller->update(1.0));
+    TEST_ASSERT_EQUAL(0, controller->update());
     TEST_ASSERT_DOUBLE_WITHIN(1e-6, 1234.5, controller->getPredictedApogee());
 
     local_tearDown();
@@ -201,7 +202,7 @@ void test_update_in_coast_computes_dynamic_pressure()
     set_state_and_update(1500.0, 120.0, -15.0, 2000);
     state->setFlightStage(astra_rocket::COAST);
 
-    TEST_ASSERT_EQUAL(0, controller->update(2.0));
+    TEST_ASSERT_EQUAL(0, controller->update());
     TEST_ASSERT_TRUE(std::isfinite(controller->getPredictedApogee()));
     TEST_ASSERT_TRUE(controller->getPredictedApogee() > 1500.0);
     TEST_ASSERT_TRUE(correctedBaro->getDynamicPressure() > 10.0);

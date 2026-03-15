@@ -1,9 +1,26 @@
 #include "MessageHandlers.h"
+
 #include <cstdlib>
 #include <cstring>
-#include "AirbrakeController.h"
+
 #include "MotorDriver/MotorDriver.h"
-#include "AirbrakeController.h"
+
+namespace
+{
+constexpr float kSweepStepDegrees = 5.0f;
+
+struct AirbrakeSweepState
+{
+    bool active = false;
+    float currentAngleDeg = 0.0f;
+    float maxAngleDeg = 0.0f;
+    uint32_t dwellMs = 0;
+    uint32_t nextStepAtMs = 0;
+    Stream *source = nullptr;
+};
+
+AirbrakeSweepState gSweepState;
+}
 
 static bool parseDoubleArg(const char *text, double &outValue)
 {
@@ -25,8 +42,7 @@ static bool parseDoubleArg(const char *text, double &outValue)
     return true;
 }
 
-void handleAirbrakeMessage(const char *message, const char *prefix, Stream *source,
-                          AirbrakeController &airbrakeCtrl, MotorDriver &motorDriver)
+void handleAirbrakeMessage(const char *message, const char *prefix, Stream *source, MotorDriver &motorDriver)
 {
     (void)prefix;
 
@@ -44,26 +60,6 @@ void handleAirbrakeMessage(const char *message, const char *prefix, Stream *sour
         return;
     }
 
-    if (strcmp(command, "TARGET_APOGEE") == 0)
-    {
-        if (!airbrakeCtrl)
-        {
-            source->println("AB ERR controller not ready");
-            return;
-        }
-        const char *arg = strtok(nullptr, " \t\r\n");
-        double apogeeM = 0.0;
-        if (!parseDoubleArg(arg, apogeeM))
-        {
-            source->println("AB ERR TARGET_APOGEE requires a numeric value");
-            return;
-        }
-
-        airbrakeCtrl.setTargetApogee(apogeeM);
-        source->printf("AB OK target_apogee=%.2f\n", apogeeM);
-        return;
-    }
-
     if (strcmp(command, "ANGLE") == 0)
     {
         const char *arg = strtok(nullptr, " \t\r\n");
@@ -74,9 +70,79 @@ void handleAirbrakeMessage(const char *message, const char *prefix, Stream *sour
             return;
         }
 
+        const bool sweepStopped = gSweepState.active;
+        gSweepState.active = false;
+
         const float targetPos = motorDriver.angleToPos(static_cast<float>(angleDeg));
         motorDriver.setPos(targetPos);
-        source->printf("AB OK angle=%.2f pos=%.4f\n", angleDeg, targetPos);
+        source->printf("AB OK angle=%.2f pos=%.4f sweep_stopped=%d\n",
+                       angleDeg,
+                       targetPos,
+                       sweepStopped ? 1 : 0);
+        return;
+    }
+
+    if (strcmp(command, "SWEEP") == 0)
+    {
+        const char *arg = strtok(nullptr, " \t\r\n");
+        double dwellSeconds = 0.0;
+        if (!parseDoubleArg(arg, dwellSeconds))
+        {
+            source->println("AB ERR SWEEP requires dwell time in seconds");
+            return;
+        }
+
+        if (dwellSeconds < 0.0)
+        {
+            source->println("AB ERR SWEEP dwell must be >= 0 seconds");
+            return;
+        }
+
+        gSweepState.active = true;
+        gSweepState.currentAngleDeg = 0.0f;
+        gSweepState.maxAngleDeg = motorDriver.getMaxAngle();
+        gSweepState.dwellMs = static_cast<uint32_t>(dwellSeconds * 1000.0);
+        gSweepState.nextStepAtMs = millis() + gSweepState.dwellMs;
+        gSweepState.source = source;
+
+        const float targetPos = motorDriver.angleToPos(gSweepState.currentAngleDeg);
+        motorDriver.setPos(targetPos);
+
+        source->printf("AB OK sweep_started step=%.1f max=%.1f dwell_s=%.3f\n",
+                       kSweepStepDegrees,
+                       gSweepState.maxAngleDeg,
+                       dwellSeconds);
+
+        if (gSweepState.maxAngleDeg <= 0.0f)
+        {
+            gSweepState.active = false;
+            source->println("AB OK sweep_complete");
+        }
+        return;
+    }
+
+    if (strcmp(command, "SWEEP_STOP") == 0)
+    {
+        const bool wasActive = gSweepState.active;
+        gSweepState.active = false;
+        source->printf("AB OK sweep_stopped=%d\n", wasActive ? 1 : 0);
+        return;
+    }
+
+    if (strcmp(command, "CRASH") == 0)
+    {
+        gSweepState.active = false;
+        source->println("AB OK forcing crash via nullptr dereference");
+        source->flush();
+        delay(20);
+
+        volatile uint32_t *crashPtr = nullptr;
+        *crashPtr = 0xDEADBEEFu;
+
+        while (true)
+        {
+            // Should never execute after the forced fault.
+        }
         return;
     }
 
@@ -109,31 +175,46 @@ void handleAirbrakeMessage(const char *message, const char *prefix, Stream *sour
         return;
     }
 
-    source->println("AB ERR unknown command (use TARGET_APOGEE, ANGLE, or ENABLE_MOTOR)");
+    source->println("AB ERR unknown command (use ANGLE, SWEEP, SWEEP_STOP, ENABLE_MOTOR, or CRASH)");
 }
 
-void handleHitlMessage(const char *message, const char *prefix, Stream *source, bool hitlRuntimeReady)
+void updateAirbrakeSweep(MotorDriver &motorDriver)
 {
-    (void)prefix;
-    if (!message || !source)
-        return;
-
-    char buffer[64];
-    strncpy(buffer, message, sizeof(buffer) - 1);
-    buffer[sizeof(buffer) - 1] = '\0';
-
-    char *command = strtok(buffer, " \t\r\n");
-    if (!command)
+    if (!gSweepState.active)
     {
-        source->println("HITL WAIT");
         return;
     }
 
-    if ((strcmp(command, "READY?") == 0) || (strcmp(command, "PING") == 0))
+    const uint32_t nowMs = millis();
+    if (static_cast<int32_t>(nowMs - gSweepState.nextStepAtMs) < 0)
     {
-        source->println(hitlRuntimeReady ? "HITL READY" : "HITL WAIT");
         return;
     }
 
-    source->println("HITL WAIT");
+    float nextAngleDeg = gSweepState.currentAngleDeg + kSweepStepDegrees;
+    if (nextAngleDeg > gSweepState.maxAngleDeg)
+    {
+        nextAngleDeg = gSweepState.maxAngleDeg;
+    }
+
+    gSweepState.currentAngleDeg = nextAngleDeg;
+    const float targetPos = motorDriver.angleToPos(nextAngleDeg);
+    motorDriver.setPos(targetPos);
+
+    if (gSweepState.source)
+    {
+        gSweepState.source->printf("AB SWEEP angle=%.2f pos=%.4f\n", nextAngleDeg, targetPos);
+    }
+
+    if (gSweepState.currentAngleDeg >= gSweepState.maxAngleDeg)
+    {
+        gSweepState.active = false;
+        if (gSweepState.source)
+        {
+            gSweepState.source->println("AB OK sweep_complete");
+        }
+        return;
+    }
+
+    gSweepState.nextStepAtMs = nowMs + gSweepState.dwellMs;
 }

@@ -23,7 +23,7 @@ public:
                        const char *name = "AirbrakeCtrl");
 
     int begin() override;
-    int update(double currentTime = -1) override;
+    int update() override;
 
     void setRocketState(astra_rocket::RocketState *state);
     void setMotor(MotorDriver *motor);
