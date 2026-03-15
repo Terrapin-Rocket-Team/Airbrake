@@ -156,15 +156,15 @@ void setup()
     airbrakeCtrl.setRocketState(rocket.getRocketState());
     airbrakeCtrl.installBaroWrapper(config.getSensorManager());
     airbrakeCtrl.begin();
-    airbrakeCtrl.setTargetApogee(3500.0/3.28);
-    airbrakeCtrl.setBinarySearchParams(10, 10.0, 5.0);
+    airbrakeCtrl.setTargetApogee(1144.0);
+    airbrakeCtrl.setBinarySearchParams(10, .1, 5.0);
     airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
-    airbrakeCtrl.setRocketParameters(23.9, 0.01168, 0.00987); // mass kg, CdA of rocket m^2 , flap area m^2
+    airbrakeCtrl.setRocketParameters(75 / 2.2, 0.01168, 0.00987); // mass kg, CdA of rocket m^2 , flap area m^2
     airbrakeCtrl.setGroundAltitude(137.0);                    // m
     airbrakeCtrl.setTransonicLockout(true, 0.7);
     airbrakeCtrl.setSimulationParams(0.05, 45.0);         // sim for apogee prediction
-    airbrakeCtrl.enableAdaptiveCdA(true, 0.2);            // ??
-    airbrakeCtrl.enableBaroCorrection(true, 0.052, 0.15); // correction c, tau
+    airbrakeCtrl.enableAdaptiveCdA(false, 0.2);            // ??
+    airbrakeCtrl.enableBaroCorrection(false, 0.052, 0.15); // correction c, tau
     airbrakeCtrl.enable();
 
     Astra *astraSys = rocket.getAstraSystem();

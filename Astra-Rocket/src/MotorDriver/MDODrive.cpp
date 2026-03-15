@@ -6,7 +6,9 @@ int MDODrive::init()
 
     LOGI("Initializing Motor Driver...");
     odrive_serial.begin(115200);
-    delay(1000); // Give some time for the serial connection to establish
+    // Keep ODrive command reads bounded so missing hardware cannot lock init.
+    odrive_serial.setTimeout(75);
+    delay(250); // Give some time for the serial connection to establish
     // Implement initialization logic for MD6 sensor
 
     LOGI("Waiting for ODrive...");
@@ -21,7 +23,7 @@ int MDODrive::init()
 
     LOGI("Enabling closed loop control...");
     odrive.setState(AXIS_STATE_CLOSED_LOOP_CONTROL);
-    delay(500);
+    delay(100);
     while (odrive.getState() != AXIS_STATE_CLOSED_LOOP_CONTROL)
     {
         LOGI("still enabling...");
