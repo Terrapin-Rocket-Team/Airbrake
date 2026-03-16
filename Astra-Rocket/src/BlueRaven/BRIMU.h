@@ -12,12 +12,15 @@ namespace astra_rocket
     public:
         explicit BRIMU(BlueRaven &parent, const char *name = "BlueRaven IMU");
 
+        bool shouldUpdate(double currentTime) override;
+
     protected:
         int init() override;
         int read() override;
 
     private:
         BlueRaven *parent = nullptr;
+        uint32_t lastSampleCount = 0;
     };
 }
 

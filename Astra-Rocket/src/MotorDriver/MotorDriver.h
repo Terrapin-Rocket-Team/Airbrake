@@ -11,7 +11,7 @@ protected:
     float velocity = 0; // current velocity
     float voltage = 0;
 
-    const float kMotorMaxAngleDeg = 80.0f;
+    const float kMotorMaxAngleDeg = 74.0f;
     const float kMotorPositionEpsilon = 0.02f;
     float kLimitTurnsPerSec = 100.0f;
     const float kMotorMaxPosition = 35.5f;
@@ -51,6 +51,6 @@ inline float angleToPosPoly(float angleDeg)
     const float x = angleDeg;
     const float x2 = x * x;
     const float x3 = x2 * x;
-    return 1.9f + (0.461f * x) - (5.92e-3f * x2) + (6.28e-5f * x3);
+    return 0.0651f + (0.586f * x) - (9.64e-3f * x2) + (1e-4f * x3);
 }
 #endif // MOTOR_DRIVER_H

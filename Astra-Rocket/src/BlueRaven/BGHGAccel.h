@@ -12,12 +12,15 @@ namespace astra_rocket
     public:
         explicit BGHGAccel(BlueRaven &parent, const char *name = "BlueRaven Hi-G");
 
+        bool shouldUpdate(double currentTime) override;
+
     protected:
         int init() override;
         int read() override;
 
     private:
         BlueRaven *parent = nullptr;
+        uint32_t lastSampleCount = 0;
     };
 }
 

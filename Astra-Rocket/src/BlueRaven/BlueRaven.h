@@ -4,6 +4,7 @@
 #include <Arduino.h>
 
 #include <Math/Vector.h>
+#include <Sensors/Sensor.h>
 
 #if defined(ENV_TEENSY) && !defined(NATIVE)
 #include <USBHost_t36.h>
@@ -11,7 +12,7 @@
 
 namespace astra_rocket
 {
-    class BlueRaven
+    class BlueRaven : public astra::Sensor
     {
     public:
         struct Sample
@@ -37,7 +38,7 @@ namespace astra_rocket
 
         BlueRaven();
 
-        int begin();
+        int begin() override;
         bool poll();
         bool ingestLine(const char *line);
         void setStream(Stream *stream);
@@ -65,9 +66,10 @@ namespace astra_rocket
         static constexpr uint32_t DEFAULT_USB_BAUD = 115200;
         static constexpr size_t MAX_LINE_LEN = 256;
         static constexpr double STANDARD_ATMOSPHERE_HPA = 1013.25;
-        static constexpr double STANDARD_GRAVITY = 9.80665;
         static constexpr double FEET_TO_METERS = 0.3048;
-        static constexpr double DEGREES_TO_RADIANS = 0.01745329251994329577;
+
+        int init() override;
+        int read() override;
 
         bool parseLine(const char *line, Sample &parsed) const;
         void resetLineBuffer();

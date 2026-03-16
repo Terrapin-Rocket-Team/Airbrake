@@ -13,6 +13,7 @@ namespace astra_rocket
         explicit BRBaro(BlueRaven &parent, const char *name = "BlueRaven Baro");
 
         double getAltitudeAglM() const { return altitudeAglM; }
+        bool shouldUpdate(double currentTime) override;
 
     protected:
         int init() override;
@@ -21,6 +22,7 @@ namespace astra_rocket
     private:
         BlueRaven *parent = nullptr;
         double altitudeAglM = 0.0;
+        uint32_t lastSampleCount = 0;
     };
 }
 

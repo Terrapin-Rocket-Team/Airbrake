@@ -15,20 +15,35 @@ namespace
     constexpr double kCentiGToMps2 = 0.01 * kStandardGravity;
     constexpr double kMilliGToMps2 = 0.001 * kStandardGravity;
     constexpr double kCentiDegPerSecToRadPerSec = 0.01 * kDegreesToRadians;
+
+    bool hasUnreadSample(const astra_rocket::BlueRaven *parent, uint32_t lastSampleCount)
+    {
+        return parent && parent->hasValidSample() && parent->getSampleCount() != lastSampleCount;
+    }
 }
 
 namespace astra_rocket
 {
 #if defined(ENV_TEENSY) && !defined(NATIVE)
     BlueRaven::BlueRaven()
-        : usbHub1(usbHost), usbHub2(usbHost), usbHub3(usbHost), usbSerial(usbHost, 1)
+        : Sensor("BlueRaven"), usbHub1(usbHost), usbHub2(usbHost), usbHub3(usbHost), usbSerial(usbHost, 1)
     {
+        setUpdateRate(5);
     }
 #else
-    BlueRaven::BlueRaven() = default;
+    BlueRaven::BlueRaven()
+        : Sensor("BlueRaven")
+    {
+        setUpdateRate(5);
+    }
 #endif
 
     int BlueRaven::begin()
+    {
+        return astra::Sensor::begin();
+    }
+
+    int BlueRaven::init()
     {
         if (started)
             return 0;
@@ -43,8 +58,21 @@ namespace astra_rocket
         return 0;
     }
 
+    int BlueRaven::read()
+    {
+        if (!isConnected())
+            return -1;
+
+        if (poll() || hasValidSample())
+            return 0;
+
+        return -2;
+    }
+
     bool BlueRaven::poll()
     {
+        const uint32_t sampleCountBefore = sampleCount;
+
         if (!started)
             begin();
 
@@ -55,7 +83,7 @@ namespace astra_rocket
         if (inputStream)
             serviceStream(*inputStream);
 
-        return latest.valid;
+        return sampleCount != sampleCountBefore;
     }
 
     void BlueRaven::setStream(Stream *stream)
@@ -294,6 +322,12 @@ namespace astra_rocket
         setUpdateRate(5);
     }
 
+    bool BRAccel::shouldUpdate(double currentTime)
+    {
+        (void)currentTime;
+        return hasUnreadSample(parent, lastSampleCount);
+    }
+
     int BRAccel::init()
     {
         return parent ? parent->begin() : -1;
@@ -304,12 +338,14 @@ namespace astra_rocket
         if (!parent)
             return -1;
 
-        parent->poll();
         if (!parent->hasValidSample())
             return -2;
 
+        if (parent->getSampleCount() == lastSampleCount)
+            return 0;
+
         acc = parent->getAccel();
-        healthy = true;
+        lastSampleCount = parent->getSampleCount();
         return 0;
     }
 
@@ -317,6 +353,14 @@ namespace astra_rocket
         : IMU6DoF(name), parent(&parentIn)
     {
         setUpdateRate(5);
+        getAccelSensor()->setUpdateRate(5);
+        getGyroSensor()->setUpdateRate(5);
+    }
+
+    bool BRIMU::shouldUpdate(double currentTime)
+    {
+        (void)currentTime;
+        return hasUnreadSample(parent, lastSampleCount);
     }
 
     int BRIMU::init()
@@ -329,13 +373,15 @@ namespace astra_rocket
         if (!parent)
             return -1;
 
-        parent->poll();
         if (!parent->hasValidSample())
             return -2;
 
+        if (parent->getSampleCount() == lastSampleCount)
+            return 0;
+
         acc = parent->getAccel();
         angVel = parent->getGyro();
-        healthy = true;
+        lastSampleCount = parent->getSampleCount();
         return 0;
     }
 
@@ -343,6 +389,12 @@ namespace astra_rocket
         : Barometer(name), parent(&parentIn)
     {
         setUpdateRate(5);
+    }
+
+    bool BRBaro::shouldUpdate(double currentTime)
+    {
+        (void)currentTime;
+        return hasUnreadSample(parent, lastSampleCount);
     }
 
     int BRBaro::init()
@@ -355,14 +407,16 @@ namespace astra_rocket
         if (!parent)
             return -1;
 
-        parent->poll();
         if (!parent->hasValidSample())
             return -2;
+
+        if (parent->getSampleCount() == lastSampleCount)
+            return 0;
 
         pressure = parent->getPressureHpa();
         temp = parent->getTemperatureC();
         altitudeAglM = parent->getAltitudeAglM();
-        healthy = true;
+        lastSampleCount = parent->getSampleCount();
         return 0;
     }
 
@@ -370,6 +424,12 @@ namespace astra_rocket
         : Accel(name), parent(&parentIn)
     {
         setUpdateRate(5);
+    }
+
+    bool BGHGAccel::shouldUpdate(double currentTime)
+    {
+        (void)currentTime;
+        return hasUnreadSample(parent, lastSampleCount);
     }
 
     int BGHGAccel::init()
@@ -382,12 +442,14 @@ namespace astra_rocket
         if (!parent)
             return -1;
 
-        parent->poll();
         if (!parent->hasValidSample())
             return -2;
 
+        if (parent->getSampleCount() == lastSampleCount)
+            return 0;
+
         acc = parent->getHighGAccel();
-        healthy = true;
+        lastSampleCount = parent->getSampleCount();
         return 0;
     }
 }

@@ -110,23 +110,23 @@ void MDODrive::setPos(float pos)
         odrive.setParameter("axis0.controller.config.input_mode", String((long)INPUT_MODE_PASSTHROUGH));
         odrivePositionControlConfigured = true;
     }
+    read(); // update position for limit switch checks and logging before potentially moving
     const bool atTarget = std::fabs(pos - position) <= kMotorPositionEpsilon;
     if (atTarget)
     {
         return;
     }
 
-    if (isLimitSwitchPressed(topLimitSwitchPin) && pos <= position)
+    if (isLimitSwitchPressed(topLimitSwitchPin) && pos <= abs(position))
     {
-        LOGW("Top limit switch pressed, not moving motor");
+        LOGW("Top limit switch pressed, not moving motor (new=%0.2f, current=%0.2f)", pos, position);
         return;
     }
-    else if (isLimitSwitchPressed(botLimitSwitchPin) && pos >= position)
+    else if (isLimitSwitchPressed(botLimitSwitchPin) && pos >= abs(position))
     {
-        LOGW("Bottom limit switch pressed, not moving motor");
+        LOGW("Bottom limit switch pressed, not moving motor (new=%0.2f, current=%0.2f)", pos, position);
         return;
     }
-
     odrive.setPosition(initposition - pos);
 }
 
