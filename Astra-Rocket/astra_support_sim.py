@@ -103,14 +103,29 @@ class FlightCodePropagatorSim:
     def is_finished(self) -> bool:
         return self._finished
 
+    def _is_pad_idle_time(self) -> bool:
+        launch_time = float(getattr(self._prop, "launchTime", 0.0))
+        sim_time = float(getattr(self._prop, "t", 0.0))
+        return sim_time < launch_time
+
+    def _truth_inertial_accel_from_propagator(self, inertial_accel: np.ndarray) -> np.ndarray:
+        # The legacy propagator uses -g as a prelaunch placeholder even while the
+        # vehicle is clamped on the pad. Export a physically meaningful inertial
+        # acceleration for diagnostics: zero on the pad, propagator output in flight.
+        if self._is_pad_idle_time():
+            return np.array([0.0, 0.0, 0.0], dtype=float)
+
+        accel = np.asarray(inertial_accel, dtype=float).copy()
+        if not np.all(np.isfinite(accel)):
+            return np.array([0.0, 0.0, 0.0], dtype=float)
+        return accel
+
     def _sensor_accel_from_inertial(self, inertial_accel: np.ndarray) -> np.ndarray:
         # FC expects accelerometer specific force in m/s^2.
         # At rest on pad this should be close to (0, 0, +9.81), i.e. (0, 0, +1g).
         gravity = 9.81
-        launch_time = float(getattr(self._prop, "launchTime", 0.0))
-        sim_time = float(getattr(self._prop, "t", 0.0))
 
-        if sim_time < launch_time:
+        if self._is_pad_idle_time():
             return np.array([0.0, 0.0, gravity], dtype=float)
 
         try:
@@ -133,7 +148,7 @@ class FlightCodePropagatorSim:
         t = float(self._prop.t)
         pos = np.asarray(self._prop.r, dtype=float)
         vel = np.asarray(self._prop.v, dtype=float)
-        inertial_accel = np.asarray(self._prop.a, dtype=float)
+        inertial_accel = self._truth_inertial_accel_from_propagator(self._prop.a)
         sensor_accel = self._sensor_accel_from_inertial(inertial_accel)
 
         atmosphere = self._prop.atmosphere

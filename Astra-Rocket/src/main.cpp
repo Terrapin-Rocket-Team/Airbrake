@@ -157,7 +157,7 @@ void setup()
     // airbrakeCtrl.installBaroWrapper(config.getSensorManager());
     airbrakeCtrl.begin();
     airbrakeCtrl.setTargetApogee(8300.0);
-    airbrakeCtrl.setBinarySearchParams(10, .1, 1);
+    airbrakeCtrl.setBinarySearchParams(10, 1, 1);
     airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
     airbrakeCtrl.setRocketParameters((120 - 37.47) / 2.2, 0.01168, 0.00987); // dry mass kg, CdA of rocket m^2 , flap area m^2
     airbrakeCtrl.setGroundAltitude(912.0);                                   // m
