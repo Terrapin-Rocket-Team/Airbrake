@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-#include "AvionicsPacketProtocol.h"
+#include "../AvionicsPacketProtocol.h"
 
 class PacketStreams
 {

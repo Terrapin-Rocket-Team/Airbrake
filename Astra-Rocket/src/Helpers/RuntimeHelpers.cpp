@@ -6,8 +6,8 @@
 #include <Sensors/SensorManager/SensorManager.h>
 #include <Sensors/VoltageSensor/VoltageSensor.h>
 
-#include "AirbrakeController.h"
-#include "MotorDriver/MotorDriver.h"
+#include "../AirbrakeController.h"
+#include "../MotorDriver/MotorDriver.h"
 
 using namespace astra;
 using namespace astra_rocket;
