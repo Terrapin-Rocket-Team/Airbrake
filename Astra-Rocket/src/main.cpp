@@ -20,6 +20,8 @@
 #include <RecordData/Logging/LoggingBackend/ILogSink.h>
 
 #include "AirbrakeController.h"
+#include "AvionicsPacketProtocol.h"
+#include "PacketStreams.h"
 
 #ifdef NATIVE
 #include <MotorDriver/MDNative.h>
@@ -64,11 +66,11 @@ static BGHGAccel blueRavenHighG(blueRaven, "BlueRaven High-G Debug");
 static PrintLog serialLog(Serial, true);
 
 #ifdef ENV_TEENSY
-static PrintLog radioLog(Serial2, true);
+static PacketStreams telemetryStreams;
 static FileLogSink fileDLog("data_log.txt", StorageBackend::SD_CARD, false);
 static FileLogSink fileELog("event_log.txt", StorageBackend::SD_CARD, false);
-static ILogSink *logSinks[] = {&serialLog, &radioLog, &fileDLog};
-static ILogSink *eventSinks[] = {&serialLog, &radioLog, &fileELog};
+static ILogSink *logSinks[] = { &fileDLog};
+static ILogSink *eventSinks[] = {&serialLog, &fileELog};
 #else
 static ILogSink *logSinks[] = {&serialLog};
 static ILogSink *eventSinks[] = {&serialLog};
@@ -84,73 +86,112 @@ static void printTeensyCrashReport()
         Serial.println("=== End Crash Report ===");
         CrashReport.clear();
     }
+    else {
+        Serial.println("No crash report from previous run.");
+    }
 }
 #endif
 
-static bool hitlReadyAnnounced = false;
-
-static void maybeAnnounceHitlReady()
+#ifdef ENV_TEENSY
+namespace
 {
-    if (hitlReadyAnnounced || config.getRuntimeMode() != AstraConfig::RuntimeMode::HITL)
-    {
-        return;
-    }
+constexpr uint32_t kTelemetryBaud = 115200;
+constexpr uint32_t kAbTelemPeriodMs = 500;
 
-    hitlReadyAnnounced = true;
-    LOGI("HITL READY");
-    Serial.println("HITL READY");
-    Serial.flush();
+uint32_t lastAbTelemMs = 0;
+bool reportedAbTelemOnline = false;
+
+float metersToFeet(double meters)
+{
+    return static_cast<float>(meters * 3.28083989501312);
 }
 
-#ifndef NATIVE
-static void printBlueRavenDebug()
+bool buildAbTelemetryPacket(avionics_packet::PacketBuffer &packet)
 {
-    static uint32_t lastPrintedSampleCount = 0;
-    static uint32_t lastStatusPrintMs = 0;
+    RocketState *state = &rocketState;
+    if (state == nullptr)
+        return false;
 
-    const uint32_t sampleCount = blueRaven.getSampleCount();
-    if (sampleCount != lastPrintedSampleCount && blueRaven.hasValidSample())
+    avionics_packet::AbTelemetry telemetry = {};
+
+    telemetry.positionZFeet = metersToFeet(state->getAltitudeAGL());
+
+    const Vector<3> velocity = state->getVelocity();
+    telemetry.velocityZMs = static_cast<float>(velocity.z());
+
+    const Vector<3> acceleration = state->getAcceleration();
+    telemetry.accelZMs2 = static_cast<float>(acceleration.z());
+
+    if (Barometer *baroSource = config.getSensorManager()->getBaroSource();
+        baroSource != nullptr && baroSource->isInitialized())
     {
-        lastPrintedSampleCount = sampleCount;
-
-        const auto lowG = blueRavenAccel.getAccel();
-        const auto imuAccel = blueRavenImu.getAccel();
-        const auto highG = blueRavenHighG.getAccel();
-        const auto gyro = blueRavenImu.getAngVel();
-
-        Serial.printf("BR[%lu] batt=%.3fV baro=%.2fhPa temp=%.2fC agl=%.2fm vel=%.2fm/s tilt=%.1f roll=%.1f\n",
-                      static_cast<unsigned long>(sampleCount),
-                      blueRaven.getBatteryVolts(),
-                      blueRavenBaro.getPressure(),
-                      blueRavenBaro.getTemp(),
-                      blueRavenBaro.getAltitudeAglM(),
-                      blueRaven.getVerticalVelocityMps(),
-                      blueRaven.getTiltDeg(),
-                      blueRaven.getRollDeg());
-        Serial.printf("  BR lowG = [%.3f, %.3f, %.3f] m/s^2\n", lowG.x(), lowG.y(), lowG.z());
-        Serial.printf("  BR imuA = [%.3f, %.3f, %.3f] m/s^2\n", imuAccel.x(), imuAccel.y(), imuAccel.z());
-        Serial.printf("  BR highG= [%.3f, %.3f, %.3f] m/s^2\n", highG.x(), highG.y(), highG.z());
-        Serial.printf("  BR gyro = [%.3f, %.3f, %.3f] rad/s\n", gyro.x(), gyro.y(), gyro.z());
-        return;
+        telemetry.hasBaroAgl = true;
+        telemetry.baroAglFeet = metersToFeet(baroSource->getASLAltM() - state->getGroundLevelMSL());
     }
 
+    const Quaternion orientation = state->getRocketOrientation();
+    telemetry.quatW = static_cast<float>(orientation.w());
+    telemetry.quatX = static_cast<float>(orientation.x());
+    telemetry.quatY = static_cast<float>(orientation.y());
+    telemetry.quatZ = static_cast<float>(orientation.z());
+
+    telemetry.hasBattery = voltageSens.isInitialized();
+    telemetry.batteryVolts = static_cast<float>(voltageSens.getVoltage());
+
+    telemetry.hasMotorBattery = motorDriver.isInitialized();
+    telemetry.motorBatteryVolts = motorDriver.getBatVoltage();
+
+    telemetry.desiredAngleDeg = static_cast<float>(airbrakeCtrl.getCommandedDeployment());
+    telemetry.actualAngleDeg = static_cast<float>(airbrakeCtrl.getCurrentDeployment());
+    telemetry.predictedApogeeFeet = metersToFeet(airbrakeCtrl.getPredictedApogee());
+
+    return avionics_packet::encodeAbTelemetry(telemetry, packet);
+}
+
+void publishAbTelemetryIfDue()
+{
     const uint32_t now = millis();
-    if ((now - lastStatusPrintMs) >= 2000)
+    if ((now - lastAbTelemMs) < kAbTelemPeriodMs)
+        return;
+
+    lastAbTelemMs = now;
+
+    avionics_packet::PacketBuffer packet;
+    if (!buildAbTelemetryPacket(packet))
+        return;
+
+    const bool sent = telemetryStreams.send(packet);
+    if (!sent)
     {
-        lastStatusPrintMs = now;
-        Serial.printf("BR status: connected=%d valid=%d samples=%lu\n",
-                      blueRaven.isConnected() ? 1 : 0,
-                      blueRaven.hasValidSample() ? 1 : 0,
-                      static_cast<unsigned long>(sampleCount));
+        LOGW("ABTELEM send failed");
+        return;
+    }
+
+    if (!reportedAbTelemOnline)
+    {
+        reportedAbTelemOnline = true;
+        LOGI("ABTELEM stream online on Serial2");
     }
 }
+
+void setupTelemetrySerial()
+{
+    Serial2.begin(kTelemetryBaud);
+    delay(100);
+    telemetryStreams.addStream(Serial2);
+}
+} // namespace
 #endif
 
 void setup()
 {
     Serial.begin(115200);
 #ifndef NATIVE
+#ifdef ENV_TEENSY
+    setupTelemetrySerial();
+#else
     Serial2.begin(115200);
+#endif
     delay(2000);
 #ifdef ENV_TEENSY
     printTeensyCrashReport();
@@ -176,10 +217,10 @@ void setup()
         .withMiscSensor(&blueRavenBaro)
         .withMiscSensor(&blueRavenAccel)
         .withMiscSensor(&blueRavenHighG)
-        .withHITL()
+        // .withHITL()
         .withHITLInterface(&Serial)
         ;
-
+    Serial2.println("Sensors configured");
     blueRaven.useUsbHost();
     mag.setMountingOrientation(MountingOrientation::FLIP_XY);
     mag.setUpdateRate(20);
@@ -237,8 +278,7 @@ void loop()
     rocket.update();
     airbrakeCtrl.update();
     updateAirbrakeSweep(motorDriver);
-    maybeAnnounceHitlReady();
-#ifndef NATIVE
-    // printBlueRavenDebug();
+#ifdef ENV_TEENSY
+    publishAbTelemetryIfDue();
 #endif
 }
