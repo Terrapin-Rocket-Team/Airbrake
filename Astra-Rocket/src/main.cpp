@@ -167,7 +167,7 @@ void setup()
     airbrakeCtrl.setTargetApogee(8382.0);
     airbrakeCtrl.setBinarySearchParams(10, 1, 1);
     airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
-    airbrakeCtrl.setRocketParameters((86.53) / 2.2, 0.47, 0.00987); // dry mass kg, Cd of rocket , flap area m^2
+    airbrakeCtrl.setRocketParameters((90.98) / 2.2, 0.47, 0.00987); // dry mass kg, Cd of rocket , flap area m^2
     airbrakeCtrl.setGroundAltitude(912.0);                          // m
     airbrakeCtrl.setTransonicLockout(true, 0.7);
     airbrakeCtrl.setSimulationParams(0.05, 45.0);          // sim for apogee prediction
