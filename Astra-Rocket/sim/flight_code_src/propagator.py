@@ -15,7 +15,7 @@ w = np.array([0.0, 0.0, 0.0])  # angular velocity [rad/s]
 t = 0  # time [s]
 lat, long = 0, 0
 
-updateRate = 20  # [Hz]
+updateRate = 10  # [Hz]
 timeStep = 1 / updateRate  # [s]
 totalImpulse = 32417 # [Ns]
 burnTime = 9.6 # [s]

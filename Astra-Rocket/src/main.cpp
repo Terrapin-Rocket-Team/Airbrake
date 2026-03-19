@@ -70,7 +70,7 @@ static PacketStreams telemetryStreams;
 static AirbrakeTelemetryPublisher airbrakeTelemetry(rocketState, config, airbrakeCtrl, voltageSens, motorDriver, telemetryStreams);
 static FileLogSink fileDLog("data_log.txt", StorageBackend::SD_CARD, false);
 static FileLogSink fileELog("event_log.txt", StorageBackend::SD_CARD, false);
-static ILogSink *logSinks[] = { &fileDLog};
+static ILogSink *logSinks[] = { &fileDLog, &serialLog};
 static ILogSink *eventSinks[] = {&serialLog, &fileELog};
 #else
 static ILogSink *logSinks[] = {&serialLog};
@@ -99,6 +99,7 @@ void setup()
 #ifndef NATIVE
 #ifdef ENV_TEENSY
     setupAirbrakeTelemetrySerial(telemetryStreams, Serial2);
+    Serial2.println("hello world");
 #else
     Serial2.begin(115200);
 #endif
@@ -107,6 +108,9 @@ void setup()
     printTeensyCrashReport();
 #endif
 #endif
+    config.withPreflightLogRate(20);   
+    config.withFlightLogRate(20);    
+    config.withPostflightLogRate(20);
 
     config.withState(&rocketState)
         .withReporter(&airbrakeCtrl)
@@ -114,7 +118,7 @@ void setup()
         .withMiscSensor(&voltageSens)
         .withEventLogs(eventSinks, sizeof(eventSinks) / sizeof(eventSinks[0]))
         .withDataLogs(logSinks, sizeof(logSinks) / sizeof(logSinks[0]))
-        .withLoggingRate(20)
+        
         .withBaroMachLockout(true, 0.7);
 
 #ifndef NATIVE
@@ -127,14 +131,16 @@ void setup()
         .withMiscSensor(&blueRavenBaro)
         .withMiscSensor(&blueRavenAccel)
         .withMiscSensor(&blueRavenHighG)
-        // .withHITL()
+        //.withHITL()  ////change this!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         .withHITLInterface(&Serial)
         ;
     Serial2.println("Sensors configured");
     blueRaven.useUsbHost();
     mag.setMountingOrientation(MountingOrientation::FLIP_XY);
     mag.setUpdateRate(20);
-#endif
+
+
+    #endif
 
     const int initResult = rocket.init();
     if (initResult < 0)
@@ -156,15 +162,15 @@ void setup()
     airbrakeCtrl.setAutoUpdate(false);
     // airbrakeCtrl.installBaroWrapper(config.getSensorManager());
     airbrakeCtrl.begin();
-    airbrakeCtrl.setTargetApogee(8300.0);
+    airbrakeCtrl.setTargetApogee(8382.0);
     airbrakeCtrl.setBinarySearchParams(10, 1, 1);
     airbrakeCtrl.setAngleLimits(0.0f, motorDriver.getMaxAngle());
-    airbrakeCtrl.setRocketParameters((120 - 37.47) / 2.2, 0.01168, 0.00987); // dry mass kg, CdA of rocket m^2 , flap area m^2
+    airbrakeCtrl.setRocketParameters((86.53) / 2.2, 0.01063965, 0.00987); // dry mass kg, CdA of rocket m^2 , flap area m^2
     airbrakeCtrl.setGroundAltitude(912.0);                                   // m
     airbrakeCtrl.setTransonicLockout(true, 0.7);
     airbrakeCtrl.setSimulationParams(0.05, 45.0);          // sim for apogee prediction
     airbrakeCtrl.enableAdaptiveCdA(false, 0.2);            // ??
-    airbrakeCtrl.enableBaroCorrection(false, 0.052, 0.15); // correction c, tau
+    airbrakeCtrl.enableBaroCorrection(false, 0.0489, 0.15); // correction c, tau
     airbrakeCtrl.enable();
 
     if (rocket.getMessageRouter())
