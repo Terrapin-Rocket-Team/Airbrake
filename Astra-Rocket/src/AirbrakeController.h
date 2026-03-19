@@ -82,7 +82,7 @@ private:
     double predictedCdArocket = 0.01168;
     double cdArocket = 0.01168;
     double flapArea = 0.00987;
-    double flapEfficiency = 0.95;
+    double flapEfficiency = 0.908;
 
     double actuationAngle = 0.0;
     double actualAngle = 0.0;
