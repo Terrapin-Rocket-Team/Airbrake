@@ -15,7 +15,7 @@ w = np.array([0.0, 0.0, 0.0])  # angular velocity [rad/s]
 t = 0  # time [s]
 lat, long = 0, 0
 
-updateRate = 20  # [Hz]
+updateRate = 10  # [Hz]
 timeStep = 1 / updateRate  # [s]
 totalImpulse = 32417 # [Ns]
 burnTime = 9.6 # [s]
@@ -27,7 +27,7 @@ dryMass = wetMass - (37.47 / 2.2) # [kg]
 m = wetMass
 
 CDr = 0.62
-CDf = 0.95
+CDf = 0.907
 flapArea = 0.00987
 rocket_diameter = 0.157 # [m]
 rocket_body_area = np.pi * (rocket_diameter/2)**2 
@@ -38,6 +38,10 @@ rocket_length = 13.0 / 3.28 # [m] (13 ft)
 tilt_angle = np.deg2rad(0)  # Launch tilt angle (entered in degrees)
 ground_altitude = 912 # [m]
 atmosphere = Atmosphere(ground_altitude)
+pressure_error_gain = 0.489  # [m/hPa]
+reported_height_agl = 0.0
+reported_height_error = 0.0
+reported_pressure_hpa = float(np.asarray(atmosphere.pressure).reshape(-1)[0] / 100.0)
 
 main_deployment = 304.8  # [m]
 main_area = 11.9845  # [m^2]
@@ -58,6 +62,26 @@ br_baro_error = 0.5  # [m]
 br_accel_error = 0.05  # [m/s^2]
 br_gryo_error = 0.01  # [rad/s]
 
+
+def _scalar(value) -> float:
+    return float(np.asarray(value, dtype=float).reshape(-1)[0])
+
+
+def _update_reported_pressure(flap_angle_deg: float) -> None:
+    global reported_height_agl, reported_height_error, reported_pressure_hpa
+
+    real_height_agl = max(0.0, float(r[2]))
+    density = max(0.0, _scalar(atmosphere.density))
+    airspeed = float(np.linalg.norm(v))
+    theta_rad = np.deg2rad(flap_angle_deg)
+    dynamic_pressure_hpa = 0.5 * density * airspeed ** 2 / 100.0
+
+    reported_height_error = pressure_error_gain * dynamic_pressure_hpa * np.sin(theta_rad)
+    reported_height_agl = max(0.0, real_height_agl + reported_height_error)
+
+    reported_altitude_asl = max(0.0, ground_altitude + reported_height_agl)
+    reported_pressure_hpa = _scalar(Atmosphere(reported_altitude_asl).pressure) / 100.0
+
 def Propagate(flapAngle):
     global t, a, v, r, m, main_deployed, settling_timer, lat, long, atmosphere
     t += timeStep
@@ -66,6 +90,8 @@ def Propagate(flapAngle):
         r[:] = 0.0
         v[:] = 0.0
         a[:] = [0.0, 0.0, -9.8]
+        atmosphere = Atmosphere(ground_altitude)
+        _update_reported_pressure(flapAngle)
         return
 
     atmosphere = Atmosphere(r[2]+ground_altitude)
@@ -112,6 +138,8 @@ def Propagate(flapAngle):
 
     v += timeStep * a
     r += timeStep * v + 0.5 * a * timeStep ** 2
+    atmosphere = Atmosphere(max(0.0, r[2] + ground_altitude))
+    _update_reported_pressure(flapAngle)
     lat, long = getLatLong(r)
     
     return

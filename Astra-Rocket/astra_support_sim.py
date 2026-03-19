@@ -152,7 +152,8 @@ class FlightCodePropagatorSim:
         sensor_accel = self._sensor_accel_from_inertial(inertial_accel)
 
         atmosphere = self._prop.atmosphere
-        pressure_hpa = float(np.asarray(atmosphere.pressure, dtype=float).reshape(-1)[0] / 100.0)
+        fallback_pressure_hpa = float(np.asarray(atmosphere.pressure, dtype=float).reshape(-1)[0] / 100.0)
+        pressure_hpa = float(getattr(self._prop, "reported_pressure_hpa", fallback_pressure_hpa))
         temp_c = float(np.asarray(atmosphere.temperature, dtype=float).reshape(-1)[0] - 273.15)
         alt_agl = max(0.0, float(pos[2]))
         ground_alt = float(getattr(self._prop, "ground_altitude", 0.0))
