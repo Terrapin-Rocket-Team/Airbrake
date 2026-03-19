@@ -22,18 +22,19 @@ burnTime = 9.6 # [s]
 rocketThrust = totalImpulse / burnTime  # [N]
 launchTime = 5  # time of launch [s]
 surface_roughness = 5e-6 # [m]
-wetMass = 120 / 2.2 # [kg]
+wetMass = 124 / 2.2 # [kg]
 dryMass = wetMass - (37.47 / 2.2) # [kg]
 m = wetMass
 
-CDr = 0.62
-CDf = 0.907
+CDr = 0.47
+CDf = 0.908
 flapArea = 0.00987
 rocket_diameter = 0.157 # [m]
 rocket_body_area = np.pi * (rocket_diameter/2)**2 
 rocket_fin_area = 0.00150839 * 4 # [m^2] (fin area = 0.0079375 m^2, 4 fins)
 rocket_fillet_area = 0.00015775 * 8 # [m^2] (fillet area = 0.00015775 m^2, 8 fillets)
 rocket_area = rocket_body_area + rocket_fin_area + rocket_fillet_area
+print(rocket_area)
 rocket_length = 13.0 / 3.28 # [m] (13 ft)
 tilt_angle = np.deg2rad(0)  # Launch tilt angle (entered in degrees)
 ground_altitude = 912 # [m]

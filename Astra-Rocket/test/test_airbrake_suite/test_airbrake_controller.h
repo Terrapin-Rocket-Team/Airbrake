@@ -240,6 +240,33 @@ void test_install_baro_wrapper_behavior()
     TEST_ASSERT_EQUAL_PTR(firstWrapped, manager.getBaroSource());
 }
 
+void test_update_with_installed_wrapper_from_null_baro_constructor_computes_dynamic_pressure()
+{
+    local_setUp();
+
+    AirbrakeController wrappedController(motor, state, nullptr, "WrappedPath");
+    wrappedController.setTargetApogee(2000.0);
+    wrappedController.setRocketParameters(40.0, 0.012, 0.010);
+    wrappedController.setBinarySearchParams(8, 5.0, 1.0);
+    wrappedController.setAngleLimits(0.0, 65.0);
+    wrappedController.setGroundAltitude(0.0);
+    wrappedController.setSimulationParams(0.05, 20.0);
+    wrappedController.enableAdaptiveCdA(false);
+    wrappedController.enableBaroCorrection(true, 0.489, 0.15);
+    TEST_ASSERT_TRUE(wrappedController.installBaroWrapper(sensorManager));
+    TEST_ASSERT_EQUAL(0, wrappedController.begin());
+    wrappedController.enable();
+
+    motor->forceInitialized(true);
+    set_state_and_update(1500.0, 120.0, -15.0, 2000);
+    state->setFlightStage(astra_rocket::COAST);
+
+    TEST_ASSERT_EQUAL(0, wrappedController.update());
+    auto *wrapped = static_cast<astra::ErrorCorrectedBaro *>(sensorManager->getBaroSource());
+    TEST_ASSERT_NOT_NULL(wrapped);
+    TEST_ASSERT_TRUE(wrapped->getDynamicPressure() > 10.0);
+}
+
 void run_test_airbrake_controller_tests()
 {
     RUN_TEST(test_begin_requires_motor_and_state);
@@ -249,6 +276,7 @@ void run_test_airbrake_controller_tests()
     RUN_TEST(test_update_with_zero_speed_sets_predicted_apogee_to_altitude);
     RUN_TEST(test_update_in_coast_computes_dynamic_pressure);
     RUN_TEST(test_install_baro_wrapper_behavior);
+    RUN_TEST(test_update_with_installed_wrapper_from_null_baro_constructor_computes_dynamic_pressure);
 }
 
 } // namespace test_airbrake_controller

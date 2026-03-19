@@ -79,8 +79,9 @@ private:
     double maxAngle = 80.0;
 
     double rocketMass = 43.5;
-    double predictedCdArocket = 0.01168;
-    double cdArocket = 0.01168;
+    double predictedCdArocket = 0.47 * 0.026654839329583704;
+    const double rocket_frontal_area = 0.026654839329583704; // m^2, based on 6" diameter, fins, and fillets
+    double cdArocket = 0.47 * rocket_frontal_area; // 0.47 is the estimated Cd based on OpenRocket, multiplied by frontal area to get CdA
     double flapArea = 0.00987;
     double flapEfficiency = 0.908;
 
@@ -88,6 +89,7 @@ private:
     double actualAngle = 0.0;
     double estimatedApogee = 0.0;
     double dynamicPressure = 0.0;
+    bool warnedMissingBaroForCorrection = false;
 
     bool motorEnabled = false;
     bool motorZeroed = false;

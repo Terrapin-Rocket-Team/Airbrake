@@ -185,6 +185,7 @@ class FlightCodePropagatorSim:
             heading=0.0,
             truth_alt=alt_agl,
             truth_accel=float(inertial_accel[2]),
+            sensor_alt_agl=float(getattr(self._prop, "reported_height_agl", alt_agl)),
         )
         self._last_packet = packet
 

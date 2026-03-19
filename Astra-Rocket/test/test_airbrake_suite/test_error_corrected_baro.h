@@ -78,7 +78,7 @@ void test_correction_disabled_forces_zero_delta()
     corrected.setCorrectionInputs(30.0, 500.0);
     TEST_ASSERT_EQUAL(0, corrected.begin());
     TEST_ASSERT_EQUAL(0, corrected.update());
-    TEST_ASSERT_TRUE(corrected.getAltitudeDelta() > 0.0);
+    TEST_ASSERT_TRUE(std::fabs(corrected.getAltitudeDelta()) > 0.0);
 
     corrected.setCorrectionEnabled(false);
     corrected.setCorrectionInputs(45.0, 900.0);
@@ -100,7 +100,7 @@ void test_correction_uses_first_order_filter()
     TEST_ASSERT_EQUAL(0, corrected.update());
 
     const double expectedAltitudeError = 0.1 * 500.0 * std::sin(30.0 * kPi / 180.0);
-    const double expectedDelta = (0.1 / (0.1 + 0.15)) * expectedAltitudeError;
+    const double expectedDelta = -expectedAltitudeError;
     TEST_ASSERT_DOUBLE_WITHIN(0.01, expectedDelta, corrected.getAltitudeDelta());
 }
 
@@ -118,7 +118,7 @@ void test_correction_clamps_angle_to_max_limit()
     TEST_ASSERT_EQUAL(0, corrected.update());
 
     const double expectedAltitudeError = 0.1 * 600.0 * std::sin(20.0 * kPi / 180.0);
-    const double expectedDelta = (0.1 / (0.1 + 0.15)) * expectedAltitudeError;
+    const double expectedDelta = -expectedAltitudeError;
     TEST_ASSERT_DOUBLE_WITHIN(0.01, expectedDelta, corrected.getAltitudeDelta());
 }
 

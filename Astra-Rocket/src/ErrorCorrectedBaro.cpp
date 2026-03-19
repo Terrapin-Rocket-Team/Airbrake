@@ -101,7 +101,10 @@ int ErrorCorrectedBaro::update() {
     } else if (altitudeError < -200.0) {
         altitudeError = -200.0;
     }
-    altitudeDelta = (1.0 - correctionAlpha) * altitudeDelta + correctionAlpha * altitudeError;
+    // The sim injects +c*q*sin(theta) into the reported barometric altitude.
+    // The FC-side correction should undo that bias and move the reading back
+    // toward the real altitude.
+    altitudeDelta = -altitudeError;
     altitudeASL += altitudeDelta;
 
     return 0;

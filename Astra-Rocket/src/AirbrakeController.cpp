@@ -48,6 +48,7 @@ int AirbrakeController::update()
 {
     if (!enabled || !motor || !state)
     {
+        dynamicPressure = 0.0;
         if (baro && baroCorrectionEnabled)
         {
             baro->setCorrectionInputs(0.0, 0.0);
@@ -56,6 +57,7 @@ int AirbrakeController::update()
     }
     if (!motor->isInitialized())
     {
+        dynamicPressure = 0.0;
         if (baro && baroCorrectionEnabled)
         {
             baro->setCorrectionInputs(0.0, 0.0);
@@ -81,6 +83,8 @@ int AirbrakeController::update()
     transonicLockoutActive = transonicLockout ? 1.0 : 0.0;
     const bool ascending = (verticalSpeed > 0.2);
     const bool controlWindowOpen = (stage == astra_rocket::COAST) && ascending && !transonicLockout;
+    const double rho = getDensity(altitudeASL);
+    dynamicPressure = 0.5 * rho * speed * speed / 100.0; // Pa -> hPa
 
     if (adaptiveCdAEnabled && controlWindowOpen)
     {
@@ -127,9 +131,16 @@ int AirbrakeController::update()
 
     if (baro && baroCorrectionEnabled)
     {
-        const double rho = getDensity(altitudeASL);
-        dynamicPressure = 0.5 * rho * speed * speed / 100.0; // Pa -> hPa
         baro->setCorrectionInputs(actualAngle, dynamicPressure);
+        warnedMissingBaroForCorrection = false;
+    }
+    else if (baroCorrectionEnabled)
+    {
+        if (!warnedMissingBaroForCorrection)
+        {
+            LOGW("Airbrake baro correction is enabled, but no wrapped barometer is attached.");
+            warnedMissingBaroForCorrection = true;
+        }
     }
 
     return 0;
@@ -165,11 +176,11 @@ void AirbrakeController::setTargetApogee(double targetM)
     targetApogee = targetM;
 }
 
-void AirbrakeController::setRocketParameters(double massKg, double cdArocketIn, double flapAreaM2)
+void AirbrakeController::setRocketParameters(double massKg, double cdrocketIn, double flapAreaM2)
 {
     rocketMass = massKg;
-    predictedCdArocket = cdArocketIn;
-    cdArocket = cdArocketIn;
+    predictedCdArocket = cdrocketIn * rocket_frontal_area;
+    cdArocket = cdrocketIn * rocket_frontal_area;
     flapArea = flapAreaM2;
 }
 
