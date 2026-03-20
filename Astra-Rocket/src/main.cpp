@@ -67,7 +67,7 @@ static PrintLog serialLog(Serial, true);
 
 #ifdef ENV_TEENSY
 static PacketStreams telemetryStreams;
-static AirbrakeTelemetryPublisher airbrakeTelemetry(rocketState, config, airbrakeCtrl, voltageSens, motorDriver, telemetryStreams);
+// static AirbrakeTelemetryPublisher airbrakeTelemetry(rocketState, config, airbrakeCtrl, voltageSens, motorDriver, telemetryStreams);
 static FileLogSink fileDLog("data_log.txt", StorageBackend::SD_CARD, false);
 static FileLogSink fileELog("event_log.txt", StorageBackend::SD_CARD, false);
 static ILogSink *logSinks[] = {&fileDLog, &serialLog};
@@ -94,13 +94,38 @@ static void printTeensyCrashReport()
 }
 #endif
 
+#include "RadioMessage.h"
+
+#define SERIAL_BAUD 115200 // bits/s
+
+#define END_CHAR '\n'
+
+HardwareSerial *telemSer = (HardwareSerial *)&Serial;
+
+uint32_t telemTimer = millis();
+
+const uint32_t telemInterval = 100; // ms -> 10 Hz
+
+Message m;
+
+APRSConfig aprscfg = {"KD3BBD", "ALL", "WIDE1-1", PositionWithoutTimestampWithoutAPRS, '\\', 'M'};
+
+APRSTelem telem(aprscfg);
+
+// uint8_t stflEncoding[] = {7, 4, 5}; // (Avionics): Temp, stage, fix qual
+
+uint8_t stflEncoding[] = {7, 5, 8, 7, 4}; // (Airbrake): Temp, flap angle, pred apogee (x2), stage
+
 void setup()
 {
     Serial.begin(115200);
 #ifndef NATIVE
 #ifdef ENV_TEENSY
-    setupAirbrakeTelemetrySerial(telemetryStreams, Serial2);
-    Serial2.println("hello world");
+    // setupAirbrakeTelemetrySerial(telemetryStreams, Serial2);
+    // Serial2.println("hello world");
+    telemSer->begin(SERIAL_BAUD);
+
+    telem.stateFlags.setEncoding(stflEncoding, sizeof(stflEncoding));
 #else
     Serial2.begin(115200);
 #endif
@@ -196,6 +221,41 @@ void loop()
     airbrakeCtrl.update();
     updateAirbrakeSweep(motorDriver);
 #ifdef ENV_TEENSY
-    airbrakeTelemetry.publishIfDue();
+    // airbrakeTelemetry.publishIfDue();
 #endif
+
+    if (millis() - telemTimer > telemInterval)
+    {
+
+        telemTimer = millis();
+        // Kloudbusters: 37°10'06.2"N 97°44'17.8"W
+        telem.lat = 37.168389;                                                 // decimal latitude
+        telem.lng = 97.738278;                                                 // decimal longitude
+        telem.alt = airbrakeCtrl.state->getPosition().z();                     // ft
+        telem.spd = airbrakeCtrl.state->getVelocity().magnitude() * 0.5144444; // knots (converted from m/s)
+        telem.hdg = airbrakeCtrl.state->getHeading();                          // degree
+        auto orient = airbrakeCtrl.state->getOrientation().toEuler321();
+        telem.orient[0] = orient[0]; // euler angles in degrees (x)
+        telem.orient[1] = orient[1]; // euler angles in degrees (y)
+        telem.orient[2] = orient[2]; // euler angles in degrees (z)
+
+        // Avionics
+        // uint8_t temp = 0; // deg C
+        // uint8_t stage = 0; // #
+        // uint8_t fixQual = 0; // #
+        // uint8_t flags[] = {temp, stage, fixQual};
+        // telem.stateFlags.set(flags);
+
+        // Airbrake
+        uint16_t predApogee = airbrakeCtrl.getPredictedApogee(); // ft
+        uint8_t temp = baro.getTemp();                           // deg C
+        uint8_t flapAng = airbrakeCtrl.getCurrentDeployment();   // deg
+        uint8_t predApogee1 = predApogee >> 8;                   // (DONT CHANGE)
+        uint8_t predApogee2 = predApogee & 0x00ff;               // (DONT CHANGE)
+        uint8_t stage = airbrakeCtrl.state->getFlightStage();    // #
+        uint8_t flags[] = {temp, flapAng, predApogee1, predApogee2, stage};
+        telem.stateFlags.set(flags);
+
+        m.encode(&telem)->print(*telemSer); // automatically terminates with \n
+    }
 }

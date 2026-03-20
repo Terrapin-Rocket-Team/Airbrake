@@ -7,15 +7,18 @@
 
 class MotorDriver;
 
-namespace astra {
+namespace astra
+{
     class SensorManager;
 }
 
-namespace astra_rocket {
-class RocketState;
+namespace astra_rocket
+{
+    class RocketState;
 }
 
-class AirbrakeController : public astra::DataReporter {
+class AirbrakeController : public astra::DataReporter
+{
 public:
     AirbrakeController(MotorDriver *motor,
                        astra_rocket::RocketState *state,
@@ -49,6 +52,8 @@ public:
     double getCurrentDeployment() const { return actualAngle; }
     double getTargetApogee() const { return targetApogee; }
 
+    astra_rocket::RocketState *state = nullptr;
+
 private:
     int calculateActuationAngle(double altitude, double velocity, double tiltDeg);
     double predictApogee(double timeStep, double tiltDeg, double curVelocity, double curHeight, double flapAngleDeg);
@@ -57,7 +62,6 @@ private:
     void updateCdAEstimate();
 
     MotorDriver *motor = nullptr;
-    astra_rocket::RocketState *state = nullptr;
     astra::ErrorCorrectedBaro *baro = nullptr;
     astra::ErrorCorrectedBaro correctedBaro;
 
@@ -81,7 +85,7 @@ private:
     double rocketMass = 43.5;
     double predictedCdArocket = 0.47 * 0.026654839329583704;
     const double rocket_frontal_area = 0.026654839329583704; // m^2, based on 6" diameter, fins, and fillets
-    double cdArocket = 0.47 * rocket_frontal_area; // 0.47 is the estimated Cd based on OpenRocket, multiplied by frontal area to get CdA
+    double cdArocket = 0.47 * rocket_frontal_area;           // 0.47 is the estimated Cd based on OpenRocket, multiplied by frontal area to get CdA
     double flapArea = 0.00987;
     double flapEfficiency = 0.908;
 
