@@ -17,7 +17,7 @@ lat, long = 0, 0
 
 updateRate = 10  # [Hz]
 timeStep = 1 / updateRate  # [s]
-totalImpulse = 32417 # [Ns]
+totalImpulse = 33417 # [Ns]
 burnTime = 9.6 # [s]
 rocketThrust = totalImpulse / burnTime  # [N]
 launchTime = 5  # time of launch [s]

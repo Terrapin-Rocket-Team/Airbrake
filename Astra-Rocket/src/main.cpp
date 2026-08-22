@@ -224,38 +224,38 @@ void loop()
     // airbrakeTelemetry.publishIfDue();
 #endif
 
-    if (millis() - telemTimer > telemInterval)
-    {
+    // if (millis() - telemTimer > telemInterval)
+    // {
 
-        telemTimer = millis();
-        // Kloudbusters: 37°10'06.2"N 97°44'17.8"W
-        telem.lat = 37.168389;                                                 // decimal latitude
-        telem.lng = 97.738278;                                                 // decimal longitude
-        telem.alt = airbrakeCtrl.state->getPosition().z();                     // ft
-        telem.spd = airbrakeCtrl.state->getVelocity().magnitude() * 0.5144444; // knots (converted from m/s)
-        telem.hdg = airbrakeCtrl.state->getHeading();                          // degree
-        auto orient = airbrakeCtrl.state->getOrientation().toEuler321();
-        telem.orient[0] = orient[0]; // euler angles in degrees (x)
-        telem.orient[1] = orient[1]; // euler angles in degrees (y)
-        telem.orient[2] = orient[2]; // euler angles in degrees (z)
+    //     // telemTimer = millis();
+    //     // // Kloudbusters: 37°10'06.2"N 97°44'17.8"W
+    //     // telem.lat = 37.168389;                                                 // decimal latitude
+    //     // telem.lng = 97.738278;                                                 // decimal longitude
+    //     // telem.alt = airbrakeCtrl.state->getPosition().z();                     // ft
+    //     // telem.spd = airbrakeCtrl.state->getVelocity().magnitude() * 0.5144444; // knots (converted from m/s)
+    //     // telem.hdg = airbrakeCtrl.state->getHeading();                          // degree
+    //     // auto orient = airbrakeCtrl.state->getOrientation().toEuler321();
+    //     // telem.orient[0] = orient[0]; // euler angles in degrees (x)
+    //     // telem.orient[1] = orient[1]; // euler angles in degrees (y)
+    //     // telem.orient[2] = orient[2]; // euler angles in degrees (z)
 
-        // Avionics
-        // uint8_t temp = 0; // deg C
-        // uint8_t stage = 0; // #
-        // uint8_t fixQual = 0; // #
-        // uint8_t flags[] = {temp, stage, fixQual};
-        // telem.stateFlags.set(flags);
+    //     // // Avionics
+    //     // // uint8_t temp = 0; // deg C
+    //     // // uint8_t stage = 0; // #
+    //     // // uint8_t fixQual = 0; // #
+    //     // // uint8_t flags[] = {temp, stage, fixQual};
+    //     // // telem.stateFlags.set(flags);
 
-        // Airbrake
-        uint16_t predApogee = airbrakeCtrl.getPredictedApogee(); // ft
-        uint8_t temp = baro.getTemp();                           // deg C
-        uint8_t flapAng = airbrakeCtrl.getCurrentDeployment();   // deg
-        uint8_t predApogee1 = predApogee >> 8;                   // (DONT CHANGE)
-        uint8_t predApogee2 = predApogee & 0x00ff;               // (DONT CHANGE)
-        uint8_t stage = airbrakeCtrl.state->getFlightStage();    // #
-        uint8_t flags[] = {temp, flapAng, predApogee1, predApogee2, stage};
-        telem.stateFlags.set(flags);
+    //     // // Airbrake
+    //     // uint16_t predApogee = airbrakeCtrl.getPredictedApogee(); // ft
+    //     // uint8_t temp = baro.getTemp();                           // deg C
+    //     // uint8_t flapAng = airbrakeCtrl.getCurrentDeployment();   // deg
+    //     // uint8_t predApogee1 = predApogee >> 8;                   // (DONT CHANGE)
+    //     // uint8_t predApogee2 = predApogee & 0x00ff;               // (DONT CHANGE)
+    //     // uint8_t stage = airbrakeCtrl.state->getFlightStage();    // #
+    //     // uint8_t flags[] = {temp, flapAng, predApogee1, predApogee2, stage};
+    //     // telem.stateFlags.set(flags);
 
-        m.encode(&telem)->print(*telemSer); // automatically terminates with \n
-    }
+    //     // m.encode(&telem)->print(*telemSer); // automatically terminates with \n
+    // }
 }
